@@ -349,7 +349,10 @@ class ApiState implements PrivateApiInterface {
     for (const tx of signed) {
       await program.provider.connection
         .sendRawTransaction(tx.serialize(), { skipPreflight: false, maxRetries: 10 })
-        .then((sig) => program.provider.connection.confirmTransaction(sig))
+        .then((sig) => {
+          console.log(sig, '    signature tx')
+          program.provider.connection.confirmTransaction(sig)
+        })
         .catch((e) => {
           if (e instanceof anchor.web3.SendTransactionError) {
             const anchorError = e.logs ? anchor.AnchorError.parse(e.logs) : null;

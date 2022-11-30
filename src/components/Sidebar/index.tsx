@@ -1,11 +1,23 @@
-import React, { useState } from 'react';
-import { hooks, thunks } from '../../data';
+import React, { useEffect, useState } from 'react';
+import { hooks, Store, thunks } from '../../data';
 import { useConnectedWallet, useWalletKit } from '@gokiprotocol/walletkit';
+import { useSelector } from 'react-redux';
 const WalletButton: React.FC = () => {
   const walletKit = useWalletKit();
   const wallet = useConnectedWallet();
   const dispatch = hooks.useThunkDispatch();
   const [hovered, setHovered] = React.useState(false);
+  
+
+  useEffect(() => {
+    if (wallet?.connected) {
+      
+    }
+  }, [wallet]);
+
+
+  
+
 
   const disconnect = React.useCallback(() => {
     if (wallet) {
@@ -38,6 +50,17 @@ const WalletButton: React.FC = () => {
 };
 //@ts-ignore
 function Sidebar({ amount, setAmount }) {
+  const api = hooks.useApi();
+  const logs = useSelector(({ HUDLogger }: Store) => HUDLogger.logs);
+  const [userAccountExists, setUserAccountExists] = useState(true);
+      useEffect(() => {
+        // console.log(logs, 'LOGS');
+        if (logs[0]?.severity === "error") {
+          alert(logs[0].message);
+          if (logs[0].message.includes("User hasn't created a flip account")) setUserAccountExists(false);
+          else setUserAccountExists(true)
+        }
+      }, [logs]);
   return (
     <div className="flex h-full flex-col max-h-[800px] justify-between w-full lg:w-3/12 p-6 font-bold">
       <div className="part1 h-[10%] center w-full">
@@ -105,22 +128,35 @@ function Sidebar({ amount, setAmount }) {
       </div>
 
       <div className="part3 h-[35%] 2xl:h-[25%] bg-brand_yellow rounded-3xl border-4 border-black text-sm p-6 flex flex-col justify-between">
-        <div>
-          <p className="font-extrabold text-center">INSERT BET AMOUNT</p>
-          <hr className="my-2 border-black" />
-        </div>
-        <div className="flex text-3xl italic  ">
-          <input
-            className=" bg-brand_yellow text-black font-extrabold w-6/12 text-right italic focus:outline-none"
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-          />
-          <p className=" ml-2 w-6/12">SOL</p>
-        </div>
-        <button className="border-black  border-4 p-1 rounded-3xl w-full font-extrabold">PLAY</button>
+        {
+          userAccountExists ? (
+            <Play amount={amount} setAmount={setAmount} api={ api} />) : (<button onClick={()=>{api.handleCommand("user create")}} className='center h-full text-lg'>
+              Create User Account
+        </button>) 
+        }
       </div>
     </div>
   );
 }
 
+//@ts-ignore
+const Play = ({amount, setAmount, api}) => {
+  return (
+    <>
+      <div>
+        <p className="font-extrabold text-center">INSERT BET AMOUNT</p>
+        <hr className="my-2 border-black" />
+      </div>
+      <div className="flex text-3xl italic  ">
+        <input
+          className=" bg-brand_yellow text-black font-extrabold w-6/12 text-right italic focus:outline-none"
+          value={amount}
+          onChange={(e) => setAmount(e.target.value)}
+        />
+        <p className=" ml-2 w-6/12">SOL</p>
+      </div>
+      <button onClick={()=>{api.handleCommand(`user play 1 ${amount}`)}} className="border-black  border-4 p-1 rounded-3xl w-full font-extrabold">PLAY</button>
+    </>
+  );
+}
 export default Sidebar;
