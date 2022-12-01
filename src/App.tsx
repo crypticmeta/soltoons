@@ -21,7 +21,7 @@ const App: React.FC = () => {
  
 
   return (
-    <WalletKitProvider app={{ name: 'SwitchFlips' }} defaultNetwork={'devnet'}>
+    <WalletKitProvider app={{ name: 'ClawGame' }} defaultNetwork={'devnet'}>
       <DataLayer>
         {inputGlobalStyles}
         <div style={{ display: 'flex', flexDirection: 'column' }} className="bg-gray-900 min-h-screen">

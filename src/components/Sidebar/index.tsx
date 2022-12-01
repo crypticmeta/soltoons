@@ -82,7 +82,7 @@ function Sidebar({ amount, setAmount }) {
       useEffect(() => {
         // console.log(logs, 'LOGS');
         if (logs && logs[0]?.severity === "error") {
-          alert(logs[0].message);
+          // alert(logs[0].message);
           if (logs[0].message.includes("User hasn't created a flip account")) setUserAccountExists(false);
           else setUserAccountExists(true)
         }
@@ -168,7 +168,7 @@ function Sidebar({ amount, setAmount }) {
           </button>
         )}
       </div>
-      <Snackbar open={open} autoHideDuration={6000} onClose={handleClose}>
+      <Snackbar open={open} onClose={handleClose}>
         <Alert onClose={handleClose} severity={ logs[0]?.severity ==="error"?"error":"info"} sx={{ width: '100%' }}>
           {logs[0]?.message}
         </Alert>

@@ -432,11 +432,12 @@ class ApiState implements PrivateApiInterface {
         await this.log(`Awaiting result from vrf... [ ${user.state.vrf.toBase58()} ]`);
       },
       /* betSettled= */ async (event) => {
-        console.log(event, 'bet settled event')
+        let multiplier = [0.0, 0.2, 0.5, 0.8, 1.0, 0.0, 1.5, 2.0, 3.0, 5.0, 0.0];
+        console.log(event, 'bet settled event', event.escrowChange.toString(), 'escrow change', event.result.toString(), 'result')
         event.userWon
-          ? this.log(`Winner winner chicken dinner!`, Severity.Success)
+          ? this.log(`Congrats! You won ${multiplier[Number(event.result.toString())]}X`, Severity.Success)
           : this.log(`Loser. We still think you're pretty great though :)`, Severity.Error);
-        await this.playPrompt();
+        // await this.playPrompt();
       }
     );
     return user;
