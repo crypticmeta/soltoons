@@ -2,6 +2,15 @@ import React, { useEffect, useState } from 'react';
 import { hooks, Store, thunks } from '../../data';
 import { useConnectedWallet, useWalletKit } from '@gokiprotocol/walletkit';
 import { useSelector } from 'react-redux';
+import CircularProgress from '@mui/material/CircularProgress';
+import Snackbar from '@mui/material/Snackbar';
+import MuiAlert, { AlertProps } from '@mui/material/Alert';
+
+const Alert = React.forwardRef<HTMLDivElement, AlertProps>(function Alert(props, ref) {
+  return <MuiAlert elevation={6} ref={ref} variant="filled" {...props} />;
+});
+
+
 const WalletButton: React.FC = () => {
   const walletKit = useWalletKit();
   const wallet = useConnectedWallet();
@@ -50,16 +59,34 @@ const WalletButton: React.FC = () => {
 };
 //@ts-ignore
 function Sidebar({ amount, setAmount }) {
+  const [open, setOpen] = React.useState(false);
+
+  const handleClick = () => {
+    setOpen(true);
+  };
+
+  const handleClose = (event?: React.SyntheticEvent | Event, reason?: string) => {
+    if (reason === 'clickaway') {
+      return;
+    }
+
+    setOpen(false);
+  };
+
+
   const api = hooks.useApi();
   const logs = useSelector(({ HUDLogger }: Store) => HUDLogger.logs);
+  const loading = useSelector((store: Store) => store.gameState.loading);
+  const balances = useSelector((store: Store) => store.gameState.userBalances);
   const [userAccountExists, setUserAccountExists] = useState(true);
       useEffect(() => {
         // console.log(logs, 'LOGS');
-        if (logs[0]?.severity === "error") {
+        if (logs && logs[0]?.severity === "error") {
           alert(logs[0].message);
           if (logs[0].message.includes("User hasn't created a flip account")) setUserAccountExists(false);
           else setUserAccountExists(true)
         }
+        handleClick()
       }, [logs]);
   return (
     <div className="flex h-full flex-col max-h-[800px] justify-between w-full lg:w-3/12 p-6 font-bold">
@@ -128,22 +155,37 @@ function Sidebar({ amount, setAmount }) {
       </div>
 
       <div className="part3 h-[35%] 2xl:h-[25%] bg-brand_yellow rounded-3xl border-4 border-black text-sm p-6 flex flex-col justify-between">
-        {
-          userAccountExists ? (
-            <Play amount={amount} setAmount={setAmount} api={ api} />) : (<button onClick={()=>{api.handleCommand("user create")}} className='center h-full text-lg'>
-              Create User Account
-        </button>) 
-        }
+        {userAccountExists ? (
+          <Play amount={amount} setAmount={setAmount} loading={loading} api={api} balances={balances} />
+        ) : (
+          <button
+            onClick={() => {
+              api.handleCommand('user create');
+            }}
+            className="center h-full text-lg"
+          >
+            Create User Account
+          </button>
+        )}
       </div>
+      <Snackbar open={open} autoHideDuration={6000} onClose={handleClose}>
+        <Alert onClose={handleClose} severity={ logs[0]?.severity ==="error"?"error":"info"} sx={{ width: '100%' }}>
+          {logs[0]?.message}
+        </Alert>
+      </Snackbar>
     </div>
   );
 }
 
 //@ts-ignore
-const Play = ({amount, setAmount, api}) => {
+const Play = ({amount, setAmount, api, balances, loading}) => {
   return (
     <>
-      <div>
+      {
+        loading ? (<div className='center h-full text-white border-white'>
+        <CircularProgress color="inherit"/></div>) : (
+          <>
+           <div>
         <p className="font-extrabold text-center">INSERT BET AMOUNT</p>
         <hr className="my-2 border-black" />
       </div>
@@ -155,7 +197,21 @@ const Play = ({amount, setAmount, api}) => {
         />
         <p className=" ml-2 w-6/12">SOL</p>
       </div>
-      <button onClick={()=>{api.handleCommand(`user play 1 ${amount}`)}} className="border-black  border-4 p-1 rounded-3xl w-full font-extrabold">PLAY</button>
+      <div>
+        <button
+          onClick={() => {
+            api.handleCommand(`user play 1 ${amount}`);
+          }}
+          className="border-black  border-4 p-1 rounded-3xl w-full font-extrabold"
+        >
+          PLAY
+        </button>
+        <p className="text-xs text-gray-700 text-center">
+          {Number(balances.sol).toFixed(2)} sol <span className='pl-4'>{Number(balances.ribs).toFixed(2)} wsol</span>
+        </p>
+      </div></>
+        )
+     }
     </>
   );
 }

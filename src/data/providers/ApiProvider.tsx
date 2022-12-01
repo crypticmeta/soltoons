@@ -13,6 +13,8 @@ import { ThunkDispatch } from '../../types';
 import { Severity } from '../../util/const';
 import { GameState } from '../store/gameStateReducer';
 
+const truncatedPubkey=(pubkey:string) => { return `${pubkey.slice(0, 5)}...${pubkey.slice(-5)}`};
+
 const TOKENMINT = new PublicKey("So11111111111111111111111111111111111111112")
 
 /*
@@ -43,8 +45,8 @@ const games: { [type: number]: { type: api.GameTypeEnum; prompt: string; minGues
   },
   [api.GameTypeValue.TWENTY_SIDED_DICE_ROLL]: {
     type: api.GameTypeEnum.TWENTY_SIDED_DICE_ROLL,
-    prompt: `TwentySidedDice: Use the command \`${ApiCommands.UserPlay} <1-20> <BET>\` to play.`,
-    minGuess: 1,
+    prompt: `Ready to play.`,
+    minGuess: 0,
     maxGuess: 20,
   },
 };
@@ -122,7 +124,7 @@ class ApiState implements PrivateApiInterface {
     // Upon instantiation of this object, try to fetch user account and balance asynchronously.
     this.user.catch((e) => this.handleError(e));
 
-    this.log(`Connected as ${wallet.publicKey}`, Severity.Success);
+    this.log(`Connected as ${truncatedPubkey(wallet.publicKey.toBase58())}`, Severity.Success);
   }
 
   /**
@@ -137,7 +139,7 @@ class ApiState implements PrivateApiInterface {
    * The currently set game mode.
    */
   get gameMode(): api.GameTypeValue {
-    return this._gameState?.gameMode ?? api.GameTypeValue.NONE;
+    return this._gameState?.gameMode ?? api.GameTypeValue.TWENTY_SIDED_DICE_ROLL;
   }
 
   /**
@@ -168,6 +170,7 @@ class ApiState implements PrivateApiInterface {
       )
       .catch((e) => {
         console.error(e);
+        this.dispatch(thunks.setLoading(false));
         throw ApiError.getFlipProgram();
       });
   }
@@ -189,12 +192,13 @@ class ApiState implements PrivateApiInterface {
           (user) =>
             (this._user ??= (() => {
               // If there is not yet a known user, set it, log it, and return it.
-              this.log(`Accounts retrieved for user: ${pubkey}`);
+              this.log(`Accounts retrieved for user: ${truncatedPubkey(pubkey.toBase58())}`);
               this.watchUserAccounts().then(this.playPrompt);
               return user;
             })())
         )
         .catch((e) => {
+          this.dispatch(thunks.setLoading(false));
           if (e instanceof ApiError) throw e;
           else throw ApiError.userAccountMissing();
         });
@@ -229,6 +233,7 @@ class ApiState implements PrivateApiInterface {
         await this.playGame(command.replace(ApiCommands.UserPlay, '').trim().split(/\s+/));
       else throw ApiError.unknownCommand(command);
     } catch (e) {
+      this.dispatch(thunks.setLoading(false));
       this.handleError(e);
     }
   };
@@ -237,17 +242,21 @@ class ApiState implements PrivateApiInterface {
    * Set up a user's VRF accounts (if they're not already set up).
    */
   private createUserAccounts = async () => {
+    this.dispatch(thunks.setLoading(true));
     const user = await this.user.catch(() => undefined);
     // If there are already known user accounts, do not set up new accounts.
-    if (user) return this.log(`User account is already set up.`).then(() => this.playPrompt());
+    if (user) {
+      this.dispatch(thunks.setLoading(false));
+      return this.log(`User account is already set up.`).then(() => this.playPrompt());
+    }
 
     // Gather necessary programs.
     const program = await this.program;
     const anchorProvider = new anchor.AnchorProvider(program.provider.connection, this.wallet, {});
     const switchboard = await api.loadSwitchboard(anchorProvider);
 
-    this.log(`Checking if user needs airdrop...`);
-    api.verifyPayerBalance(program.provider.connection, anchorProvider.publicKey);
+    // this.log(`Checking if user needs airdrop...`);
+    // api.verifyPayerBalance(program.provider.connection, anchorProvider.publicKey);
 
     // If there are no known user accounts, begin accounts set up.
     this.log(`Building user accounts...`);
@@ -257,6 +266,7 @@ class ApiState implements PrivateApiInterface {
     await this.packSignAndSubmit(request.ixns, request.signers);
 
     // Try to load the new user accounts.
+    this.dispatch(thunks.setLoading(false));
     await this.user;
   };
 
@@ -268,17 +278,18 @@ class ApiState implements PrivateApiInterface {
     const user = await this.user;
 
     // Build out and sign transactions.
-    this.log(`Building airdrop request...`);
-    const request = await user.airdropReq(this.wallet.publicKey, TOKENMINT);
-    await this.packSignAndSubmit(request.ixns, request.signers);
+    // this.log(`Building airdrop request...`);
+    // const request = await user.airdropReq(this.wallet.publicKey, TOKENMINT);
+    // await this.packSignAndSubmit(request.ixns, request.signers);
 
-    await this.playPrompt();
+    // await this.playPrompt();
   };
 
   /**
    * Play the game.
    */
   private playGame = async (args: string[]) => {
+    this.dispatch(thunks.setLoading(true));
     const game = games[this.gameMode];
 
     // Gather necessary programs.
@@ -287,18 +298,20 @@ class ApiState implements PrivateApiInterface {
     // Validate the guess.
     const guess = _.isFinite(Number(args[0])) ? Number(args[0]) : undefined;
     if (_.isUndefined(guess) || guess < game.minGuess || guess > game.maxGuess)
-      // Guess must be a number within the range (inclusive).
-      throw ApiError.badGuess(game.minGuess, game.maxGuess);
+      {// Guess must be a number within the range (inclusive).
+      this.dispatch(thunks.setLoading(false));
+      throw ApiError.badGuess(game.minGuess, game.maxGuess);}
 
     // Validate the bet.
     const bet = Number.isFinite(Number(args[1])) ? Number(args[1]) : undefined;
     console.log(bet, this.userRibsBalance, 'comparing')
     if (_.isUndefined(bet) || bet <= 0 || bet > this.userRibsBalance)
-      // Bet must be a positive number that's less than the user's balance.
-      throw ApiError.badBet();
+    { // Bet must be a positive number that's less than the user's balance.
+      this.dispatch(thunks.setLoading(false));
+      throw ApiError.badBet();}
 
     this.log(`Building bet request...`);
-    this.log(`Bet Amount: ${new anchor.BN(bet * LAMPORTS_PER_SOL).toNumber()}`)
+    this.log(`Bet Amount: ${bet}`);
     const request = await user.placeBetReq(
       TOKENMINT,
       this.gameMode,
@@ -314,9 +327,11 @@ class ApiState implements PrivateApiInterface {
     //   })
     // })
     await this.packSignAndSubmit(request.ixns, request.signers);
+    this.dispatch(thunks.setLoading(false));
   };
 
   private packSignAndSubmit = async (ixns: anchor.web3.TransactionInstruction[], signers: anchor.web3.Signer[]) => {
+    this.dispatch(thunks.setLoading(true));
     const program = await this.program;
     const packed = await sbv2.packTransactions(
       program.provider.connection,
@@ -341,7 +356,9 @@ class ApiState implements PrivateApiInterface {
         return signed;
       })
       .catch((e) => {
+        this.dispatch(thunks.setLoading(false));
         console.error(e);
+        this.dispatch(thunks.setLoading(false));
         throw ApiError.walletSignature();
       });
 
@@ -350,10 +367,12 @@ class ApiState implements PrivateApiInterface {
       await program.provider.connection
         .sendRawTransaction(tx.serialize(), { skipPreflight: false, maxRetries: 10 })
         .then((sig) => {
+          this.dispatch(thunks.setLoading(false));
           console.log(sig, '    signature tx')
           program.provider.connection.confirmTransaction(sig)
         })
         .catch((e) => {
+          this.dispatch(thunks.setLoading(false));
           if (e instanceof anchor.web3.SendTransactionError) {
             const anchorError = e.logs ? anchor.AnchorError.parse(e.logs) : null;
             if (anchorError) {
@@ -365,6 +384,7 @@ class ApiState implements PrivateApiInterface {
             }
           } else {
             console.error(e);
+            this.dispatch(thunks.setLoading(false));
             throw ApiError.general('An error occurred while sending transaction.');
           }
         });
@@ -412,6 +432,7 @@ class ApiState implements PrivateApiInterface {
         await this.log(`Awaiting result from vrf... [ ${user.state.vrf.toBase58()} ]`);
       },
       /* betSettled= */ async (event) => {
+        console.log(event, 'bet settled event')
         event.userWon
           ? this.log(`Winner winner chicken dinner!`, Severity.Success)
           : this.log(`Loser. We still think you're pretty great though :)`, Severity.Error);
@@ -425,6 +446,7 @@ class ApiState implements PrivateApiInterface {
    * Handles errors that are thrown.
    */
   private handleError = (e: any) => {
+    this.dispatch(thunks.setLoading(false));
     if (e instanceof ApiError) {
       this.log(e.message, Severity.Error);
       // After an unknown command, try to prompt the user to play.
@@ -436,7 +458,13 @@ class ApiState implements PrivateApiInterface {
    * Log to DisplayLogger.
    */
   private log = (message: string, severity: Severity = Severity.Normal) =>
+  {
+    console.log(severity, 'severity')
+    if (severity == "error") {
+      this.dispatch(thunks.setLoading(false));
+    }
     this.dispatch(thunks.log({ message, severity }));
+  }
 
   /**
    * Prompts the user to play the game.

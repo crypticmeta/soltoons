@@ -28,7 +28,7 @@ export interface GameState {
  */
 const initialState: GameState = {
   loading: false,
-  gameMode: GameTypeValue.COIN_FLIP,
+  gameMode: GameTypeValue.TWENTY_SIDED_DICE_ROLL,
   userBalances: {},
 };
 
@@ -51,8 +51,11 @@ const gameStateSlice = createSlice({
         state.userBalances.ribs = undefined;
       }
     },
+    setLoading: (state: GameState, action: PayloadAction<boolean>) => {
+      state.loading = action.payload
+    },
   },
 });
 
-export const { setUserBalance } = gameStateSlice.actions;
+export const { setUserBalance, setLoading } = gameStateSlice.actions;
 export default gameStateSlice.reducer;

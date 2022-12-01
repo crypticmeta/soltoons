@@ -831,7 +831,7 @@ export class User {
           if (!this.publicKey.equals(event.user)) {
             return;
           }
-          const gameType = GameTypeValue.COIN_FLIP;
+          const gameType = GameTypeValue.TWENTY_SIDED_DICE_ROLL;
           await betPlaced({
             ...event,
             gameType: convertGameType(event.gameType),
@@ -847,6 +847,7 @@ export class User {
           if (!this.publicKey.equals(event.user)) {
             return;
           }
+          console.log(signature, ' bet settled tx')
           await betSettled({
             ...event,
             gameType: convertGameType(event.gameType),
