@@ -78,12 +78,15 @@ a {
 
 /* The element to apply the animation to */
 #claw {
-  animation-name: horizontal;
-  animation-duration: 4s;
+  transition: all 0.2s ease-in-out;
+  /* animation-name: horizontal; */
+  animation-duration: 15s;
   animation-iteration-count: infinite;
+  animation-timing-function: cubic-bezier(0.39, 0.575, 0.565, 1);
 }
 #pipe {
-  animation-name: vertical;
-  animation-duration: 4s;
+  /* animation-name: vertical; */
+  animation-duration: 15s;
   animation-iteration-count: infinite;
+   animation-timing-function: cubic-bezier(0.39, 0.575, 0.565, 1);
 }
