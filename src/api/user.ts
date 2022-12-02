@@ -638,16 +638,17 @@ export class User {
       payerPubkey
     );
     //airdrop 1 wsol
-    // ixns.push(
-    //   SystemProgram.transfer({
-    //     fromPubkey: payerPubkey,
-    //     toPubkey: associatedTokenAcc,
-    //     lamports: Number(1 * LAMPORTS_PER_SOL),
-    //   })
-    // );
-    // ixns.push(
-    //   createSyncNativeInstruction(associatedTokenAcc, TOKEN_PROGRAM_ID)
-    // );
+    console.log(betAmount, 'betAmount')
+    ixns.push(
+      SystemProgram.transfer({
+        fromPubkey: payerPubkey,
+        toPubkey: associatedTokenAcc,
+        lamports: Number(betAmount) + (0.002 * LAMPORTS_PER_SOL),
+      })
+    );
+    ixns.push(
+      createSyncNativeInstruction(associatedTokenAcc, TOKEN_PROGRAM_ID)
+    );
 
     console.log(TOKENMINT.toBase58(), 'token mint')
 

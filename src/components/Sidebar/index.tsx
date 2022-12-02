@@ -225,7 +225,7 @@ const Play = ({amount, setAmount, api, balances, loading}) => {
           PLAY
         </button>
         <p className="text-xs text-gray-700 text-center">
-          {Number(balances.sol).toFixed(2)} sol <span className='pl-4'>{Number(balances.ribs).toFixed(2)} wsol</span>
+          {Number(balances.sol).toFixed(4)} sol <span className='pl-4'>{Number(balances.ribs).toFixed(4)} wsol</span>
         </p>
       </div></>
         )

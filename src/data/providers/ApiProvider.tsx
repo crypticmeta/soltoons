@@ -150,6 +150,10 @@ class ApiState implements PrivateApiInterface {
     return this._gameState?.userBalances?.ribs ?? 0;
   }
 
+  get userBalance(): number {
+    return this._gameState?.userBalances?.sol ?? 0;
+  }
+
   /**
    * Try to return the cached program, and fallback on retrieving it from the network.
    *
@@ -191,12 +195,12 @@ class ApiState implements PrivateApiInterface {
       return api.User.load(program, pubkey, TOKENMINT)
         .then(
           (user) =>
-          (this._user ??= (() => {
-            this.dispatch(thunks.setUser(user.state.toJSON()));
+            (this._user ??= (() => {
+              this.dispatch(thunks.setUser(user.state.toJSON()));
               // If there is not yet a known user, set it, log it, and return it.
               this.log(`Accounts retrieved for user: ${truncatedPubkey(pubkey.toBase58())}`);
-            this.watchUserAccounts().then(this.playPrompt);
-            
+              this.watchUserAccounts().then(this.playPrompt);
+
               return user;
             })())
         )
@@ -265,15 +269,15 @@ class ApiState implements PrivateApiInterface {
 
     // If there are no known user accounts, begin accounts set up.
     this.log(`Building user accounts...`);
-     const rewardAddress = await spl.getAssociatedTokenAddress(TOKENMINT, anchorProvider.publicKey, true);
-    const accountInfo = await spl.getAccount(anchorProvider.connection, rewardAddress).catch(err=>console.log(err));    
+    const rewardAddress = await spl.getAssociatedTokenAddress(TOKENMINT, anchorProvider.publicKey, true);
+    const accountInfo = await spl.getAccount(anchorProvider.connection, rewardAddress).catch((err) => console.log(err));
     // Build out and sign transactions.
     const request = await api.User.createReq(
       program,
       switchboard,
       TOKENMINT,
       anchorProvider.publicKey,
-      accountInfo?.isInitialized||false
+      accountInfo?.isInitialized || false
     );
 
     const packed = await sbv2.packTransactions(
@@ -284,12 +288,10 @@ class ApiState implements PrivateApiInterface {
     );
     const signedTxs = await this.wallet.signAllTransactions(packed);
 
-     
     const sigs: string[] = [];
     // await this.packSignAndSubmit(request.ixns, request.signers);
 
     // Try to load the new user accounts.
-
 
     for (let k = 0; k < packed.length; k += 1) {
       // console.log('executing tx no. ', k);
@@ -325,13 +327,12 @@ class ApiState implements PrivateApiInterface {
           if (e instanceof ApiError) throw e;
         });
       // console.log(sig, 'signed tx ', k);
-      if(sig)
-      await program.provider.connection.confirmTransaction(sig).catch((e) => {
-        console.log(e, 'error confirming transaction');
-        if (e instanceof ApiError) throw e;
-      });
-      if(sig)
-      sigs.push(sig);
+      if (sig)
+        await program.provider.connection.confirmTransaction(sig).catch((e) => {
+          console.log(e, 'error confirming transaction');
+          if (e instanceof ApiError) throw e;
+        });
+      if (sig) sigs.push(sig);
       // console.log('sleeping for a sec');
       await sleep(500);
     }
@@ -352,7 +353,7 @@ class ApiState implements PrivateApiInterface {
                   // If there is not yet a known user, set it, log it, and return it.
                   // this.log(`Accounts retrieved for user: ${truncatedPubkey(pubkey.toBase58())}`);
                   this.dispatch(thunks.setUser(user.state.toJSON()));
-                  this.watchUserAccounts()
+                  this.watchUserAccounts();
                   return user;
                 })())
             )
@@ -398,18 +399,20 @@ class ApiState implements PrivateApiInterface {
 
     // Validate the guess.
     const guess = _.isFinite(Number(args[0])) ? Number(args[0]) : undefined;
-    if (_.isUndefined(guess) || guess < game.minGuess || guess > game.maxGuess)
-      {// Guess must be a number within the range (inclusive).
+    if (_.isUndefined(guess) || guess < game.minGuess || guess > game.maxGuess) {
+      // Guess must be a number within the range (inclusive).
       this.dispatch(thunks.setLoading(false));
-      throw ApiError.badGuess(game.minGuess, game.maxGuess);}
+      throw ApiError.badGuess(game.minGuess, game.maxGuess);
+    }
 
     // Validate the bet.
     const bet = Number.isFinite(Number(args[1])) ? Number(args[1]) : undefined;
-    console.log(bet, this.userRibsBalance, 'comparing')
-    if (_.isUndefined(bet) || bet <= 0 || bet > this.userRibsBalance)
-    { // Bet must be a positive number that's less than the user's balance.
+    console.log(bet, this.userBalance, 'comparing');
+    if (_.isUndefined(bet) || bet <= 0 || bet > this.userBalance-0.004) {
+      // Bet must be a positive number that's less than the user's balance.
       this.dispatch(thunks.setLoading(false));
-      throw ApiError.badBet();}
+      throw ApiError.badBet();
+    }
 
     this.log(`Building bet request...`);
     this.log(`Bet Amount: ${bet}`);
@@ -428,7 +431,7 @@ class ApiState implements PrivateApiInterface {
     //   })
     // })
     await this.packSignAndSubmit(request.ixns, request.signers);
-    this.dispatch(thunks.setLoading(false));
+    // this.dispatch(thunks.setLoading(false));
   };
 
   private packSignAndSubmit = async (ixns: anchor.web3.TransactionInstruction[], signers: anchor.web3.Signer[]) => {
@@ -468,9 +471,9 @@ class ApiState implements PrivateApiInterface {
       await program.provider.connection
         .sendRawTransaction(tx.serialize(), { skipPreflight: false, maxRetries: 20 })
         .then((sig) => {
-          this.dispatch(thunks.setLoading(false));
-          console.log(sig, '    signature tx')
-          program.provider.connection.confirmTransaction(sig)
+          // this.dispatch(thunks.setLoading(false));
+          console.log(sig, '    signature tx');
+          program.provider.connection.confirmTransaction(sig);
         })
         .catch((e) => {
           this.dispatch(thunks.setLoading(false));
@@ -505,7 +508,7 @@ class ApiState implements PrivateApiInterface {
       // console.log(rawAccount, 'rawAccount', rawAccount.mint.toBase58(), 'mint', Number(rawAccount.amount)  / RIBS_PER_RACK, 'amount')
       this.dispatch(
         thunks.setUserBalance({
-          ribs: rawAccount.amount ? Number(rawAccount.amount)  / RIBS_PER_RACK : undefined,
+          ribs: rawAccount.amount ? Number(rawAccount.amount) / RIBS_PER_RACK : undefined,
         })
       );
     };
@@ -513,7 +516,7 @@ class ApiState implements PrivateApiInterface {
     // Grab initial values.
     const program = await this.program;
     const user = await this.user;
-    console.log(user.state.rewardAddress.toBase58(), 'reward adress')
+    console.log(user.state.rewardAddress.toBase58(), 'reward adress');
     await program.provider.connection.getAccountInfo(this.wallet.publicKey).then(onSolAccountChange);
     await program.provider.connection.getAccountInfo(user.state.rewardAddress).then(onRibsAccountChange);
 
@@ -534,10 +537,20 @@ class ApiState implements PrivateApiInterface {
       },
       /* betSettled= */ async (event) => {
         let multiplier = [0.0, 0.2, 0.5, 0.8, 1.0, 0.0, 1.5, 2.0, 3.0, 5.0, 0.0];
-        console.log(event, 'bet settled event', event.escrowChange.toString(), 'escrow change', event.result.toString(), 'result')
+        console.log(
+          event,
+          'bet settled event',
+          event.escrowChange.toString(),
+          'escrow change',
+          event.result.toString(),
+          'result'
+        );
         event.userWon
           ? this.log(`Congrats! You won ${multiplier[Number(event.result.toString())]}X`, Severity.Success)
           : this.log(`Loser. We still think you're pretty great though :)`, Severity.Error);
+        
+        
+        this.dispatch(thunks.setLoading(false));
         // await this.playPrompt();
       }
     );
@@ -551,22 +564,19 @@ class ApiState implements PrivateApiInterface {
     this.dispatch(thunks.setLoading(false));
     if (e instanceof ApiError) {
       this.log(e.message, Severity.Error);
-      // After an unknown command, try to prompt the user to play.
-      if (e.type !== ApiErrorType.UserAccountMissing) this.playPrompt();
     } else console.error('ApiProvider[handleError] Error occurred:\n', e);
   };
 
   /**
    * Log to DisplayLogger.
    */
-  private log = (message: string, severity: Severity = Severity.Normal) =>
-  {
+  private log = (message: string, severity: Severity = Severity.Normal) => {
     // console.log(severity, 'severity')
-    if (severity == "error") {
+    if (severity == 'error') {
       this.dispatch(thunks.setLoading(false));
     }
     this.dispatch(thunks.log({ message, severity }));
-  }
+  };
 
   /**
    * Prompts the user to play the game.
