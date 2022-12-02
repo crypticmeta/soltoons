@@ -3,6 +3,7 @@ import * as anchor from '@project-serum/anchor';
 import { ConnectedWallet } from '@saberhq/use-solana';
 import * as spl from '@solana/spl-token-v2';
 import { LAMPORTS_PER_SOL, PublicKey } from '@solana/web3.js';
+import { sleep } from '@switchboard-xyz/sbv2-utils';
 import * as sbv2 from '@switchboard-xyz/switchboard-v2';
 import _ from 'lodash';
 import React from 'react';
@@ -66,11 +67,11 @@ enum ApiErrorType {
 
 class ApiError extends Error {
   static general = (message: string) => new ApiError(ApiErrorType.General, message);
-  static getFlipProgram = () => new ApiError(ApiErrorType.GetFlipProgram, `Couldn't get FlipProgram from the network.`);
+  static getFlipProgram = () => new ApiError(ApiErrorType.GetFlipProgram, `Network Issue.`);
   static userAccountMissing = () =>
     new ApiError(
       ApiErrorType.UserAccountMissing,
-      "User hasn't created a flip account. Please enter the `user create` command."
+      "User hasn't created an account. Please click on Create Account Button."
     );
   static walletSignature = () => new ApiError(ApiErrorType.WalletSignature, `Couldn't retrieve user signature.`);
   static unknownCommand = (command: string) =>
@@ -190,10 +191,12 @@ class ApiState implements PrivateApiInterface {
       return api.User.load(program, pubkey, TOKENMINT)
         .then(
           (user) =>
-            (this._user ??= (() => {
+          (this._user ??= (() => {
+            this.dispatch(thunks.setUser(user.state.toJSON()));
               // If there is not yet a known user, set it, log it, and return it.
               this.log(`Accounts retrieved for user: ${truncatedPubkey(pubkey.toBase58())}`);
-              this.watchUserAccounts().then(this.playPrompt);
+            this.watchUserAccounts().then(this.playPrompt);
+            
               return user;
             })())
         )
@@ -227,7 +230,7 @@ class ApiState implements PrivateApiInterface {
     try {
       command = command.trim(); // Trim the initial command.
       if (command === ApiCommands.UserCreate) await this.createUserAccounts();
-      else if (command === ApiCommands.UserAirdrop) await this.userAirdrop();
+      // else if (command === ApiCommands.UserAirdrop) await this.userAirdrop();
       else if (command.startsWith(ApiCommands.UserPlay))
         // Split the arguments and try to play the game.
         await this.playGame(command.replace(ApiCommands.UserPlay, '').trim().split(/\s+/));
@@ -242,13 +245,15 @@ class ApiState implements PrivateApiInterface {
    * Set up a user's VRF accounts (if they're not already set up).
    */
   private createUserAccounts = async () => {
-    this.dispatch(thunks.setLoading(true));
     const user = await this.user.catch(() => undefined);
     // If there are already known user accounts, do not set up new accounts.
-    if (user) {
+    if (user?.publicKey) {
       this.dispatch(thunks.setLoading(false));
+      //@ts-ignore
       return this.log(`User account is already set up.`).then(() => this.playPrompt());
     }
+
+    this.dispatch(thunks.setLoading(true));
 
     // Gather necessary programs.
     const program = await this.program;
@@ -260,13 +265,109 @@ class ApiState implements PrivateApiInterface {
 
     // If there are no known user accounts, begin accounts set up.
     this.log(`Building user accounts...`);
-
+     const rewardAddress = await spl.getAssociatedTokenAddress(TOKENMINT, anchorProvider.publicKey, true);
+    const accountInfo = await spl.getAccount(anchorProvider.connection, rewardAddress).catch(err=>console.log(err));    
     // Build out and sign transactions.
-    const request = await api.User.createReq(program, switchboard, TOKENMINT, anchorProvider.publicKey);
-    await this.packSignAndSubmit(request.ixns, request.signers);
+    const request = await api.User.createReq(
+      program,
+      switchboard,
+      TOKENMINT,
+      anchorProvider.publicKey,
+      accountInfo?.isInitialized||false
+    );
+
+    const packed = await sbv2.packTransactions(
+      program.provider.connection,
+      [new anchor.web3.Transaction().add(...request.ixns)],
+      request.signers as anchor.web3.Keypair[],
+      this.wallet.publicKey
+    );
+    const signedTxs = await this.wallet.signAllTransactions(packed);
+
+     
+    const sigs: string[] = [];
+    // await this.packSignAndSubmit(request.ixns, request.signers);
 
     // Try to load the new user accounts.
+
+
+    for (let k = 0; k < packed.length; k += 1) {
+      // console.log('executing tx no. ', k);
+      // console.log(signedTxs[k]?.instructions.length, ' instruction length for k = ',k)
+      // console.log(signedTxs[k]?.instructions[1]?.programId?.toBase58(), ' tx ', k)
+      // if (k == 1)
+      //   signedTxs[k].instructions.map((item, idx) => {
+      //     console.log('keys for instruction ', idx, ' of k=', k);
+      //     if (idx == 1)
+      //       item.keys.map((key, i) => {
+      //         if (i == 0) console.log('user key');
+      //         if (i == 1) console.log('house key');
+      //         if (i == 2) console.log('mint key');
+      //         if (i == 3) console.log('authority key');
+      //         if (i == 4) console.log('escrow key');
+      //         if (i == 5) console.log('reward_address key');
+      //         if (i == 6) console.log('vrf key');
+      //         if (i == 7) console.log('payer key');
+      //         console.log(key.pubkey.toBase58(), ' key ', i, ' of ', item.keys.length);
+      //       });
+      //   });
+      const sig = await program.provider.connection
+        .sendRawTransaction(
+          signedTxs[k].serialize(),
+          // req.signers,
+          {
+            skipPreflight: false,
+            maxRetries: 10,
+          }
+        )
+        .catch((e) => {
+          console.log(e, 'error signing instruction');
+          if (e instanceof ApiError) throw e;
+        });
+      // console.log(sig, 'signed tx ', k);
+      if(sig)
+      await program.provider.connection.confirmTransaction(sig).catch((e) => {
+        console.log(e, 'error confirming transaction');
+        if (e instanceof ApiError) throw e;
+      });
+      if(sig)
+      sigs.push(sig);
+      // console.log('sleeping for a sec');
+      await sleep(500);
+    }
+
+    let retryCount = 5;
+    while (retryCount) {
+      const userState = await api.UserState.fetch(program.provider.connection, request.account);
+      if (userState !== null) {
+        this.log('User Account Created Successfully', Severity.Normal);
+        this.dispatch(thunks.setLoading(false));
+        return (async () => {
+          const pubkey = this.wallet.publicKey;
+          const program = await this.program;
+          return api.User.load(program, pubkey, TOKENMINT)
+            .then(
+              (user) =>
+                (this._user ??= (() => {
+                  // If there is not yet a known user, set it, log it, and return it.
+                  // this.log(`Accounts retrieved for user: ${truncatedPubkey(pubkey.toBase58())}`);
+                  this.dispatch(thunks.setUser(user.state.toJSON()));
+                  this.watchUserAccounts()
+                  return user;
+                })())
+            )
+            .catch((e) => {
+              this.dispatch(thunks.setLoading(false));
+              if (e instanceof ApiError) throw e;
+              else throw ApiError.userAccountMissing();
+            });
+        })();
+      }
+      await sleep(1000);
+      --retryCount;
+    }
     this.dispatch(thunks.setLoading(false));
+    this.log('A transaction failed to confirm.', Severity.Error);
     await this.user;
   };
 
@@ -365,7 +466,7 @@ class ApiState implements PrivateApiInterface {
     // Submit transactions and await confirmation
     for (const tx of signed) {
       await program.provider.connection
-        .sendRawTransaction(tx.serialize(), { skipPreflight: false, maxRetries: 10 })
+        .sendRawTransaction(tx.serialize(), { skipPreflight: false, maxRetries: 20 })
         .then((sig) => {
           this.dispatch(thunks.setLoading(false));
           console.log(sig, '    signature tx')
@@ -460,7 +561,7 @@ class ApiState implements PrivateApiInterface {
    */
   private log = (message: string, severity: Severity = Severity.Normal) =>
   {
-    console.log(severity, 'severity')
+    // console.log(severity, 'severity')
     if (severity == "error") {
       this.dispatch(thunks.setLoading(false));
     }
@@ -472,10 +573,10 @@ class ApiState implements PrivateApiInterface {
    */
   private playPrompt = async () => {
     try {
-      if (this.userRibsBalance < 0.01) {
-        // If user balance is under 1 - request that they airdrop.
-        return this.log('Looks like your user balance is low - stock up using `user airdrop`');
-      }
+      // if (this.userRibsBalance < 0.01) {
+      //   // If user balance is under 1 - request that they airdrop.
+      //   return this.log('Looks like your user balance is low - stock up using `user airdrop`');
+      // }
 
       // Check for valid game mode and prompt user.
       const game = games[this.gameMode];

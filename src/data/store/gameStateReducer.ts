@@ -21,6 +21,7 @@ export interface GameState {
    * The current mode tha the game is being played with.
    */
   gameMode: GameTypeValue;
+  user: any;
 }
 
 /**
@@ -30,6 +31,7 @@ const initialState: GameState = {
   loading: false,
   gameMode: GameTypeValue.TWENTY_SIDED_DICE_ROLL,
   userBalances: {},
+  user: {},
 };
 
 /**
@@ -52,10 +54,15 @@ const gameStateSlice = createSlice({
       }
     },
     setLoading: (state: GameState, action: PayloadAction<boolean>) => {
+      console.log('setting loading = ', action.payload)
       state.loading = action.payload
+    },
+    setUser: (state: GameState, action: PayloadAction<any>) => {
+      console.log('setting user = ', action.payload)
+      state.user = action.payload
     },
   },
 });
 
-export const { setUserBalance, setLoading } = gameStateSlice.actions;
+export const { setUserBalance, setLoading, setUser } = gameStateSlice.actions;
 export default gameStateSlice.reducer;

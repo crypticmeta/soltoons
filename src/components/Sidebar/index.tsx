@@ -78,16 +78,26 @@ function Sidebar({ amount, setAmount }) {
   const logs = useSelector(({ HUDLogger }: Store) => HUDLogger.logs);
   const loading = useSelector((store: Store) => store.gameState.loading);
   const balances = useSelector((store: Store) => store.gameState.userBalances);
+  const user = useSelector((store: Store) => store.gameState.user);
   const [userAccountExists, setUserAccountExists] = useState(true);
       useEffect(() => {
         // console.log(logs, 'LOGS');
         if (logs && logs[0]?.severity === "error") {
           // alert(logs[0].message);
-          if (logs[0].message.includes("User hasn't created a flip account")) setUserAccountExists(false);
-          else setUserAccountExists(true)
+          if (logs[0].message.includes("User hasn't created an account")) setUserAccountExists(false);
+          else setUserAccountExists(true);
         }
         handleClick()
       }, [logs]);
+
+  useEffect(() => {
+    // console.log(user, 'user in redux')
+    if (user && user.authority) {
+      setUserAccountExists(true)
+    }
+  }, [user])
+  
+  
   return (
     <div className="flex h-full flex-col max-h-[800px] justify-between w-full lg:w-3/12 p-6 font-bold">
       <div className="part1 h-[10%] center w-full">
@@ -158,18 +168,26 @@ function Sidebar({ amount, setAmount }) {
         {userAccountExists ? (
           <Play amount={amount} setAmount={setAmount} loading={loading} api={api} balances={balances} />
         ) : (
-          <button
-            onClick={() => {
-              api.handleCommand('user create');
-            }}
-            className="center h-full text-lg"
-          >
-            Create User Account
-          </button>
+          <>
+            {loading ? (
+              <div className="center h-full text-white border-white">
+                <CircularProgress color="inherit" />
+              </div>
+            ) : (
+              <button
+                onClick={() => {
+                  api.handleCommand('user create');
+                }}
+                className="center h-full text-lg"
+              >
+                Create User Account
+              </button>
+            )}
+          </>
         )}
       </div>
       <Snackbar open={open} onClose={handleClose}>
-        <Alert onClose={handleClose} severity={ logs[0]?.severity ==="error"?"error":"info"} sx={{ width: '100%' }}>
+        <Alert onClose={handleClose} severity={logs[0]?.severity === 'error' ? 'error' : 'info'} sx={{ width: '100%' }}>
           {logs[0]?.message}
         </Alert>
       </Snackbar>

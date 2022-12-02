@@ -21,10 +21,10 @@ const App: React.FC = () => {
  
 
   return (
-    <WalletKitProvider app={{ name: 'ClawGame' }} defaultNetwork={'devnet'}>
+    <WalletKitProvider app={{ name: 'Soltoons' }} defaultNetwork={'devnet'}>
       <DataLayer>
         {inputGlobalStyles}
-        <div style={{ display: 'flex', flexDirection: 'column' }} className="bg-gray-900 min-h-screen">
+        <div style={{ display: 'flex', flexDirection: 'column' }} className="bg-gray-00 min-h-screen">
           {/* <NavigationBar /> */}
           <Router />
         </div>

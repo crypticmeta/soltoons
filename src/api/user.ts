@@ -299,11 +299,15 @@ export class User {
     switchboardProgram: anchor24.Program,
     TOKENMINT: PublicKey,
     payerPubkey = programWallet(program as any).publicKey,
+    rewardAddressInitialized: boolean
   ): Promise<{
     ixns: TransactionInstruction[];
     signers: Signer[];
     account: PublicKey;
   }> {
+
+
+    let txnIxns: TransactionInstruction[];
 
     const house = await House.load(program, TOKENMINT);
     const flipMint = await house.loadMint();
@@ -325,6 +329,8 @@ export class User {
       payerPubkey,
       true
     );
+    
+    console.log(rewardAddress.toBase58(), 'reward address')
 
 
     const [programStateAccount, stateBump] = ProgramStateAccount.fromSeed(
@@ -356,14 +362,15 @@ export class User {
     );
 
 
-    const txnIxns: TransactionInstruction[] = [
+    console.log(vrfSecret.publicKey.toBase58(), 'vrf account')    
+    txnIxns = [     
       // create VRF account
       spl.createAssociatedTokenAccountInstruction(
         payerPubkey,
         vrfEscrow,
         vrfSecret.publicKey,
         switchboardMint.address
-      ),
+      ),      
       spl.createSetAuthorityInstruction(
         vrfEscrow,
         vrfSecret.publicKey,
@@ -428,6 +435,14 @@ export class User {
         })
         .instruction(),
     ];
+    if (!rewardAddressInitialized) {
+      txnIxns.unshift(spl.createAssociatedTokenAccountInstruction(
+        payerPubkey,
+        rewardAddress,
+        payerPubkey,
+        TOKENMINT
+      ))
+    }
 
     return {
       ixns: txnIxns,

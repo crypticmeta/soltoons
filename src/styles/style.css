@@ -11,6 +11,10 @@ body {
     background: rgb(109,66,93);
 background: linear-gradient(270deg, rgba(109,66,93,1) 0%, rgba(56,6,116,1) 100%);
 }
+.gradient{
+  background: rgb(109,66,93);
+background: linear-gradient(270deg, rgba(109,66,93,1) 0%, rgba(56,6,116,1) 100%);
+}
 
 a {
   color: inherit;
