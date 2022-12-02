@@ -523,7 +523,8 @@ export class User {
     userGuess: number,
     betAmount: anchor.BN,
     switchboardTokenAccount?: PublicKey,
-    payerPubkey = programWallet(this.program as any).publicKey
+    payerPubkey = programWallet(this.program as any).publicKey,
+    balance = 0,
   ): Promise<{ ixns: TransactionInstruction[]; signers: Signer[] }> {
     try {
       await verifyPayerBalance(this.program.provider.connection, payerPubkey);
@@ -639,7 +640,10 @@ export class User {
     );
     //airdrop 1 wsol
     console.log(betAmount, 'betAmount')
-    ixns.push(
+    if((balance * LAMPORTS_PER_SOL) < betAmount.toNumber())
+    {
+      console.log('low balance')
+      ixns.push(
       SystemProgram.transfer({
         fromPubkey: payerPubkey,
         toPubkey: associatedTokenAcc,
@@ -648,7 +652,7 @@ export class User {
     );
     ixns.push(
       createSyncNativeInstruction(associatedTokenAcc, TOKEN_PROGRAM_ID)
-    );
+    );}
 
     console.log(TOKENMINT.toBase58(), 'token mint')
 
@@ -777,7 +781,7 @@ export class User {
     return state.currentRound.guess === state.currentRound.result;
   }
 
-  async airdropReq(payerPubkey = programWallet(this.program as any).publicKey, TOKENMINT) {
+  async airdropReq(payerPubkey = programWallet(this.program as any).publicKey, TOKENMINT:any) {
     try {
       await verifyPayerBalance(this.program.provider.connection, payerPubkey);
     } catch {}

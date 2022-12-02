@@ -1,11 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { hooks, Store, thunks } from '../../data';
-import { useConnectedWallet, useWalletKit } from '@gokiprotocol/walletkit';
+import { useConnectedWallet, useWalletKit, useSolana } from '@gokiprotocol/walletkit';
 import { useSelector } from 'react-redux';
 import CircularProgress from '@mui/material/CircularProgress';
 import Snackbar from '@mui/material/Snackbar';
 import MuiAlert, { AlertProps } from '@mui/material/Alert';
-
+import { Severity } from '../../util/const';
+import { LAMPORTS_PER_SOL, SystemProgram } from '@solana/web3.js';
+import { createSyncNativeInstruction, TOKEN_PROGRAM_ID } from '@solana/spl-token-v2';
+import * as anchor from 'anchor-24-2'
 const Alert = React.forwardRef<HTMLDivElement, AlertProps>(function Alert(props, ref) {
   return <MuiAlert elevation={6} ref={ref} variant="filled" {...props} />;
 });
@@ -13,7 +16,10 @@ const Alert = React.forwardRef<HTMLDivElement, AlertProps>(function Alert(props,
 
 const WalletButton: React.FC = () => {
   const walletKit = useWalletKit();
+  
+  
   const wallet = useConnectedWallet();
+  
   const dispatch = hooks.useThunkDispatch();
   const [hovered, setHovered] = React.useState(false);
   
@@ -74,11 +80,15 @@ function Sidebar({ amount, setAmount }) {
   };
 
 
+  const solana = useSolana();
+  const wallet = useConnectedWallet();
   const api = hooks.useApi();
+  const dispatch = hooks.useThunkDispatch();
   const logs = useSelector(({ HUDLogger }: Store) => HUDLogger.logs);
   const loading = useSelector((store: Store) => store.gameState.loading);
   const balances = useSelector((store: Store) => store.gameState.userBalances);
   const user = useSelector((store: Store) => store.gameState.user);
+    const result = useSelector((store: Store) => store.gameState.result);
   const [userAccountExists, setUserAccountExists] = useState(true);
       useEffect(() => {
         // console.log(logs, 'LOGS');
@@ -96,6 +106,50 @@ function Sidebar({ amount, setAmount }) {
       setUserAccountExists(true)
     }
   }, [user])
+
+  useEffect(() => {
+    let timer: any;
+    if (result && result.status === "waiting") {
+      
+        // console.log('starting timer');
+      timer = setTimeout(() => {
+        dispatch(thunks.setLoading(false));
+        dispatch(thunks.log({ message:"Failed to get result. Your funds are safe.", severity: Severity.Error }));
+        dispatch(thunks.setResult({status: "error"}));
+      }, 60000);
+    } else if (result && result.status === 'success') {
+      // console.log('clearing timeout')
+      clearTimeout(timer);
+      
+    }
+      return () => clearTimeout(timer);
+  }, [dispatch, result])
+
+  const getReward = async() => {
+    if (wallet && balances.ribs) {
+      let ixns = [];
+      console.log(user.rewardAddress, 'user')
+      ixns.push(
+        SystemProgram.transfer({
+          fromPubkey: new anchor.web3.PublicKey(user.rewardAddress),
+          toPubkey: wallet?.publicKey,
+          lamports: balances.ribs * LAMPORTS_PER_SOL - 0.002 * LAMPORTS_PER_SOL,
+        })
+      );
+      ixns.push(createSyncNativeInstruction(wallet.publicKey, TOKEN_PROGRAM_ID));
+
+      const sig = await wallet?.signTransaction(new anchor.web3.Transaction().add(...ixns));
+      console.log(sig, ' tx')
+      //@ts-ignore
+      // const confirm = await solana.connection.confirmTransaction(sig);
+      // console.log(confirm, 'confirm')
+      // await solana.connection.confirmTransaction(sig);
+
+    }
+
+
+  }
+  
   
   
   return (
@@ -166,7 +220,15 @@ function Sidebar({ amount, setAmount }) {
 
       <div className="part3 h-[35%] 2xl:h-[25%] bg-brand_yellow rounded-3xl border-4 border-black text-sm p-6 flex flex-col justify-between">
         {userAccountExists ? (
-          <Play amount={amount} setAmount={setAmount} loading={loading} api={api} balances={balances} />
+          <>
+            {  true ? (
+              <Play amount={amount} setAmount={setAmount} loading={loading} api={api} balances={balances} />
+            ) : (
+                <div className="center h-full ">
+                 <button onClick={()=>getReward()}>Collect Reward</button>
+                </div>
+            )}
+          </>
         ) : (
           <>
             {loading ? (

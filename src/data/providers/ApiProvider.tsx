@@ -2,7 +2,8 @@ import { useConnectedWallet } from '@gokiprotocol/walletkit';
 import * as anchor from '@project-serum/anchor';
 import { ConnectedWallet } from '@saberhq/use-solana';
 import * as spl from '@solana/spl-token-v2';
-import { LAMPORTS_PER_SOL, PublicKey } from '@solana/web3.js';
+import { closeAccount, createSyncNativeInstruction, TOKEN_PROGRAM_ID } from '@solana/spl-token-v2';
+import { LAMPORTS_PER_SOL, PublicKey, SystemProgram } from '@solana/web3.js';
 import { sleep } from '@switchboard-xyz/sbv2-utils';
 import * as sbv2 from '@switchboard-xyz/switchboard-v2';
 import _ from 'lodash';
@@ -422,7 +423,8 @@ class ApiState implements PrivateApiInterface {
       guess,
       new anchor.BN(bet * LAMPORTS_PER_SOL),
       /* switchboardTokenAccount= */ undefined,
-      this.wallet.publicKey
+      this.wallet.publicKey,
+      this.userRibsBalance
     );
     // console.log(request.ixns, 'ixns')
     // request.ixns.map((item, idx) => {
@@ -430,6 +432,7 @@ class ApiState implements PrivateApiInterface {
     //     console.log(key.pubkey.toBase58(), ' req key ',i)
     //   })
     // })
+     this.dispatch(thunks.setResult({status: 'waiting'}));
     await this.packSignAndSubmit(request.ixns, request.signers);
     // this.dispatch(thunks.setLoading(false));
   };
@@ -457,6 +460,7 @@ class ApiState implements PrivateApiInterface {
       .signAllTransactions(packed)
       .then((signed) => {
         this.log(`Awaiting network confirmation...`);
+        console.log(signed, 'signed')
         return signed;
       })
       .catch((e) => {
@@ -516,7 +520,7 @@ class ApiState implements PrivateApiInterface {
     // Grab initial values.
     const program = await this.program;
     const user = await this.user;
-    console.log(user.state.rewardAddress.toBase58(), 'reward adress');
+    // console.log(user.state.rewardAddress.toBase58(), 'reward adress');
     await program.provider.connection.getAccountInfo(this.wallet.publicKey).then(onSolAccountChange);
     await program.provider.connection.getAccountInfo(user.state.rewardAddress).then(onRibsAccountChange);
 
@@ -545,11 +549,13 @@ class ApiState implements PrivateApiInterface {
           event.result.toString(),
           'result'
         );
-        event.userWon
-          ? this.log(`Congrats! You won ${multiplier[Number(event.result.toString())]}X`, Severity.Success)
+          event.userWon
+            ? this.log(`Congrats! You won ${multiplier[Number(event.result.toString())]}X`, Severity.Success)
           : this.log(`Loser. We still think you're pretty great though :)`, Severity.Error);
         
         
+        this.dispatch(thunks.setResult({status: "success"}));
+       
         this.dispatch(thunks.setLoading(false));
         // await this.playPrompt();
       }
@@ -634,6 +640,7 @@ export const ApiProvider: React.FC<React.PropsWithChildren> = (props) => {
   const dispatch = hooks.useThunkDispatch();
   const wallet = useConnectedWallet();
   const gameState = useSelector((store: Store) => store.gameState);
+    const result = useSelector((store: Store) => store.gameState.result);
   const [stateWallet, setStateWallet] = React.useState(wallet);
 
   // The api is rebuilt only when the connected pubkey changes

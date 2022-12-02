@@ -22,6 +22,7 @@ export interface GameState {
    */
   gameMode: GameTypeValue;
   user: any;
+  result: any;
 }
 
 /**
@@ -32,6 +33,7 @@ const initialState: GameState = {
   gameMode: GameTypeValue.TWENTY_SIDED_DICE_ROLL,
   userBalances: {},
   user: {},
+  result: {},
 };
 
 /**
@@ -61,8 +63,12 @@ const gameStateSlice = createSlice({
       console.log('setting user = ', action.payload)
       state.user = action.payload
     },
+    setResult: (state: GameState, action: PayloadAction<any>) => {
+      console.log('setting result = ', action.payload)
+      state.result = action.payload
+    },
   },
 });
 
-export const { setUserBalance, setLoading, setUser } = gameStateSlice.actions;
+export const { setUserBalance, setLoading, setUser, setResult } = gameStateSlice.actions;
 export default gameStateSlice.reducer;
