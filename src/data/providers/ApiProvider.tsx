@@ -2,8 +2,7 @@ import { useConnectedWallet } from '@gokiprotocol/walletkit';
 import * as anchor from '@project-serum/anchor';
 import { ConnectedWallet } from '@saberhq/use-solana';
 import * as spl from '@solana/spl-token-v2';
-import { closeAccount, createSyncNativeInstruction, TOKEN_PROGRAM_ID } from '@solana/spl-token-v2';
-import { LAMPORTS_PER_SOL, PublicKey, SystemProgram } from '@solana/web3.js';
+import { LAMPORTS_PER_SOL, PublicKey } from '@solana/web3.js';
 import { sleep } from '@switchboard-xyz/sbv2-utils';
 import * as sbv2 from '@switchboard-xyz/switchboard-v2';
 import _ from 'lodash';
@@ -432,7 +431,8 @@ class ApiState implements PrivateApiInterface {
     //     console.log(key.pubkey.toBase58(), ' req key ',i)
     //   })
     // })
-     this.dispatch(thunks.setResult({status: 'waiting'}));
+     
+    this.dispatch(thunks.setResult({ status: 'waiting' }));
     await this.packSignAndSubmit(request.ixns, request.signers);
     // this.dispatch(thunks.setLoading(false));
   };
@@ -464,6 +464,7 @@ class ApiState implements PrivateApiInterface {
         return signed;
       })
       .catch((e) => {
+        this.dispatch(thunks.setResult({ status: 'error' }));
         this.dispatch(thunks.setLoading(false));
         console.error(e);
         this.dispatch(thunks.setLoading(false));
@@ -480,6 +481,7 @@ class ApiState implements PrivateApiInterface {
           program.provider.connection.confirmTransaction(sig);
         })
         .catch((e) => {
+          this.dispatch(thunks.setResult({ status: 'error' }));
           this.dispatch(thunks.setLoading(false));
           if (e instanceof anchor.web3.SendTransactionError) {
             const anchorError = e.logs ? anchor.AnchorError.parse(e.logs) : null;
@@ -507,7 +509,11 @@ class ApiState implements PrivateApiInterface {
       this.dispatch(thunks.setUserBalance({ sol: account ? account.lamports / LAMPORTS_PER_SOL : undefined }));
     };
     const onRibsAccountChange = (account: anchor.web3.AccountInfo<Buffer> | null) => {
-      if (!account) return;
+      if (!account) return this.dispatch(
+        thunks.setUserBalance({
+          ribs: 0,
+        })
+      );;
       const rawAccount = spl.AccountLayout.decode(account.data);
       // console.log(rawAccount, 'rawAccount', rawAccount.mint.toBase58(), 'mint', Number(rawAccount.amount)  / RIBS_PER_RACK, 'amount')
       this.dispatch(

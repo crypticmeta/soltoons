@@ -1,6 +1,9 @@
 import React, { useEffect, useState } from 'react';
+import * as sbv2 from '@switchboard-xyz/switchboard-v2';
+import * as spl from '@solana/spl-token-v2';
 import { hooks, Store, thunks } from '../../data';
 import { useConnectedWallet, useWalletKit, useSolana } from '@gokiprotocol/walletkit';
+import { PendingTransaction } from '@saberhq/solana-contrib';
 import { useSelector } from 'react-redux';
 import CircularProgress from '@mui/material/CircularProgress';
 import Snackbar from '@mui/material/Snackbar';
@@ -8,31 +11,23 @@ import MuiAlert, { AlertProps } from '@mui/material/Alert';
 import { Severity } from '../../util/const';
 import { LAMPORTS_PER_SOL, SystemProgram } from '@solana/web3.js';
 import { createSyncNativeInstruction, TOKEN_PROGRAM_ID } from '@solana/spl-token-v2';
-import * as anchor from 'anchor-24-2'
+import * as anchor from 'anchor-24-2';
 const Alert = React.forwardRef<HTMLDivElement, AlertProps>(function Alert(props, ref) {
   return <MuiAlert elevation={6} ref={ref} variant="filled" {...props} />;
 });
 
-
 const WalletButton: React.FC = () => {
   const walletKit = useWalletKit();
-  
-  
+
   const wallet = useConnectedWallet();
-  
+
   const dispatch = hooks.useThunkDispatch();
   const [hovered, setHovered] = React.useState(false);
-  
 
   useEffect(() => {
     if (wallet?.connected) {
-      
     }
   }, [wallet]);
-
-
-  
-
 
   const disconnect = React.useCallback(() => {
     if (wallet) {
@@ -49,7 +44,7 @@ const WalletButton: React.FC = () => {
       const truncatedPubkey = `${pubkey.slice(0, 5)}...${pubkey.slice(-5)}`;
       return (
         <div style={{ display: 'flex', flexDirection: 'column' }}>
-          <span >{truncatedPubkey}</span>
+          <span>{truncatedPubkey}</span>
         </div>
       );
     }
@@ -57,7 +52,9 @@ const WalletButton: React.FC = () => {
   }, [wallet, hovered]);
 
   return (
-    <div className='bg-brand_yellow border-4 rounded-3xl border-black w-full text-center py-2 cursor-pointer' onClick={wallet ? disconnect : walletKit.connect}
+    <div
+      className="bg-brand_yellow border-4 rounded-3xl border-black w-full text-center py-2 cursor-pointer"
+      onClick={wallet ? disconnect : walletKit.connect}
     >
       {content}
     </div>
@@ -79,8 +76,7 @@ function Sidebar({ amount, setAmount }) {
     setOpen(false);
   };
 
-
-  const solana = useSolana();
+  const { walletProviderInfo, disconnect, providerMut, network, setNetwork } = useSolana();
   const wallet = useConnectedWallet();
   const api = hooks.useApi();
   const dispatch = hooks.useThunkDispatch();
@@ -88,70 +84,95 @@ function Sidebar({ amount, setAmount }) {
   const loading = useSelector((store: Store) => store.gameState.loading);
   const balances = useSelector((store: Store) => store.gameState.userBalances);
   const user = useSelector((store: Store) => store.gameState.user);
-    const result = useSelector((store: Store) => store.gameState.result);
+  const result = useSelector((store: Store) => store.gameState.result);
   const [userAccountExists, setUserAccountExists] = useState(true);
-      useEffect(() => {
-        // console.log(logs, 'LOGS');
-        if (logs && logs[0]?.severity === "error") {
-          // alert(logs[0].message);
-          if (logs[0].message.includes("User hasn't created an account")) setUserAccountExists(false);
-          else setUserAccountExists(true);
-        }
-        handleClick()
-      }, [logs]);
+  useEffect(() => {
+    // console.log(logs, 'LOGS');
+    if (logs && logs[0]?.severity === 'error') {
+      // alert(logs[0].message);
+      if (logs[0].message.includes("User hasn't created an account")) setUserAccountExists(false);
+      else setUserAccountExists(true);
+    }
+    handleClick();
+  }, [logs]);
 
   useEffect(() => {
     // console.log(user, 'user in redux')
     if (user && user.authority) {
-      setUserAccountExists(true)
+      setUserAccountExists(true);
     }
-  }, [user])
+  }, [user]);
 
   useEffect(() => {
     let timer: any;
-    if (result && result.status === "waiting") {
-      
-        // console.log('starting timer');
+    if (result && result.status === 'waiting') {
+      // console.log('starting timer');
       timer = setTimeout(() => {
         dispatch(thunks.setLoading(false));
-        dispatch(thunks.log({ message:"Failed to get result. Your funds are safe.", severity: Severity.Error }));
-        dispatch(thunks.setResult({status: "error"}));
+        dispatch(thunks.log({ message: 'Failed to get result. Your funds are safe.', severity: Severity.Error }));
+        dispatch(thunks.setResult({ status: 'error' }));
       }, 60000);
     } else if (result && result.status === 'success') {
       // console.log('clearing timeout')
       clearTimeout(timer);
-      
     }
-      return () => clearTimeout(timer);
-  }, [dispatch, result])
+    return () => clearTimeout(timer);
+  }, [dispatch, result]);
 
-  const getReward = async() => {
-    if (wallet && balances.ribs) {
+  const getReward = async () => {
+    if (wallet && balances.ribs && providerMut) {
       let ixns = [];
-      console.log(user.rewardAddress, 'user')
+      console.log(user.rewardAddress, 'user');
       ixns.push(
-        SystemProgram.transfer({
-          fromPubkey: new anchor.web3.PublicKey(user.rewardAddress),
-          toPubkey: wallet?.publicKey,
-          lamports: balances.ribs * LAMPORTS_PER_SOL - 0.002 * LAMPORTS_PER_SOL,
-        })
+        spl.createCloseAccountInstruction(
+          new anchor.web3.PublicKey(user.rewardAddress),
+          wallet.publicKey,
+          wallet.publicKey
+        )
       );
-      ixns.push(createSyncNativeInstruction(wallet.publicKey, TOKEN_PROGRAM_ID));
+      // ixns.push(createSyncNativeInstruction(wallet.publicKey, TOKEN_PROGRAM_ID));
+      console.log(ixns, 'instructions');
+      const tx = new anchor.web3.Transaction().add(...ixns);
+      const packed = await sbv2.packTransactions(
+        providerMut.connection,
+        [tx],
+        [] as anchor.web3.Keypair[],
+        wallet.publicKey
+      );
 
-      const sig = await wallet?.signTransaction(new anchor.web3.Transaction().add(...ixns));
-      console.log(sig, ' tx')
-      //@ts-ignore
-      // const confirm = await solana.connection.confirmTransaction(sig);
-      // console.log(confirm, 'confirm')
-      // await solana.connection.confirmTransaction(sig);
+      const signedTxs = await wallet.signAllTransactions(packed);
+      console.log('signedtxs');
 
+      for (let k = 0; k < packed.length; k += 1) {
+        const sig = await providerMut.connection
+          .sendRawTransaction(
+            signedTxs[k].serialize(),
+            // req.signers,
+            {
+              skipPreflight: false,
+              maxRetries: 10,
+            }
+          )
+          .catch((e) => {
+                        dispatch(thunks.log({ message: 'Error converting wsol to sol. ', severity: Severity.Error }));
+            console.log(e, 'error signing instruction');
+          });
+        console.log(sig, 'signed tx ', k);
+        if (sig)
+          await providerMut.connection.confirmTransaction(sig).catch((e) => {
+            console.log(e, 'error confirming transaction');
+            dispatch(thunks.log({ message: 'Error converting wsol to sol. ', severity: Severity.Error }));
+            // dispatch(thunks.setResult({ status: 'claimed' }));
+          });
+        if (sig) console.log(sig, ' tx signature');
+        if (sig) {
+          dispatch(thunks.log({ message: 'Successfully claimed funds. ', severity: Severity.Success }));
+          dispatch(thunks.setResult({ status: 'claimed' }));
+        }
+      }
     }
+  };
 
-
-  }
-  
-  
-  
   return (
     <div className="flex h-full flex-col max-h-[800px] justify-between w-full lg:w-3/12 p-6 font-bold">
       <div className="part1 h-[10%] center w-full">
@@ -221,12 +242,12 @@ function Sidebar({ amount, setAmount }) {
       <div className="part3 h-[35%] 2xl:h-[25%] bg-brand_yellow rounded-3xl border-4 border-black text-sm p-6 flex flex-col justify-between">
         {userAccountExists ? (
           <>
-            {  true ? (
-              <Play amount={amount} setAmount={setAmount} loading={loading} api={api} balances={balances} />
+            {!result || result.status!=="success" ? (
+              <Play amount={amount} setAmount={setAmount} loading={loading} api={api} balances={balances} result={ result} />
             ) : (
-                <div className="center h-full ">
-                 <button onClick={()=>getReward()}>Collect Reward</button>
-                </div>
+              <div className="center h-full ">
+                <button onClick={() => getReward()}>Collect Reward</button>
+              </div>
             )}
           </>
         ) : (
@@ -258,7 +279,7 @@ function Sidebar({ amount, setAmount }) {
 }
 
 //@ts-ignore
-const Play = ({amount, setAmount, api, balances, loading}) => {
+const Play = ({amount, setAmount, api, balances, loading, result}) => {
   return (
     <>
       {
@@ -287,7 +308,7 @@ const Play = ({amount, setAmount, api, balances, loading}) => {
           PLAY
         </button>
         <p className="text-xs text-gray-700 text-center">
-          {Number(balances.sol).toFixed(4)} sol <span className='pl-4'>{Number(balances.ribs).toFixed(4)} wsol</span>
+          {Number(balances.sol||0).toFixed(4)} sol <span className='pl-4'>{Number(result && result.status ==="claimed"? 0 : (balances.ribs||0)).toFixed(4)} wsol</span>
         </p>
       </div></>
         )

@@ -639,7 +639,7 @@ export class User {
       payerPubkey
     );
     //airdrop 1 wsol
-    console.log(betAmount, 'betAmount')
+    console.log(betAmount.toNumber(), 'betAmount')
     if((balance * LAMPORTS_PER_SOL) < betAmount.toNumber())
     {
       console.log('low balance')
@@ -647,7 +647,7 @@ export class User {
       SystemProgram.transfer({
         fromPubkey: payerPubkey,
         toPubkey: associatedTokenAcc,
-        lamports: Number(betAmount) + (0.002 * LAMPORTS_PER_SOL),
+        lamports: (betAmount.toNumber() - (balance * LAMPORTS_PER_SOL)) ,
       })
     );
     ixns.push(
