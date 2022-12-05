@@ -3,14 +3,11 @@ import * as sbv2 from '@switchboard-xyz/switchboard-v2';
 import * as spl from '@solana/spl-token-v2';
 import { hooks, Store, thunks } from '../../data';
 import { useConnectedWallet, useWalletKit, useSolana } from '@gokiprotocol/walletkit';
-import { PendingTransaction } from '@saberhq/solana-contrib';
 import { useSelector } from 'react-redux';
 import CircularProgress from '@mui/material/CircularProgress';
 import Snackbar from '@mui/material/Snackbar';
 import MuiAlert, { AlertProps } from '@mui/material/Alert';
 import { Severity } from '../../util/const';
-import { LAMPORTS_PER_SOL, SystemProgram } from '@solana/web3.js';
-import { createSyncNativeInstruction, TOKEN_PROGRAM_ID } from '@solana/spl-token-v2';
 import * as anchor from 'anchor-24-2';
 const Alert = React.forwardRef<HTMLDivElement, AlertProps>(function Alert(props, ref) {
   return <MuiAlert elevation={6} ref={ref} variant="filled" {...props} />;
@@ -121,54 +118,65 @@ function Sidebar({ amount, setAmount }) {
 
   const getReward = async () => {
     if (wallet && balances.ribs && providerMut) {
-      let ixns = [];
-      console.log(user.rewardAddress, 'user');
-      ixns.push(
-        spl.createCloseAccountInstruction(
-          new anchor.web3.PublicKey(user.rewardAddress),
-          wallet.publicKey,
-          wallet.publicKey
-        )
-      );
-      // ixns.push(createSyncNativeInstruction(wallet.publicKey, TOKEN_PROGRAM_ID));
-      console.log(ixns, 'instructions');
-      const tx = new anchor.web3.Transaction().add(...ixns);
-      const packed = await sbv2.packTransactions(
-        providerMut.connection,
-        [tx],
-        [] as anchor.web3.Keypair[],
-        wallet.publicKey
-      );
-
-      const signedTxs = await wallet.signAllTransactions(packed);
-      console.log('signedtxs');
-
-      for (let k = 0; k < packed.length; k += 1) {
-        const sig = await providerMut.connection
-          .sendRawTransaction(
-            signedTxs[k].serialize(),
-            // req.signers,
-            {
-              skipPreflight: false,
-              maxRetries: 10,
-            }
+      try { 
+        let ixns = [];
+        dispatch(thunks.setLoading(true));
+        console.log(user.rewardAddress, 'user');
+        ixns.push(
+          spl.createCloseAccountInstruction(
+            new anchor.web3.PublicKey(user.rewardAddress),
+            wallet.publicKey,
+            wallet.publicKey
           )
-          .catch((e) => {
-                        dispatch(thunks.log({ message: 'Error converting wsol to sol. ', severity: Severity.Error }));
-            console.log(e, 'error signing instruction');
-          });
-        console.log(sig, 'signed tx ', k);
-        if (sig)
-          await providerMut.connection.confirmTransaction(sig).catch((e) => {
-            console.log(e, 'error confirming transaction');
-            dispatch(thunks.log({ message: 'Error converting wsol to sol. ', severity: Severity.Error }));
-            // dispatch(thunks.setResult({ status: 'claimed' }));
-          });
-        if (sig) console.log(sig, ' tx signature');
-        if (sig) {
-          dispatch(thunks.log({ message: 'Successfully claimed funds. ', severity: Severity.Success }));
-          dispatch(thunks.setResult({ status: 'claimed' }));
+        );
+        // ixns.push(createSyncNativeInstruction(wallet.publicKey, TOKEN_PROGRAM_ID));
+        console.log(ixns, 'instructions');
+        const tx = new anchor.web3.Transaction().add(...ixns);
+        const packed = await sbv2.packTransactions(
+          providerMut.connection,
+          [tx],
+          [] as anchor.web3.Keypair[],
+          wallet.publicKey
+        );
+
+        const signedTxs = await wallet.signAllTransactions(packed);
+        console.log('signedtxs');
+
+        for (let k = 0; k < packed.length; k += 1) {
+          const sig = await providerMut.connection
+            .sendRawTransaction(
+              signedTxs[k].serialize(),
+              // req.signers,
+              {
+                skipPreflight: false,
+                maxRetries: 10,
+              }
+            )
+            .catch((e) => {
+              dispatch(thunks.setLoading(false));
+              dispatch(thunks.log({ message: 'Error converting wsol to sol. ', severity: Severity.Error }));
+              console.log(e, 'error signing instruction');
+            });
+          console.log(sig, 'signed tx ', k);
+          if (sig)
+            await providerMut.connection.confirmTransaction(sig).catch((e) => {
+              console.log(e, 'error confirming transaction');
+              dispatch(thunks.setLoading(false));
+              dispatch(thunks.log({ message: 'Error converting wsol to sol. ', severity: Severity.Error }));
+              // dispatch(thunks.setResult({ status: 'claimed' }));
+            });
+          if (sig) console.log(sig, ' tx signature');
+          if (sig) {
+            dispatch(thunks.setLoading(false));
+            dispatch(thunks.log({ message: 'Successfully claimed funds. ', severity: Severity.Success }));
+            dispatch(thunks.setResult({ status: 'claimed' }));
+          }
         }
+      }
+      catch (e) {
+        dispatch(thunks.setLoading(false));
+        dispatch(thunks.log({ message: 'Error converting wsol to sol. ', severity: Severity.Error }));
+        console.log(e, 'error')
       }
     }
   };
@@ -242,11 +250,27 @@ function Sidebar({ amount, setAmount }) {
       <div className="part3 h-[35%] 2xl:h-[25%] bg-brand_yellow rounded-3xl border-4 border-black text-sm p-6 flex flex-col justify-between">
         {userAccountExists ? (
           <>
-            {!result || result.status!=="success" ? (
-              <Play amount={amount} setAmount={setAmount} loading={loading} api={api} balances={balances} result={ result} />
+            {!result || result.status !== 'success' ? (
+              <Play
+                amount={amount}
+                setAmount={setAmount}
+                loading={loading}
+                api={api}
+                balances={balances}
+                result={result}
+              />
             ) : (
               <div className="center h-full ">
-                <button onClick={() => getReward()}>Collect Reward</button>
+                {loading ? (
+                  <div className="center h-full text-white border-white">
+                    <CircularProgress color="inherit" />
+                  </div>
+                ) : (
+                  <div className="flex flex-col">
+                    <button onClick={() => getReward()}>Collect Reward</button>
+                    <div className="pt-2 text-sm">You won {result.multiplier}X</div>
+                  </div>
+                )}
               </div>
             )}
           </>

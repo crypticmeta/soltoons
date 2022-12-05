@@ -639,20 +639,25 @@ export class User {
       payerPubkey
     );
     //airdrop 1 wsol
-    console.log(betAmount.toNumber(), 'betAmount')
-    if((balance * LAMPORTS_PER_SOL) < betAmount.toNumber())
+    const requiredBal = (betAmount.toNumber() + (0.002 * LAMPORTS_PER_SOL));
+    console.log("balance ", balance * LAMPORTS_PER_SOL, " < ", requiredBal, 'betAmount + wsol vrf fee ')
+    if((balance * LAMPORTS_PER_SOL) < requiredBal)
     {
       console.log('low balance')
       ixns.push(
       SystemProgram.transfer({
         fromPubkey: payerPubkey,
         toPubkey: associatedTokenAcc,
-        lamports: (betAmount.toNumber() - (balance * LAMPORTS_PER_SOL)) ,
+        lamports: requiredBal-(balance*LAMPORTS_PER_SOL) ,
       })
     );
     ixns.push(
       createSyncNativeInstruction(associatedTokenAcc, TOKEN_PROGRAM_ID)
-    );}
+      );
+    }
+    else {
+      console.log('enough balance')
+    }
 
     console.log(TOKENMINT.toBase58(), 'token mint')
 

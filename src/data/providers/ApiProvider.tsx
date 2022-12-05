@@ -560,7 +560,14 @@ class ApiState implements PrivateApiInterface {
           : this.log(`Loser. We still think you're pretty great though :)`, Severity.Error);
         
         
-        this.dispatch(thunks.setResult({status: "success"}));
+        this.dispatch(
+          thunks.setResult({
+            status: 'success',
+            result: event.result.toString(),
+            change: event.escrowChange.toString(),
+            multiplier: multiplier[Number(event.result.toString())].toFixed(1),
+          })
+        );
        
         this.dispatch(thunks.setLoading(false));
         // await this.playPrompt();
