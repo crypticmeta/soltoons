@@ -47,6 +47,7 @@ const gameStateSlice = createSlice({
       if (action.payload) {
         // If ribs value changed, update.
         if (!_.isUndefined(action.payload.ribs)) state.userBalances.ribs = action.payload.ribs;
+        else state.userBalances.ribs = 0;
         // If sol value changed, update.
         if (!_.isUndefined(action.payload.sol)) state.userBalances.sol = action.payload.sol;
       } else {

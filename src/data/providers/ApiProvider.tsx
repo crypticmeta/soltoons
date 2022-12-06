@@ -509,18 +509,31 @@ class ApiState implements PrivateApiInterface {
       this.dispatch(thunks.setUserBalance({ sol: account ? account.lamports / LAMPORTS_PER_SOL : undefined }));
     };
     const onRibsAccountChange = (account: anchor.web3.AccountInfo<Buffer> | null) => {
-      if (!account) return this.dispatch(
+      // console.log(account, 'acc')
+      if (!account) {
+        this.dispatch(
+          thunks.setUserBalance({
+            ribs: undefined,
+          })
+        );
+        return;
+      }
+      else if (account?.data?.length === 0) {
+        this.dispatch(
         thunks.setUserBalance({
-          ribs: 0,
+          ribs: undefined,
         })
-      );;
+        );
+        return
+      }
       const rawAccount = spl.AccountLayout.decode(account.data);
-      // console.log(rawAccount, 'rawAccount', rawAccount.mint.toBase58(), 'mint', Number(rawAccount.amount)  / RIBS_PER_RACK, 'amount')
-      this.dispatch(
-        thunks.setUserBalance({
-          ribs: rawAccount.amount ? Number(rawAccount.amount) / RIBS_PER_RACK : undefined,
-        })
-      );
+      console.log(rawAccount, 'rawAccount', rawAccount.mint.toBase58(), 'mint', Number(rawAccount.amount) / RIBS_PER_RACK, 'amount')
+      if (Number(rawAccount?.amount?.toString())>0)
+        this.dispatch(
+          thunks.setUserBalance({
+            ribs: rawAccount.amount ? Number(rawAccount.amount) / RIBS_PER_RACK : undefined,
+          })
+        );
     };
 
     // Grab initial values.
