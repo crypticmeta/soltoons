@@ -250,7 +250,7 @@ function Sidebar({ amount, setAmount }) {
       <div className="part3 h-[35%] 2xl:h-[25%] bg-brand_yellow rounded-3xl border-4 border-black text-sm p-6 flex flex-col justify-between">
         {userAccountExists ? (
           <>
-            {!result || result.status !== 'success' ? (
+            {!result || result.status !== 'success' || !result.userWon ? (
               <Play
                 amount={amount}
                 setAmount={setAmount}

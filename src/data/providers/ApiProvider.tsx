@@ -568,9 +568,14 @@ class ApiState implements PrivateApiInterface {
           event.result.toString(),
           'result'
         );
+
+        if (multiplier[Number(event.result.toString())] > 0) {
+          event.userWon = true
+        }
+        else event.userWon=false
           event.userWon
             ? this.log(`Congrats! You won ${multiplier[Number(event.result.toString())]}X`, Severity.Success)
-          : this.log(`Loser. We still think you're pretty great though :)`, Severity.Error);
+            : this.log(`Loser. We still think you're pretty great though :)`, Severity.Error);
         
         
         this.dispatch(
@@ -579,6 +584,7 @@ class ApiState implements PrivateApiInterface {
             result: event.result.toString(),
             change: event.escrowChange.toString(),
             multiplier: multiplier[Number(event.result.toString())].toFixed(1),
+            userWon: event.userWon
           })
         );
        
