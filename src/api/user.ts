@@ -224,7 +224,7 @@ export class User {
     TOKENMINT: PublicKey,
   ): Promise<User> {
    
-    const req = await User.createReq(program, switchboardProgram, TOKENMINT, userWallet.wallet.publicKey);
+    const req = await User.createReq(program, switchboardProgram, TOKENMINT, userWallet.wallet.publicKey, false);
 
     const packedTxns = await packTransactions(
       program.provider.connection,
@@ -786,64 +786,64 @@ export class User {
     return state.currentRound.guess === state.currentRound.result;
   }
 
-  async airdropReq(payerPubkey = programWallet(this.program as any).publicKey, TOKENMINT:any) {
-    try {
-      await verifyPayerBalance(this.program.provider.connection, payerPubkey);
-    } catch {}
+  // async airdropReq(payerPubkey = programWallet(this.program as any).publicKey, TOKENMINT:any) {
+  //   try {
+  //     await verifyPayerBalance(this.program.provider.connection, payerPubkey);
+  //   } catch {}
 
-    const house = await House.load(this.program, TOKENMINT);
-    const flipMint = await house.loadMint();
-    const payerFlipTokenAccount = await spl.getAssociatedTokenAddress(
-      flipMint.address,
-      payerPubkey
-    );
-    const payerFlipTokenAccountInfo: anchor.web3.AccountInfo<Buffer> | null =
-      await this.program.provider.connection
-        .getAccountInfo(payerFlipTokenAccount)
-        .catch((err) => {
-          return null;
-        });
+  //   const house = await House.load(this.program, TOKENMINT);
+  //   const flipMint = await house.loadMint();
+  //   const payerFlipTokenAccount = await spl.getAssociatedTokenAddress(
+  //     flipMint.address,
+  //     payerPubkey
+  //   );
+  //   const payerFlipTokenAccountInfo: anchor.web3.AccountInfo<Buffer> | null =
+  //     await this.program.provider.connection
+  //       .getAccountInfo(payerFlipTokenAccount)
+  //       .catch((err) => {
+  //         return null;
+  //       });
 
-    const ixn = await this.program.methods
-      .userAirdrop({})
-      .accounts({
-        user: this.publicKey,
-        house: house.publicKey,
-        houseVault: house.state.houseVault,
-        mint: flipMint.address,
-        authority: payerPubkey,
-        airdropTokenWallet: payerFlipTokenAccount,
-        tokenProgram: spl.TOKEN_PROGRAM_ID,
-      })
-      .instruction();
+  //   const ixn = await this.program.methods
+  //     .userAirdrop({})
+  //     .accounts({
+  //       user: this.publicKey,
+  //       house: house.publicKey,
+  //       houseVault: house.state.houseVault,
+  //       mint: flipMint.address,
+  //       authority: payerPubkey,
+  //       airdropTokenWallet: payerFlipTokenAccount,
+  //       tokenProgram: spl.TOKEN_PROGRAM_ID,
+  //     })
+  //     .instruction();
 
-    const ixns = [ixn];
-    if (payerFlipTokenAccountInfo === null) {
-      const createTokenAccountIxn = spl.createAssociatedTokenAccountInstruction(
-        payerPubkey,
-        payerFlipTokenAccount,
-        payerPubkey,
-        flipMint.address
-      );
-      ixns.unshift(createTokenAccountIxn);
-    }
+  //   const ixns = [ixn];
+  //   if (payerFlipTokenAccountInfo === null) {
+  //     const createTokenAccountIxn = spl.createAssociatedTokenAccountInstruction(
+  //       payerPubkey,
+  //       payerFlipTokenAccount,
+  //       payerPubkey,
+  //       flipMint.address
+  //     );
+  //     ixns.unshift(createTokenAccountIxn);
+  //   }
 
-    return { ixns, signers: [] };
-  }
+  //   return { ixns, signers: [] };
+  // }
 
-  async airdrop(
-    payerPubkey = programWallet(this.program as any).publicKey,
-    TOKENMINT: PublicKey
-  ): Promise<string> {
-    const req = await this.airdropReq(payerPubkey, TOKENMINT);
+  // async airdrop(
+  //   payerPubkey = programWallet(this.program as any).publicKey,
+  //   TOKENMINT: PublicKey
+  // ): Promise<string> {
+  //   const req = await this.airdropReq(payerPubkey, TOKENMINT);
 
-    const signature = await this.program.provider.sendAndConfirm!(
-      new Transaction().add(...req.ixns),
-      req.signers
-    );
+  //   const signature = await this.program.provider.sendAndConfirm!(
+  //     new Transaction().add(...req.ixns),
+  //     req.signers
+  //   );
 
-    return signature;
-  }
+  //   return signature;
+  // }
 
   watch(
     betPlaced: (event: UserBetPlaced) => Promise<void> | void,
@@ -856,7 +856,7 @@ export class User {
           if (!this.publicKey.equals(event.user)) {
             return;
           }
-          const gameType = GameTypeValue.TWENTY_SIDED_DICE_ROLL;
+          // const gameType = GameTypeValue.TWENTY_SIDED_DICE_ROLL;
           await betPlaced({
             ...event,
             gameType: convertGameType(event.gameType),

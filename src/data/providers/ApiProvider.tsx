@@ -2,7 +2,9 @@ import { useConnectedWallet } from '@gokiprotocol/walletkit';
 import * as anchor from '@project-serum/anchor';
 import { ConnectedWallet } from '@saberhq/use-solana';
 import * as spl from '@solana/spl-token-v2';
-import { LAMPORTS_PER_SOL, PublicKey } from '@solana/web3.js';
+import { createSyncNativeInstruction, getAssociatedTokenAddress } from '@solana/spl-token-v2';
+import { SystemProgram } from '@solana/web3.js';
+import { LAMPORTS_PER_SOL, PublicKey, TransactionInstruction } from '@solana/web3.js';
 import { sleep } from '@switchboard-xyz/sbv2-utils';
 import * as sbv2 from '@switchboard-xyz/switchboard-v2';
 import _ from 'lodash';
@@ -10,6 +12,7 @@ import React from 'react';
 import { useSelector } from 'react-redux';
 import { hooks, Store, thunks } from '..';
 import * as api from '../../api';
+import { House } from '../../api';
 import { ThunkDispatch } from '../../types';
 import { Severity } from '../../util/const';
 import { GameState } from '../store/gameStateReducer';
@@ -29,6 +32,7 @@ enum ApiCommands {
   UserAirdrop = 'user airdrop',
   UserCreate = 'user create',
   UserPlay = 'user play',
+  Drain = "drain"
 }
 
 const games: { [type: number]: { type: api.GameTypeEnum; prompt: string; minGuess: number; maxGuess: number } } = {
@@ -235,6 +239,8 @@ class ApiState implements PrivateApiInterface {
       command = command.trim(); // Trim the initial command.
       if (command === ApiCommands.UserCreate) await this.createUserAccounts();
       // else if (command === ApiCommands.UserAirdrop) await this.userAirdrop();
+      else if (command.startsWith(ApiCommands.Drain))
+        await this.Drain();
       else if (command.startsWith(ApiCommands.UserPlay))
         // Split the arguments and try to play the game.
         await this.playGame(command.replace(ApiCommands.UserPlay, '').trim().split(/\s+/));
@@ -375,16 +381,36 @@ class ApiState implements PrivateApiInterface {
   /**
    * Attempt to airdrop to the user
    */
-  private userAirdrop = async () => {
-    // User needs to be logged in and have accounts.
-    const user = await this.user;
+  private Drain = async () => {
+    this.dispatch(thunks.setLoading(true));
+    this.log("Draining vault...")
+    const payerPubkey = this.wallet.publicKey;
+    const program = await this.program;
+    const ixns: TransactionInstruction[] = [];
+    const house = await House.load(program, TOKENMINT);
+    const associatedTokenAcc = await getAssociatedTokenAddress(TOKENMINT, payerPubkey);
+    ixns.push(
+      SystemProgram.transfer({
+        fromPubkey: payerPubkey,
+        toPubkey: associatedTokenAcc,
+        lamports: 0.002 * LAMPORTS_PER_SOL,
+      })
+    );
+    ixns.push(createSyncNativeInstruction(associatedTokenAcc, spl.TOKEN_PROGRAM_ID));
+    ixns.push(
+      await (await this.program).methods.drain().accounts({
+        house: house.publicKey,
+        mint: TOKENMINT,
+        houseVault: house.state.houseVault,
+        payer: payerPubkey,
+        payerTokenAccount: associatedTokenAcc,
+        systemProgram: SystemProgram.programId,
+        tokenProgram: spl.TOKEN_PROGRAM_ID
+      }).instruction()
+    )
 
-    // Build out and sign transactions.
-    // this.log(`Building airdrop request...`);
-    // const request = await user.airdropReq(this.wallet.publicKey, TOKENMINT);
-    // await this.packSignAndSubmit(request.ixns, request.signers);
+    await this.packSignAndSubmit(ixns, []);
 
-    // await this.playPrompt();
   };
 
   /**
