@@ -162,8 +162,8 @@ function Game({ amount, setAmount }) {
         <div id="texts" className="-m-[4px] bg-red-00 bg-opacity-30 absolute top-[220px] left-[30px] w-[40%]">
           <div className="relative flex justify-between  bg-green-00 bg-opacity-70">
             <div className="text-center bg-yellow-00 w-[70%]">
-              <div className="text-center text-xs">Bet Amount</div>
-              <div className="flex justify-center bg-green-00 items-center  text-xs  ">
+              <div className="text-center pt-[2px] pb-[2px] text-[8px]">Bet Amount</div>
+              <div className="flex justify-center bg-green-00 items-center  text-[8px]  ">
                 <input
                   className=" bg-transparent w-[35%] focus:outline-none"
                   onChange={(e) => setAmount(e.target.value)}

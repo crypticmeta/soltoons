@@ -182,11 +182,11 @@ function Sidebar({ amount, setAmount }) {
   };
 
   return (
-    <div className="flex h-full flex-col max-h-[800px] justify-between w-full lg:w-3/12 p-6 font-bold">
-      <div className="part1 h-[10%] center w-full">
+    <div className="flex h-full flex-col max-h-[800px] justify-start md:justify-center w-full lg:w-3/12 p-6 font-bold">
+      <div className="part1 h-[20%] center w-full">
         <WalletButton />
       </div>
-      <div className="part2 h-[50%] 2xl:h-[60%] bg-brand_yellow  border-4 border-black rounded-3xl p-2 text-sm overflow-hidden">
+      {/* <div className="part2 h-[50%] 2xl:h-[60%] bg-brand_yellow  border-4 border-black rounded-3xl p-2 text-sm overflow-hidden">
         <div className="flex justify-between font-extrabold h-[10%]">
           <p className="w-6/12 text-center border-r border-black xl:text-lg">LIVE CHAT</p>
 
@@ -245,7 +245,7 @@ function Sidebar({ amount, setAmount }) {
           </div>
           <hr className="my-2 border-black" />
         </div>
-      </div>
+      </div> */}
 
       <div className="part3 h-[35%] 2xl:h-[25%] bg-brand_yellow rounded-3xl border-4 border-black text-sm p-6 flex flex-col justify-between">
         {userAccountExists ? (
