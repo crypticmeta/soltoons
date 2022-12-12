@@ -247,7 +247,7 @@ function Sidebar({ amount, setAmount }) {
         </div>
       </div> */}
 
-      <div className="part3 h-[35%] 2xl:h-[25%] bg-brand_yellow rounded-3xl border-4 border-black text-sm p-6 flex flex-col justify-between">
+      <div className="part3 h-[35%] 2xl:h-[35%] bg-brand_yellow rounded-3xl border-4 border-black text-sm p-6 flex flex-col justify-between">
         {userAccountExists ? (
           <>
             {!result || result.status !== 'success' || !result.userWon ? (
@@ -294,8 +294,8 @@ function Sidebar({ amount, setAmount }) {
         )}
       </div>
       <Snackbar open={open} onClose={handleClose}>
-        <Alert onClose={handleClose} severity={logs[0]?.severity === 'error' ? 'error' : 'info'} sx={{ width: '100%' }}>
-          {logs[0]?.message}
+        <Alert style={{display:"flex", alignItems:"center"}} onClose={handleClose} severity={logs[0]?.severity === 'error' ? 'error' : 'info'} sx={{ width: '100%' }}>
+          <p className='2xl:text-2xl'>{logs[0]?.message}</p>
         </Alert>
       </Snackbar>
     </div>
