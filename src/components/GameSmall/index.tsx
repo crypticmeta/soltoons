@@ -132,11 +132,18 @@ function Game({ amount, setAmount }) {
         <div id="buttons" className={`p-0 bg-red-00 absolute top-[172px] left-[80px] w-[50%]`}>
           <div className="relative flex justify-around px-2 py-1 bg-red-00 bg-opacity-70">
             <img
+              style={{ userSelect: 'none' }}
               className="w-[15px] bg-red-00 cursor-pointer"
               onMouseDown={() => setLeftHold(true)}
               onMouseUp={() => setLeftHold(false)}
-              onTouchStart={() => setLeftHold(true)}
-              onTouchEnd={() => setLeftHold(false)}
+              onTouchStart={(e) => {
+                e.preventDefault();
+                setLeftHold(true)
+              }}
+              onTouchEnd={(e) => {
+                e.preventDefault()
+                setLeftHold(false)
+              }}
               src={`${leftHold ? '/assets/images/left_pushed.png' : '/assets/images/left_button_default.png'}`}
               alt=""
             />
@@ -149,12 +156,19 @@ function Game({ amount, setAmount }) {
               alt=""
             />
             <img
+              style={{ userSelect: 'none' }}
               className="w-[15px] cursor-pointer"
               src={`${rightHold ? '/assets/images/right_pushed.png' : '/assets/images/right_button_default.png'}`}
               onMouseDown={() => setRightHold(true)}
               onMouseUp={() => setRightHold(false)}
-              onTouchStart={() => setRightHold(true)}
-              onTouchEnd={() => setRightHold(false)}
+              onTouchStart={(e) => {
+                e.preventDefault();
+                setRightHold(true)
+              }}
+              onTouchEnd={(e) => {
+                e.preventDefault();
+                setRightHold(false)
+              }}
               alt=""
             />
           </div>
