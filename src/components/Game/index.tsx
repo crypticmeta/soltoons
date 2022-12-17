@@ -16,7 +16,7 @@ function Game({ amount, setAmount }) {
      stateMachines: STATE_MACHINE_NAME
   };
   const { RiveComponent, rive } = useRive(params);
-  console.log(rive, 'rive')
+  // console.log(rive, 'rive')
    const fireInput = useStateMachineInput(rive, STATE_MACHINE_NAME, INPUT_NAME);
   //api
     const api = hooks.useApi();
@@ -49,7 +49,7 @@ function Game({ amount, setAmount }) {
 
   useEffect(() => {
     if (result.status === "waiting") {
-      setY(80)
+      setY(90)
     }
     else {
       setY(0)
@@ -161,7 +161,6 @@ function Game({ amount, setAmount }) {
             id="prizes"
             className="absolute bg-green-00 w-[100%] z-[2] bottom-[15px] left-[0px] h-full overflow-hidden"
           >
-            <RiveComponent className="bg-red-00 bg-opacity-40 h-[108%]" />
           </div>
           <div className="absolute top-0 z-[3] cursor-pointer">
             <img src="/assets/images/glass.png" alt="" />

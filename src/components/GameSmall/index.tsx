@@ -2,10 +2,25 @@ import React, { useState, useEffect } from 'react';
 import { PublicKey } from '@solana/web3.js';
 import { hooks, Store, thunks } from '../../data';
 import { useSelector } from 'react-redux';
+import { useRive, useStateMachineInput } from '@rive-app/react-canvas';
+import useSound from 'use-sound';
 const TOKENMINT = new PublicKey('So11111111111111111111111111111111111111112');
 
 //@ts-ignore
 function Game({ amount, setAmount }) {
+  //rive
+   const STATE_MACHINE_NAME = 'State Machine 1';
+   const INPUT_NAME = 'Trigger 1';
+   const params = {
+     src: '/assets/rive/loading.riv',
+     autoplay: true,
+     stateMachines: STATE_MACHINE_NAME
+  };
+  const { RiveComponent, rive } = useRive(params);
+  // console.log(rive, 'rive')
+   const fireInput = useStateMachineInput(rive, STATE_MACHINE_NAME, INPUT_NAME);
+  //api
+  
   const api = hooks.useApi();
   const [x, setX] = useState(0);
   const [styleX, setStyleX] = useState({ transform: 'translateX(0%)' });
@@ -15,6 +30,7 @@ function Game({ amount, setAmount }) {
   const [rightHold, setRightHold] = useState(false);
 
   const result = useSelector((store: Store) => store.gameState.result);
+  const user = useSelector((store: Store) => store.gameState.user);
 
   const plushies = {
     '0.0': { img: '' },
@@ -86,6 +102,24 @@ function Game({ amount, setAmount }) {
   }, [rightHold, x]);
 
   console.log(result, 'result');
+  
+  useEffect(() => {
+    if (user) {
+     fireInput?.fire()
+   }
+  }, [user, fireInput])
+
+  useEffect(() => {
+    if (result.status === "claimed") {
+      fireInput?.fire();
+      setTimeout(() => {
+        fireInput?.fire();
+        setTimeout(() => {
+          fireInput?.fire();
+        }, 500);
+      }, 2000);
+    }
+  }, [result, fireInput])
 
   return (
     <div className="w-full lg:w-9/12 bg-red justify-center items-center py-16 lg:py-0 flex md:hidden bg-red-00">
@@ -120,10 +154,8 @@ function Game({ amount, setAmount }) {
               </div>
             </div>
           </div>
-          <div id="prizes" className={`absolute bg-green-00 w-[90%] z-[2] bottom-[7px] left-[12px] overflow-hidden`}>
-            <div className="relative flex w-full">
-              <img className="w-full" src="/assets/images/prizes.png" alt="" />
-            </div>
+          <div id="prizes" className={`absolute h-full bg-green-00 w-[90%] z-[2] bottom-[7px] left-[12px] overflow-hidden`}>
+            <RiveComponent className="bg-red-00 bg-opacity-40 h-[108%]" />
           </div>
           <div className="absolute top-0 z-[3] cursor-pointer">
             <img src="/assets/images/glass.png" alt="" />
