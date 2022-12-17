@@ -2,9 +2,23 @@ import React, { useState, useEffect } from 'react';
 import { PublicKey } from '@solana/web3.js';
 import { hooks, Store, thunks } from '../../data';
 import { useSelector } from 'react-redux';
+import { useRive, useStateMachineInput } from '@rive-app/react-canvas';
+import useSound from 'use-sound';
 const TOKENMINT = new PublicKey('So11111111111111111111111111111111111111112');
 //@ts-ignore
 function Game({ amount, setAmount }) {
+  //rive
+   const STATE_MACHINE_NAME = 'State Machine 1';
+   const INPUT_NAME = 'Trigger 1';
+   const params = {
+     src: '/assets/rive/loading.riv',
+     autoplay: true,
+     stateMachines: STATE_MACHINE_NAME
+  };
+  const { RiveComponent, rive } = useRive(params);
+  console.log(rive, 'rive')
+   const fireInput = useStateMachineInput(rive, STATE_MACHINE_NAME, INPUT_NAME);
+  //api
     const api = hooks.useApi();
   const [x, setX] = useState(0);
   const [styleX, setStyleX] = useState({ transform: "translateX(0%)" })
@@ -14,6 +28,7 @@ function Game({ amount, setAmount }) {
   const [rightHold, setRightHold] = useState(false);
 
   const result = useSelector((store: Store) => store.gameState.result);
+  const user = useSelector((store: Store) => store.gameState.user);
 
   const plushies = {
     '0.0': { img: '' },
@@ -34,7 +49,7 @@ function Game({ amount, setAmount }) {
 
   useEffect(() => {
     if (result.status === "waiting") {
-      setY(50)
+      setY(80)
     }
     else {
       setY(0)
@@ -47,10 +62,6 @@ function Game({ amount, setAmount }) {
       setStyleY({ transform: `translateY(${y}%)`, animationName: "vertical" });
     else
       setStyleY({ transform: `translateY(${y}%)`, animationName: 'none' });
-    // if (y !== 0)
-    //   setTimeout(() => {
-    //     setY(0);
-    //   }, 2000);
   }
 
   useEffect(() => {
@@ -91,6 +102,26 @@ function Game({ amount, setAmount }) {
     }, [rightHold, x]);
   
   console.log(result, 'result')
+
+  useEffect(() => {
+    if (user) {
+     fireInput?.fire()
+   }
+  }, [user, fireInput])
+
+  useEffect(() => {
+    if (result.status === "claimed") {
+      fireInput?.fire();
+      setTimeout(() => {
+        fireInput?.fire();
+        setTimeout(() => {
+          fireInput?.fire();
+        }, 500);
+      }, 2000);
+    }
+  }, [result, fireInput])
+  
+  
   
   
   return (
@@ -126,16 +157,20 @@ function Game({ amount, setAmount }) {
               </div>
             </div>
           </div>
-          <div id="prizes" className="absolute bg-green-00 w-[90%] z-[2] bottom-[15px] left-[20px] overflow-hidden">
-            <div className="relative flex w-full">
-              <img className="w-full " src="/assets/images/prizes.png" alt="" />
-            </div>
+          <div
+            id="prizes"
+            className="absolute bg-green-00 w-[100%] z-[2] bottom-[15px] left-[0px] h-full overflow-hidden"
+          >
+            <RiveComponent className="bg-red-00 bg-opacity-40 h-[108%]" />
           </div>
           <div className="absolute top-0 z-[3] cursor-pointer">
             <img src="/assets/images/glass.png" alt="" />
           </div>
         </div>
-        <div id="buttons" className="p-3 bg-red-00 absolute top-[280px] left-[120px] w-[50%]">
+        <div
+          id="buttons"
+          className="p-3 bg-red-00 absolute top-[280px] left-[120px] w-[50%]"
+        >
           <div className="relative flex justify-evenly px-16 py-1 bg-red-00 bg-opacity-70">
             <img
               className="w-[20px] bg-red-00 cursor-pointer"

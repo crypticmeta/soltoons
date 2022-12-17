@@ -12,6 +12,7 @@
     "@project-serum/borsh": "^0.2.5",
     "@reach/dialog": "^0.17.0",
     "@reduxjs/toolkit": "^1.8.3",
+    "@rive-app/react-canvas": "^3.0.34",
     "@saberhq/use-solana": "^1.13.32",
     "@solana/spl-token": "^0.2.0",
     "@solana/spl-token-v2": "npm:@solana/spl-token@^0.2.0",
@@ -26,6 +27,7 @@
     "react-dom": "^18.2.0",
     "react-redux": "^8.0.2",
     "react-router-dom": "^6.3.0",
+    "use-sound": "^4.0.1",
     "uuid": "^8.3.2"
   },
   "devDependencies": {
