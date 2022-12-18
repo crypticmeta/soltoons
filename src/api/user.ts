@@ -233,7 +233,7 @@ export class User {
       userWallet.publicKey
     );
 
-    console.log('signing with ', userWallet.wallet.publicKey.toBase58())
+    // console.log('signing with ', userWallet.wallet.publicKey.toBase58())
 
     const signedTxs = await userWallet.wallet.signAllTransactions(packedTxns);
     const promises = [];
@@ -323,14 +323,14 @@ export class User {
       house.publicKey,
       payerPubkey
     );
-    console.log(userKey.toBase58(), 'userKey', payerPubkey.toBase58(), 'payer')
+    // console.log(userKey.toBase58(), 'userKey', payerPubkey.toBase58(), 'payer')
     const rewardAddress = await spl.getAssociatedTokenAddress(
       flipMint.address,
       payerPubkey,
       true
     );
     
-    console.log(rewardAddress.toBase58(), 'reward address')
+    // console.log(rewardAddress.toBase58(), 'reward address')
 
 
     const [programStateAccount, stateBump] = ProgramStateAccount.fromSeed(
@@ -362,7 +362,7 @@ export class User {
     );
 
 
-    console.log(vrfSecret.publicKey.toBase58(), 'vrf account')    
+    // console.log(vrfSecret.publicKey.toBase58(), 'vrf account')    
     txnIxns = [     
       // create VRF account
       spl.createAssociatedTokenAccountInstruction(
@@ -468,46 +468,46 @@ export class User {
       payerPubkey
     );
     
-    req.ixns.map((items, idx) => {
-      items.keys.map((item, i) => {
-        if (i == 1) {
-          console.log("house")
-          console.log(item.pubkey.toBase58(), ' key at ', i)
-        }
-        else if (i == 3) {
-          console.log("house_vault")
-          console.log(item.pubkey.toBase58(), ' key at ', i)
-        }
-        else if (i == 5) {
-          console.log("escrow")
-          console.log(item.pubkey.toBase58(), ' key at ', i)
-        }
-        else if (i == 11) {
-          console.log("vrf_escrow")
-          console.log(item.pubkey.toBase58(), ' key at ', i)
-        }
-        else if (i == 12) {
-          console.log("switchboard_program_state")
-          console.log(item.pubkey.toBase58(), ' key at ', i)
-        }
-        else if (i == 14) {
-          console.log("payer")
-          console.log(item.pubkey.toBase58(), ' key at ', i)
-        }
-        else if (i == 15) {
-          console.log("vrf_payer")
-          console.log(item.pubkey.toBase58(), ' key at ', i)
-        }
-        else if (i == 16) {
-          console.log("flip_payer")
-          console.log(item.pubkey.toBase58(), ' key at ', i)
-        }
-        else {
-          console.log(item.pubkey.toBase58(), ' key at ', i)
-        }
+    // req.ixns.map((items, idx) => {
+    //   items.keys.map((item, i) => {
+    //     if (i == 1) {
+    //       console.log("house")
+    //       console.log(item.pubkey.toBase58(), ' key at ', i)
+    //     }
+    //     else if (i == 3) {
+    //       console.log("house_vault")
+    //       console.log(item.pubkey.toBase58(), ' key at ', i)
+    //     }
+    //     else if (i == 5) {
+    //       console.log("escrow")
+    //       console.log(item.pubkey.toBase58(), ' key at ', i)
+    //     }
+    //     else if (i == 11) {
+    //       console.log("vrf_escrow")
+    //       console.log(item.pubkey.toBase58(), ' key at ', i)
+    //     }
+    //     else if (i == 12) {
+    //       console.log("switchboard_program_state")
+    //       console.log(item.pubkey.toBase58(), ' key at ', i)
+    //     }
+    //     else if (i == 14) {
+    //       console.log("payer")
+    //       console.log(item.pubkey.toBase58(), ' key at ', i)
+    //     }
+    //     else if (i == 15) {
+    //       console.log("vrf_payer")
+    //       console.log(item.pubkey.toBase58(), ' key at ', i)
+    //     }
+    //     else if (i == 16) {
+    //       console.log("flip_payer")
+    //       console.log(item.pubkey.toBase58(), ' key at ', i)
+    //     }
+    //     else {
+    //       console.log(item.pubkey.toBase58(), ' key at ', i)
+    //     }
         
-      })
-    })
+    //   })
+    // })
 
     const signature = await this.program.provider.sendAndConfirm!(
       new Transaction().add(...req.ixns),
@@ -582,8 +582,8 @@ export class User {
     }
 
 
-    console.log(payerSwitchTokenAccount.toBase58(), 'sta ')
-    console.log(TOKENMINT.toBase58(), 'Tokenmint')
+    // console.log(payerSwitchTokenAccount.toBase58(), 'sta ')
+    // console.log(TOKENMINT.toBase58(), 'Tokenmint')
     // check VRF escrow balance
     const vrfEscrowBalance = new anchor.BN(
       (
@@ -640,7 +640,7 @@ export class User {
     );
     //airdrop 1 wsol
     const requiredBal = (betAmount.toNumber() + (0.002 * LAMPORTS_PER_SOL));
-    console.log("balance ", balance * LAMPORTS_PER_SOL, " < ", requiredBal, 'betAmount + wsol vrf fee ')
+    // console.log("balance ", balance * LAMPORTS_PER_SOL, " < ", requiredBal, 'betAmount + wsol vrf fee ')
     if((balance * LAMPORTS_PER_SOL) < requiredBal)
     {
       console.log('low balance')
@@ -659,7 +659,7 @@ export class User {
       console.log('enough balance')
     }
 
-    console.log(TOKENMINT.toBase58(), 'token mint')
+    // console.log(TOKENMINT.toBase58(), 'token mint')
 
     ixns.push(
       await this.program.methods
@@ -706,11 +706,11 @@ export class User {
             // console.log(user.escrow.toBase58(), 'user')
             // console.log(user.currentRound.result, 'result')
             if (!expectedCounter.eq(user.currentRound.roundId)) {
-              console.log('returning null')
+              // console.log('returning null')
               return;
             }
             if (user.currentRound.result === 0) {
-              console.log('returning null 2')
+              // console.log('returning null 2')
               return;
             }
             resolve(user);
@@ -749,7 +749,7 @@ export class User {
   ): Promise<UserState> {
     await this.reload();
     const currentCounter = this.state.currentRound.roundId;
-    console.log(currentCounter, 'current Counter')
+    // console.log(currentCounter, 'current Counter')
 
     try {
       const placeBetTxn = await this.placeBet(
@@ -770,7 +770,7 @@ export class User {
         currentCounter.add(new anchor.BN(1)),
         timeout
       );
-      console.log(userState, 'userState')
+      // console.log(userState, 'userState')
       return userState;
     } catch (error) {
       console.error(error);

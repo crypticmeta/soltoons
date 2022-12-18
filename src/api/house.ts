@@ -78,7 +78,7 @@ export class House {
     TOKENMINT: PublicKey,
     mintKeypair = anchor.web3.Keypair.generate(),
   ): Promise<House> {
-    console.log(TOKENMINT.toBase58(), 'tokenmint')
+    // console.log(TOKENMINT.toBase58(), 'tokenmint')
     const req = await House.createReq(program, switchboardQueue, mintKeypair, TOKENMINT);
 
     const signature = await program.provider.sendAndConfirm!(
@@ -152,7 +152,7 @@ export class House {
   static async load(program: FlipProgram, TOKENMINT:PublicKey): Promise<House> {
     const connection = program.provider.connection;
     const [houseKey, houseBump] = House.fromSeeds(program, TOKENMINT);
-    console.log(houseKey.toBase58(), 'houseKey')
+    // console.log(houseKey.toBase58(), 'houseKey')
     const payer = programWallet(program as any);
 
     let houseState = await HouseState.fetch(connection, houseKey);

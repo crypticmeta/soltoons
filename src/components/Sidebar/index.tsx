@@ -9,6 +9,7 @@ import Snackbar from '@mui/material/Snackbar';
 import MuiAlert, { AlertProps } from '@mui/material/Alert';
 import { Severity } from '../../util/const';
 import * as anchor from 'anchor-24-2';
+import Modal from '@mui/material/Modal';
 const Alert = React.forwardRef<HTMLDivElement, AlertProps>(function Alert(props, ref) {
   return <MuiAlert elevation={6} ref={ref} variant="filled" {...props} />;
 });
@@ -58,8 +59,12 @@ const WalletButton: React.FC = () => {
   );
 };
 //@ts-ignore
-function Sidebar({ amount, setAmount }) {
+function Sidebar({ amount, setAmount, step, setStep }) {
   const [open, setOpen] = React.useState(false);
+
+   const [openModal, setOpenModal] = React.useState(false);
+   const handleModalOpen = () => setOpenModal(true);
+   const handleModalClose = () => setOpenModal(false);
 
   const handleClick = () => {
     setOpen(true);
@@ -73,7 +78,7 @@ function Sidebar({ amount, setAmount }) {
     setOpen(false);
   };
 
-  const { walletProviderInfo, disconnect, providerMut, network, setNetwork } = useSolana();
+  const { providerMut } = useSolana();
   const wallet = useConnectedWallet();
   const api = hooks.useApi();
   const dispatch = hooks.useThunkDispatch();
@@ -121,7 +126,7 @@ function Sidebar({ amount, setAmount }) {
       try { 
         let ixns = [];
         dispatch(thunks.setLoading(true));
-        console.log(user.rewardAddress, 'user');
+        // console.log(user.rewardAddress, 'user');
         ixns.push(
           spl.createCloseAccountInstruction(
             new anchor.web3.PublicKey(user.rewardAddress),
@@ -130,7 +135,7 @@ function Sidebar({ amount, setAmount }) {
           )
         );
         // ixns.push(createSyncNativeInstruction(wallet.publicKey, TOKEN_PROGRAM_ID));
-        console.log(ixns, 'instructions');
+        // console.log(ixns, 'instructions');
         const tx = new anchor.web3.Transaction().add(...ixns);
         const packed = await sbv2.packTransactions(
           providerMut.connection,
@@ -140,7 +145,7 @@ function Sidebar({ amount, setAmount }) {
         );
 
         const signedTxs = await wallet.signAllTransactions(packed);
-        console.log('signedtxs');
+        // console.log('signedtxs');
 
         for (let k = 0; k < packed.length; k += 1) {
           const sig = await providerMut.connection
@@ -167,6 +172,7 @@ function Sidebar({ amount, setAmount }) {
             });
           if (sig) console.log(sig, ' tx signature');
           if (sig) {
+            handleModalClose()
             dispatch(thunks.setLoading(false));
             dispatch(thunks.log({ message: 'Successfully claimed funds. ', severity: Severity.Success }));
             dispatch(thunks.setResult({ status: 'claimed' }));
@@ -180,6 +186,14 @@ function Sidebar({ amount, setAmount }) {
       }
     }
   };
+
+  useEffect(() => {
+    console.log(step, result, 'step, rsult')
+    if (result?.userWon && step === 3) {
+      handleModalOpen();
+    }
+  }, [result, step])
+  
 
   return (
     <div className="flex h-full flex-col max-h-[800px] justify-start md:justify-center w-full lg:w-3/12 p-6 font-bold">
@@ -250,7 +264,6 @@ function Sidebar({ amount, setAmount }) {
       <div className="part3 h-[35%] 2xl:h-[35%] bg-brand_yellow rounded-3xl border-4 border-black text-sm p-6 flex flex-col justify-between">
         {userAccountExists ? (
           <>
-            {!result || result.status !== 'success' || !result.userWon ? (
               <Play
                 amount={amount}
                 setAmount={setAmount}
@@ -259,20 +272,6 @@ function Sidebar({ amount, setAmount }) {
                 balances={balances}
                 result={result}
               />
-            ) : (
-              <div className="center h-full ">
-                {loading ? (
-                  <div className="center h-full text-white border-white">
-                    <CircularProgress color="inherit" />
-                  </div>
-                ) : (
-                  <div className="flex flex-col">
-                    <button onClick={() => getReward()}>Collect Reward</button>
-                    <div className="pt-2 text-sm">You won {result.multiplier}X</div>
-                  </div>
-                )}
-              </div>
-            )}
           </>
         ) : (
           <>
@@ -293,9 +292,50 @@ function Sidebar({ amount, setAmount }) {
           </>
         )}
       </div>
+      <Modal open={openModal} onClose={handleModalClose}>
+        <div className="bg-black w-full h-screen center bg-opacity-75">
+          <div className="bg-brand_yellow md:w-6/12 2xl:w-4/12 p-6 text-xl">
+            {loading ? (
+              <div className="center h-full text-white border-white">
+                <CircularProgress color="inherit" />
+              </div>
+            ) : (
+              <div className="flex flex-col">
+                <p className="text-xl text-center font-extrabold pb-6 2xl:text-3xl">
+                  {Number(result?.multiplier) >= 1
+                    ? `Congrats! You Won ${result?.multiplier}X.`
+                    : Number(result?.multiplier) < 1 && Number(result?.multiplier) > 0
+                    ? `You got back ${result?.multiplier}X`
+                    : 'You Lost'}
+                </p>
+
+                <div className="center space-x-4 flex-wrap text-sm md:text-xl">
+                  <button
+                    className="bg-yellow-600 border-2 rounded-3xl border-black uppercase font-extrabold px-4 py-2 cursor-pointer"
+                    onClick={() => getReward()}
+                  >
+                    Collect Reward
+                  </button>
+                  <button
+                    className="bg-red-600 text-white border-2 rounded-3xl border-black uppercase font-extrabold px-4 py-2 cursor-pointer"
+                    onClick={() => handleModalClose()}
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </Modal>
       <Snackbar open={open} onClose={handleClose}>
-        <Alert style={{display:"flex", alignItems:"center"}} onClose={handleClose} severity={logs[0]?.severity === 'error' ? 'error' : 'info'} sx={{ width: '100%' }}>
-          <p className='2xl:text-2xl'>{logs[0]?.message}</p>
+        <Alert
+          style={{ display: 'flex', alignItems: 'center' }}
+          onClose={handleClose}
+          severity={logs[0]?.severity === 'error' ? 'error' : 'info'}
+          sx={{ width: '100%' }}
+        >
+          <p className="2xl:text-2xl">{logs[0]?.message}</p>
         </Alert>
       </Snackbar>
     </div>
@@ -306,37 +346,42 @@ function Sidebar({ amount, setAmount }) {
 const Play = ({amount, setAmount, api, balances, loading, result}) => {
   return (
     <>
-      {
-        loading ? (<div className='center h-full text-white border-white'>
-        <CircularProgress color="inherit"/></div>) : (
-          <>
-           <div>
-        <p className="font-extrabold text-center">INSERT BET AMOUNT</p>
-        <hr className="my-2 border-black" />
-      </div>
-      <div className="flex text-3xl italic  ">
-        <input
-          className=" bg-brand_yellow text-black font-extrabold w-6/12 text-right italic focus:outline-none"
-          value={amount}
-          onChange={(e) => setAmount(e.target.value)}
-        />
-        <p className=" ml-2 w-6/12">SOL</p>
-      </div>
-      <div>
-        <button
-          onClick={() => {
-            api.handleCommand(`user play 1 ${amount}`);
-          }}
-          className="border-black  border-4 p-1 rounded-3xl w-full font-extrabold"
-        >
-          PLAY
-        </button>
-        <p className="text-xs text-gray-700 text-center">
-          {Number(balances.sol||0).toFixed(4)} sol <span className='pl-4'>{Number(result && result.status ==="claimed"? 0 : (balances.ribs||0)).toFixed(4)} wsol</span>
-        </p>
-      </div></>
-        )
-     }
+      {loading && result?.status === 'waiting' ? (
+        <div className="center h-full text-white border-white">
+          <CircularProgress color="inherit" />
+        </div>
+      ) : (
+        <>
+          <div>
+            <p className="font-extrabold text-center">INSERT BET AMOUNT</p>
+            <hr className="my-2 border-black" />
+          </div>
+          <div className="flex text-3xl italic  ">
+            <input
+              className=" bg-brand_yellow text-black font-extrabold w-6/12 text-right italic focus:outline-none"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+            />
+            <p className=" ml-2 w-6/12">SOL</p>
+          </div>
+          <div>
+            <button
+              onClick={() => {
+                api.handleCommand(`user play 1 ${amount}`);
+              }}
+              className="border-black  border-4 p-1 rounded-3xl w-full font-extrabold"
+            >
+              PLAY
+            </button>
+            <p className="text-xs text-gray-700 text-center">
+              {Number(balances.sol || 0).toFixed(4)} sol{' '}
+              <span className="pl-4">
+                {Number(result && result.status === 'claimed' ? 0 : balances.ribs || 0).toFixed(4)} wsol
+              </span>
+            </p>
+          </div>
+        </>
+      )}
     </>
   );
 }

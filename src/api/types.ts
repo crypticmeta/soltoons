@@ -47,8 +47,8 @@ export const convertGameType = (gameType: any): GameTypeEnum => {
     return GameTypeEnum.TWENTY_SIDED_DICE_ROLL;
   }
 
-  console.log(gameType);
-  console.log(typeof gameType);
+  // console.log(gameType);
+  // console.log(typeof gameType);
 
   throw new Error(`Failed to match game type enum`);
 };
