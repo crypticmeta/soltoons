@@ -6,14 +6,19 @@ import GameLarge from '../../components/GameLarge';
 
 function Index() {
   const [amount, setAmount] = useState('0.003');
-    const [step, setStep] = useState(0);
+  const [step, setStep] = useState(0);
+  
+  
+   const [openModal, setOpenModal] = React.useState(false);
+   const handleModalOpen = () => setOpenModal(true);
+   const handleModalClose = () => setOpenModal(false);
   return (
     <div className="flex flex-wrap justify-center items-center min-h-screen h-screen">
       <div className="max-w-[1536px] max-h-[1920px] w-full flex flex-wrap justify-between items-center h-full">
-        <Game amount={amount} setAmount={setAmount} step={step} setStep={setStep} />
-        <GameSmall amount={amount} setAmount={setAmount} step={step} setStep={setStep} />
-        <GameLarge amount={amount} setAmount={setAmount} step={step} setStep={setStep} />
-        <Sidebar amount={amount} setAmount={setAmount} step={step} setStep={setStep} />
+        <Game amount={amount} setAmount={setAmount} step={step} setStep={setStep} handleModalOpen={ handleModalOpen} />
+        <GameSmall amount={amount} setAmount={setAmount} step={step} setStep={setStep} handleModalOpen={handleModalOpen} />
+        <GameLarge amount={amount} setAmount={setAmount} step={step} setStep={setStep} handleModalOpen={handleModalOpen} />
+        <Sidebar amount={amount} setAmount={setAmount} step={step} setStep={setStep} handleModalClose={handleModalClose} openModal={ openModal} />
       </div>
     </div>
   );

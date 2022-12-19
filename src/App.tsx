@@ -1,5 +1,6 @@
 import { css } from '@emotion/react';
 import { WalletKitProvider } from '@gokiprotocol/walletkit';
+import { ModalStep } from '@gokiprotocol/walletkit/dist/cjs/components/WalletSelectorModal';
 import { GlobalStyles } from '@mui/material';
 import React from 'react';
 import NavigationBar from './components/NavigationBar';
@@ -21,7 +22,7 @@ const App: React.FC = () => {
  
 
   return (
-    <WalletKitProvider app={{ name: 'Soltoons' }} defaultNetwork={'devnet'}>
+    <WalletKitProvider app={{ name: 'Soltoons' }} defaultNetwork={'devnet'} initialStep={ModalStep.Select} >
       <DataLayer>
         {inputGlobalStyles}
         <div style={{ display: 'flex', flexDirection: 'column' }} className="bg-gray-00 min-h-screen">

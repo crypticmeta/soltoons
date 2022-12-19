@@ -20,7 +20,7 @@ const TOKENMINT = new PublicKey('So11111111111111111111111111111111111111112');
       '100.0': { img: '/assets/images/snake.png' },
     };
     //@ts-ignore
-    function Game({ amount, setAmount, step, setStep }) {
+    function Game({ amount, setAmount, step, setStep , handleModalOpen }) {
       //rive
       const STATE_MACHINE_NAME = 'State Machine 1';
       const INPUT_NAME = 'Trigger 1';
@@ -243,26 +243,21 @@ const TOKENMINT = new PublicKey('So11111111111111111111111111111111111111112');
                 />
               </div>
             </div>
-            <div id="texts" className="p-3 bg-red-0 bg-opacity-30 absolute top-[508px] left-[40px] w-[40%]">
+            <div id="texts" className="py-3 bg-red-00 bg-opacity-60 absolute top-[490px] left-[52px] w-[28%]">
               <div className="relative flex justify-between  bg-green-00 bg-opacity-70">
-                <div className="text-center bg-yellow-00 w-[65%]">
-                  <div className="text-center font-extrabold">Bet Amount</div>
-                  <div className="flex justify-center bg-green-00 items-center  text-sm font-bold ">
-                    <input
-                      className=" bg-transparent w-[35%] focus:outline-none"
-                      onChange={(e) => setAmount(e.target.value)}
-                      value={amount}
+                <div className="text-center bg-yello relative">
+                  <img alt="" src="/assets/images/collect.png" />
+                  {reward && step === 3 && (
+                    <img
+                      onClick={handleModalOpen}
+                      style={styleRewardItem}
+                      className="w-[50px] z-20 absolute bottom-[10px] left-[60px] cursor-pointer"
+                      //@ts-ignore
+                      // src={reward}
+                      src={plushies['50.0'].img}
+                      alt=""
                     />
-                    <span> SOL</span>
-                  </div>
-                </div>
-                <div
-                  className="text-center center uppercase font-extrabold text-2xl cursor-pointer"
-                  onClick={() => {
-                    api.handleCommand(`user play 1 ${amount}`);
-                  }}
-                >
-                  GO
+                  )}
                 </div>
               </div>
             </div>

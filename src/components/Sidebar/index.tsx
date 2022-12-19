@@ -59,12 +59,9 @@ const WalletButton: React.FC = () => {
   );
 };
 //@ts-ignore
-function Sidebar({ amount, setAmount, step, setStep }) {
+function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal }) {
   const [open, setOpen] = React.useState(false);
 
-   const [openModal, setOpenModal] = React.useState(false);
-   const handleModalOpen = () => setOpenModal(true);
-   const handleModalClose = () => setOpenModal(false);
 
   const handleClick = () => {
     setOpen(true);
@@ -187,13 +184,6 @@ function Sidebar({ amount, setAmount, step, setStep }) {
     }
   };
 
-  useEffect(() => {
-    console.log(step, result, 'step, rsult')
-    if (result?.userWon && step === 3) {
-      handleModalOpen();
-    }
-  }, [result, step])
-  
 
   return (
     <div className="flex h-full flex-col max-h-[800px] justify-start md:justify-center w-full lg:w-3/12 p-6 font-bold">
