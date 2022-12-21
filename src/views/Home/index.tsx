@@ -15,8 +15,8 @@ function Index() {
   return (
     <div className="flex flex-wrap justify-center items-center min-h-screen h-screen">
       <div className="max-w-[1536px] max-h-[1920px] w-full flex flex-wrap justify-between items-center h-full">
-        {getWindowDimension().width > DeviceWidthObject.xl.min &&
-          getWindowDimension().width < DeviceWidthObject.xl.max && (
+        {getWindowDimension().width > DeviceWidthObject.md.min &&
+          getWindowDimension().width < DeviceWidthObject._2xl.min && (
             <Game
               amount={amount}
               setAmount={setAmount}
@@ -26,7 +26,7 @@ function Index() {
             />
           )}
         {
-          getWindowDimension().width < DeviceWidthObject.xl.min && (
+          getWindowDimension().width < DeviceWidthObject.md.min && (
             <GameSmall
               amount={amount}
               setAmount={setAmount}
