@@ -3,7 +3,7 @@ import Game from '../../components/Game';
 import React, { useState } from 'react';
 import GameSmall from '../../components/GameSmall';
 import GameLarge from '../../components/GameLarge';
-
+import {getWindowDimension, DeviceWidthObject } from '../../util'
 function Index() {
   const [amount, setAmount] = useState('0.003');
   const [step, setStep] = useState(0);
@@ -15,10 +15,43 @@ function Index() {
   return (
     <div className="flex flex-wrap justify-center items-center min-h-screen h-screen">
       <div className="max-w-[1536px] max-h-[1920px] w-full flex flex-wrap justify-between items-center h-full">
-        <Game amount={amount} setAmount={setAmount} step={step} setStep={setStep} handleModalOpen={ handleModalOpen} />
-        <GameSmall amount={amount} setAmount={setAmount} step={step} setStep={setStep} handleModalOpen={handleModalOpen} />
-        <GameLarge amount={amount} setAmount={setAmount} step={step} setStep={setStep} handleModalOpen={handleModalOpen} />
-        <Sidebar amount={amount} setAmount={setAmount} step={step} setStep={setStep} handleModalClose={handleModalClose} openModal={ openModal} />
+        {getWindowDimension().width > DeviceWidthObject.xl.min &&
+          getWindowDimension().width < DeviceWidthObject.xl.max && (
+            <Game
+              amount={amount}
+              setAmount={setAmount}
+              step={step}
+              setStep={setStep}
+              handleModalOpen={handleModalOpen}
+            />
+          )}
+        {
+          getWindowDimension().width < DeviceWidthObject.xl.min && (
+            <GameSmall
+              amount={amount}
+              setAmount={setAmount}
+              step={step}
+              setStep={setStep}
+              handleModalOpen={handleModalOpen}
+            />
+          )}
+        {getWindowDimension().width > DeviceWidthObject._2xl.min && (
+          <GameLarge
+            amount={amount}
+            setAmount={setAmount}
+            step={step}
+            setStep={setStep}
+            handleModalOpen={handleModalOpen}
+          />
+        )}
+        <Sidebar
+          amount={amount}
+          setAmount={setAmount}
+          step={step}
+          setStep={setStep}
+          handleModalClose={handleModalClose}
+          openModal={openModal}
+        />
       </div>
     </div>
   );

@@ -35,7 +35,7 @@ const TOKENMINT = new PublicKey('So11111111111111111111111111111111111111112');
       //api
 
       const api = hooks.useApi();
-      const [x, setX] = useState(-10);
+      const [x, setX] = useState(0);
       const [styleX, setStyleX] = useState({ transform: 'translateX(0%)', zIndex: 1, animationName: 'none' });
       const [y, setY] = useState(0);
       const [styleY, setStyleY] = useState({ transform: 'translateY(0%)', animationName: 'none' });
@@ -49,6 +49,7 @@ const TOKENMINT = new PublicKey('So11111111111111111111111111111111111111112');
 
       useEffect(() => {
         if (x <= -9 && result?.status === 'success') {
+           console.log('setting leftHold false and moving to step 2 for small screen');
           setLeftHold(false);
           setStep(2);
         }
@@ -253,7 +254,6 @@ const TOKENMINT = new PublicKey('So11111111111111111111111111111111111111112');
                   {reward && step === 3 && (
                     <img
                       onClick={handleModalOpen}
-                      style={styleRewardItem}
                       className="w-[20px] z-20 absolute bottom-[5px] left-[30px] cursor-pointer"
                       //@ts-ignore
                       // src={reward}

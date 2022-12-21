@@ -34,7 +34,7 @@ function Game({ amount, setAmount, step, setStep, handleModalOpen }) {
   const fireInput = useStateMachineInput(rive, STATE_MACHINE_NAME, INPUT_NAME);
   //api
   const api = hooks.useApi();
-  const [x, setX] = useState(-5);
+  const [x, setX] = useState(0);
   const [styleX, setStyleX] = useState({ transform: 'translateX(0%)', zIndex: 1, animationName: 'none' });
   const [y, setY] = useState(0);
   const [styleY, setStyleY] = useState({ transform: 'translateY(0%)', animationName: 'none' });
@@ -50,6 +50,7 @@ function Game({ amount, setAmount, step, setStep, handleModalOpen }) {
 
   useEffect(() => {
     if (x <= -4 && result?.status === 'success') {
+      console.log('setting leftHold false and moving to step 2')
       setLeftHold(false);
       setStep(2);
     }
@@ -119,6 +120,8 @@ function Game({ amount, setAmount, step, setStep, handleModalOpen }) {
       setStyleReward({ animationName: 'none' });
       setStyleRewardItem({ animationName: 'none' });
       setStep(0);
+      //@ts-ignore
+      setReward('');
       setTimeout(() => {
         fireInput?.fire();
         setTimeout(() => {
@@ -146,8 +149,6 @@ function Game({ amount, setAmount, step, setStep, handleModalOpen }) {
       setStyleRewardItem({ animationName: 'freefallItem' });
       setTimeout(() => {
         setStep(3);
-        //@ts-ignore
-        setReward('');
       }, 2000);
     } else if (step === 3 && !result?.userWon) {
       setTimeout(() => {
@@ -162,7 +163,9 @@ function Game({ amount, setAmount, step, setStep, handleModalOpen }) {
   // console.log(styleReward, 'reward style animation check');
   // console.log(styleRewardItem, 'reward style item animation check');
   // console.log(styleX, 'claw X style');
-
+  
+  // console.log(reward, step, 'reward, step');
+  // console.log(x, styleX)
   return (
     <div className="w-full lg:w-9/12 bg-red justify-center items-center py-16 lg:py-0 hidden 2xl:hidden md:flex">
       <div id="game" className="relative">
@@ -248,10 +251,10 @@ function Game({ amount, setAmount, step, setStep, handleModalOpen }) {
           <div className="relative flex justify-between  bg-green-00 bg-opacity-70">
             <div className="text-center bg-yello relative">
               <img alt="" src="/assets/images/collect.png" />
+
               {reward && step === 3 && (
                 <img
-                  onClick={handleModalOpen}
-                  style={styleRewardItem}
+                  onClick={handleModalOpen}                  
                   className="w-[30px] z-20 absolute bottom-[10px] left-[55px] cursor-pointer"
                   //@ts-ignore
                   src={reward}
