@@ -47,6 +47,7 @@ function Game({ amount, setAmount, step, setStep, handleModalOpen }) {
 
   const result = useSelector((store: Store) => store.gameState.result);
   const user = useSelector((store: Store) => store.gameState.user);
+  const logs = useSelector((store: Store) => store.HUDLogger.logs);
 
   useEffect(() => {
     if (x <= -4 && result?.status === 'success') {
@@ -107,10 +108,15 @@ function Game({ amount, setAmount, step, setStep, handleModalOpen }) {
 
   //rive movement after loading user
   useEffect(() => {
-    if (user) {
+    if (fireInput) {
+      console.log('fire');
       fireInput?.fire();
-    }
-  }, [user, fireInput]);
+      setTimeout(() => {
+        console.log('fire 2');
+        fireInput?.fire();
+      }, 600);
+   }
+  }, [fireInput, rive]);
 
   //rive movement after getting collecting rewards
 

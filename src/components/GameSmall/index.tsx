@@ -112,11 +112,16 @@ const TOKENMINT = new PublicKey('So11111111111111111111111111111111111111112');
 
       // console.log(result, 'result');
 
-      useEffect(() => {
-        if (user) {
-          fireInput?.fire();
-        }
-      }, [user, fireInput]);
+       useEffect(() => {
+         if (fireInput) {
+          //  console.log('fire');
+           fireInput?.fire();
+           setTimeout(() => {
+            //  console.log('fire 2');
+             fireInput?.fire();
+           }, 600);
+         }
+       }, [fireInput, rive]);
 
       useEffect(() => {
         if (result.status === 'claimed') {
