@@ -51,7 +51,7 @@ const TOKENMINT = new PublicKey('So11111111111111111111111111111111111111112');
           console.log(x, 'x value for large screen')
            console.log('setting leftHold false and moving to step 2 forr large screen');
           setLeftHold(false);
-          setStep(2);
+          setStep(3);
         }
         if (result?.status === 'success')
           setStyleX({ transform: `translateX(${x}%)`, zIndex: 10, animationName: 'none' });
@@ -83,7 +83,7 @@ const TOKENMINT = new PublicKey('So11111111111111111111111111111111111111112');
       useEffect(() => {
         let interval: any;
         let newX = x - 2;
-        if (leftHold)
+        if (leftHold && step < 3)
           interval = setInterval(() => {
             if (newX >= -5 && newX <= 85) {
               setX(newX);
@@ -142,28 +142,39 @@ const TOKENMINT = new PublicKey('So11111111111111111111111111111111111111112');
         }
       }, [result]);
 
-      useEffect(() => {
-        if (step === 1) {
-          setLeftHold(true);
-          //@ts-ignore
-          setReward(plushies[result?.multiplier || '0.0'].img);
-        } else if (step === 2) {
-          setStyleReward({ animationName: 'freefall' });
-          setStyleRewardItem({ animationName: 'freefallItem' });
-          setTimeout(() => {
-            setStep(3);
-            //@ts-ignore
-            setReward('');
-          }, 2000);
-        } else if (step === 3 && !result?.userWon) {
-          setTimeout(() => {
-            setStep(0);
-          }, 3000);
-        }
+useEffect(() => {
+  if (step === 1) {
+    setStyleY({ transform: `translateY(25%)`, animationName: 'none' });
+    setTimeout(() => {
+      //@ts-ignore
+      setReward(plushies[result?.multiplier || '0.0'].img);
+    }, 600);
+  } else if (step === 2) {
+    setLeftHold(true);
+  } else if (step === 3) {
+    setStyleReward({ animationName: 'freefall' });
+    setStyleRewardItem({ animationName: 'freefallItem' });
+    setTimeout(() => {
+      setStep(4);
+    }, 2000);
+  } else if (step === 4 && !result?.userWon) {
+    setTimeout(() => {
+      setStep(0);
+    }, 3000);
+  }
 
-        return () => {};
-      }, [step, result, y, setStep]);
+  return () => {};
+}, [step, result, y, setStep]);
 
+useEffect(() => {
+  if (reward && step === 1) {
+    setStyleY({ transform: `translateY(0%)`, animationName: 'none' });
+    setTimeout(() => {
+      setStep(2);
+    }, 600);
+  }
+}, [reward, step]);
+  
 
       return (
         <div className="w-full lg:w-9/12 bg-red-00 justify-center items-center py-16 lg:py-0 hidden 2xl:flex">
@@ -255,13 +266,13 @@ const TOKENMINT = new PublicKey('So11111111111111111111111111111111111111112');
               <div className="relative flex justify-between  bg-green-00 bg-opacity-70">
                 <div className="text-center bg-yello relative">
                   <img alt="" src="/assets/images/collect.png" />
-                  {reward && step === 3 && (
+                  {reward && step === 4 && (
                     <img
                       onClick={handleModalOpen}
                       className="w-[50px] z-20 absolute bottom-[10px] left-[60px] cursor-pointer"
                       //@ts-ignore
-                      // src={reward}
-                      src={plushies['50.0'].img}
+                      src={reward}
+                      // src={plushies['50.0'].img}
                       alt=""
                     />
                   )}

@@ -53,7 +53,7 @@ function Game({ amount, setAmount, step, setStep, handleModalOpen }) {
     if (x <= -4 && result?.status === 'success') {
       console.log('setting leftHold false and moving to step 2')
       setLeftHold(false);
-      setStep(2);
+      setStep(3)
     }
     if (result?.status === 'success') setStyleX({ transform: `translateX(${x}%)`, zIndex: 10, animationName: 'none' });
     else setStyleX({ transform: `translateX(${x}%)`, zIndex: 1, animationName: 'none' });
@@ -79,7 +79,7 @@ function Game({ amount, setAmount, step, setStep, handleModalOpen }) {
   useEffect(() => {
     let interval: any;
     let newX = x - 2;
-    if (leftHold && step < 2)
+    if (leftHold && step < 3)
       interval = setInterval(() => {
         if (newX >= -5 && newX <= 85) {
           setX(newX);
@@ -147,16 +147,21 @@ function Game({ amount, setAmount, step, setStep, handleModalOpen }) {
 
   useEffect(() => {
     if (step === 1) {
-      setLeftHold(true);
-      //@ts-ignore
-      setReward(plushies[result?.multiplier || '0.0'].img);
-    } else if (step === 2) {
-      setStyleReward({ animationName: 'freefall' });
-      setStyleRewardItem({ animationName: 'freefallItem' });
+      setStyleY({ transform: `translateY(30%)`, animationName: 'none' });
       setTimeout(() => {
-        setStep(3);
-      }, 2000);
-    } else if (step === 3 && !result?.userWon) {
+        //@ts-ignore
+        setReward(plushies[result?.multiplier || '0.0'].img);
+        
+      }, 600);
+    } else if (step === 2) {
+      setLeftHold(true);
+    } else if (step === 3) {
+       setStyleReward({ animationName: 'freefall' });
+       setStyleRewardItem({ animationName: 'freefallItem' });
+       setTimeout(() => {
+         setStep(4);
+       }, 2000);
+    } else if (step === 4 && !result?.userWon) {
       setTimeout(() => {
         setStep(0);
       }, 3000);
@@ -165,12 +170,22 @@ function Game({ amount, setAmount, step, setStep, handleModalOpen }) {
     return () => {};
   }, [step, result, y, setStep]);
 
+  useEffect(() => {
+    if (reward && step === 1) {
+      setStyleY({ transform: `translateY(0%)`, animationName: 'none' });
+      setTimeout(() => {
+        setStep(2);
+      }, 600);
+    }
+  }, [reward, step])
+  
+
   // console.log(step, 'step');
   // console.log(styleReward, 'reward style animation check');
   // console.log(styleRewardItem, 'reward style item animation check');
   // console.log(styleX, 'claw X style');
   
-  // console.log(reward, step, 'reward, step');
+  console.log(reward, step, 'reward, step');
   // console.log(x, styleX)
   return (
     <div className="w-full lg:w-9/12 bg-red justify-center items-center py-16 lg:py-0 hidden 2xl:hidden md:flex">
@@ -258,7 +273,7 @@ function Game({ amount, setAmount, step, setStep, handleModalOpen }) {
             <div className="text-center bg-yello relative">
               <img alt="" src="/assets/images/collect.png" />
 
-              {reward && step === 3 && (
+              {reward && step === 4 && (
                 <img
                   onClick={handleModalOpen}                  
                   className="w-[30px] z-20 absolute bottom-[10px] left-[55px] cursor-pointer"
