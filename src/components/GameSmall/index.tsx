@@ -129,6 +129,7 @@ const TOKENMINT = new PublicKey('So11111111111111111111111111111111111111112');
           setStyleReward({ animationName: 'none' });
           setStyleRewardItem({ animationName: 'none' });
           setStep(0);
+          setReward('');
           setTimeout(() => {
             fireInput?.fire();
             setTimeout(() => {
