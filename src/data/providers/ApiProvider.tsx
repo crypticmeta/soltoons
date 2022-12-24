@@ -87,9 +87,9 @@ class ApiError extends Error {
       `[ANCHOR ERROR] ${error.error.errorCode.number}: ${error.error.errorMessage}`
     );
   static badGuess = (min: number, max: number) =>
-    new ApiError(ApiErrorType.BadGuess, `[INVALID GUESS] Guess must be a number between ${min} and ${max}.`);
+    new ApiError(ApiErrorType.BadGuess, `must be a number between ${min} and ${max}.`);
   static badBet = () =>
-    new ApiError(ApiErrorType.BadBet, `[INVALID BET] Bet must be a number > 0 and less than your wallet balance.`);
+    new ApiError(ApiErrorType.BadBet, `Bet must be a number > 0 and less than your wallet balance or 2 SOL.`);
   static sendTransactionError = (message: string) => new ApiError(ApiErrorType.SendTransactionError, message);
 
   readonly type: ApiErrorType;
@@ -435,7 +435,7 @@ class ApiState implements PrivateApiInterface {
     // Validate the bet.
     const bet = Number.isFinite(Number(args[1])) ? Number(args[1]) : undefined;
     console.log(bet, this.userBalance, 'comparing');
-    if (_.isUndefined(bet) || bet <= 0 || bet > this.userBalance-0.004) {
+    if (_.isUndefined(bet) || bet <= 0 || bet>2 || bet > this.userBalance-0.004) {
       // Bet must be a positive number that's less than the user's balance.
       this.dispatch(thunks.setLoading(false));
       throw ApiError.badBet();
@@ -693,7 +693,7 @@ class ApiState implements PrivateApiInterface {
           event.userWon = true
         }
         else event.userWon=false
-          !event.userWon && this.log(`Loser. We still think you're pretty great though :)`, Severity.Error);
+          !event.userWon && this.log(`You missed the plushie, please try again`, Severity.Error);
         
         
         this.dispatch(

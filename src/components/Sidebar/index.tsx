@@ -296,7 +296,7 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
                   {Number(result?.multiplier) >= 1
                     ? `Congrats! You Won ${result?.change / LAMPORTS_PER_SOL} SOL`
                     : Number(result?.multiplier) < 1 && Number(result?.multiplier) > 0
-                    ? `You got back ${result?.change / LAMPORTS_PER_SOL} SOL`
+                    ? `You won ${result?.change / LAMPORTS_PER_SOL} SOL`
                     : 'You Lost'}
                 </p>
 
@@ -369,7 +369,8 @@ const Play = ({amount, setAmount, api, balances, loading, result}) => {
               <span className="pl-4">
                 {Number(result && result.status === 'claimed' ? 0 : balances.ribs || 0).toFixed(4)} wsol
               </span>
-            </p>
+              </p>
+              {Number(amount)>2 && (<p className='text-red-800 text-xs pt-2 text-center'>Amount should be less than 2 SOL</p>)}
           </div>
         </>
       )}

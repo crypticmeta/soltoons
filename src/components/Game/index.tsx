@@ -206,7 +206,7 @@ function Game({ amount, setAmount, step, setStep, handleModalOpen }) {
               >
                 <img className="  w-[10px]" src="/assets/images/pipe.png" alt="" />
                 <img
-                  className="w-[30px] ml-[-9.0px] mt-[-2px] "
+                  className="w-[30px] ml-[-10px] mt-[-2px] "
                   src={`${reward ? '/assets/images/claw_closed.png' : '/assets/images/claw_open.png'}`}
                   alt=""
                 />
