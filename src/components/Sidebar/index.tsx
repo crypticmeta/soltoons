@@ -10,6 +10,7 @@ import MuiAlert, { AlertProps } from '@mui/material/Alert';
 import { Severity } from '../../util/const';
 import * as anchor from 'anchor-24-2';
 import Modal from '@mui/material/Modal';
+import { LAMPORTS_PER_SOL } from '@solana/web3.js';
 const Alert = React.forwardRef<HTMLDivElement, AlertProps>(function Alert(props, ref) {
   return <MuiAlert elevation={6} ref={ref} variant="filled" {...props} />;
 });
@@ -254,14 +255,14 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
       <div className="part3 h-[35%] 2xl:h-[35%] bg-brand_yellow rounded-3xl border-4 border-black text-sm p-6 flex flex-col justify-between">
         {userAccountExists ? (
           <>
-              <Play
-                amount={amount}
-                setAmount={setAmount}
-                loading={loading}
-                api={api}
-                balances={balances}
-                result={result}
-              />
+            <Play
+              amount={amount}
+              setAmount={setAmount}
+              loading={loading}
+              api={api}
+              balances={balances}
+              result={result}
+            />
           </>
         ) : (
           <>
@@ -284,7 +285,7 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
       </div>
       <Modal open={openModal} onClose={handleModalClose}>
         <div className="bg-black w-full h-screen center bg-opacity-75">
-          <div className="bg-brand_yellow md:w-6/12 2xl:w-4/12 p-6 text-xl">
+          <div className="bg-brand_yellow rounded-xl md:w-6/12 2xl:w-4/12 p-6 text-xl">
             {loading ? (
               <div className="center h-full text-white border-white">
                 <CircularProgress color="inherit" />
@@ -293,25 +294,25 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
               <div className="flex flex-col">
                 <p className="text-xl text-center font-extrabold pb-6 2xl:text-3xl">
                   {Number(result?.multiplier) >= 1
-                    ? `Congrats! You Won ${result?.multiplier}X.`
+                    ? `Congrats! You Won ${result?.change / LAMPORTS_PER_SOL} SOL`
                     : Number(result?.multiplier) < 1 && Number(result?.multiplier) > 0
-                    ? `You got back ${result?.multiplier}X`
+                    ? `You got back ${result?.change / LAMPORTS_PER_SOL} SOL`
                     : 'You Lost'}
                 </p>
 
                 <div className="center space-x-4 flex-wrap text-sm md:text-xl">
                   <button
-                    className="bg-yellow-600 border-2 rounded-3xl border-black uppercase font-extrabold px-4 py-2 cursor-pointer"
+                    className="bg-[#a23acd] border-2 rounded-3xl border-black uppercase font-extrabold px-4 py-2 cursor-pointer"
                     onClick={() => getReward()}
                   >
                     Collect Reward
                   </button>
-                  <button
+                  {/* <button
                     className="bg-red-600 text-white border-2 rounded-3xl border-black uppercase font-extrabold px-4 py-2 cursor-pointer"
                     onClick={() => handleModalClose()}
                   >
                     Close
-                  </button>
+                  </button> */}
                 </div>
               </div>
             )}

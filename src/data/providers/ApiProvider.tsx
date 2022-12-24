@@ -693,9 +693,7 @@ class ApiState implements PrivateApiInterface {
           event.userWon = true
         }
         else event.userWon=false
-          event.userWon
-            ? this.log(`Congrats! You won ${multiplier[Number(event.result.toString())]}X`, Severity.Success)
-            : this.log(`Loser. We still think you're pretty great though :)`, Severity.Error);
+          !event.userWon && this.log(`Loser. We still think you're pretty great though :)`, Severity.Error);
         
         
         this.dispatch(

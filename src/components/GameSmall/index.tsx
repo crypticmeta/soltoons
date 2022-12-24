@@ -173,10 +173,12 @@ const TOKENMINT = new PublicKey('So11111111111111111111111111111111111111112');
 
       useEffect(() => {
         if (reward && step === 1) {
-          setStyleY({ transform: `translateY(0%)`, animationName: 'none' });
-          setTimeout(() => {
-            setStep(2);
-          }, 600);
+         setTimeout(() => {
+           setStyleY({ transform: `translateY(0%)`, animationName: 'none' });
+           setTimeout(() => {
+             setStep(2);
+           }, 600);
+         }, 600);
         }
       }, [reward, step]);
   

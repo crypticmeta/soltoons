@@ -5,7 +5,7 @@ import GameSmall from '../../components/GameSmall';
 import GameLarge from '../../components/GameLarge';
 import {getWindowDimension, DeviceWidthObject } from '../../util'
 function Index() {
-  const [amount, setAmount] = useState('0.003');
+  const [amount, setAmount] = useState('1');
   const [step, setStep] = useState(0);
   
   
