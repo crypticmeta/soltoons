@@ -7,6 +7,7 @@ import { SystemProgram } from '@solana/web3.js';
 import { LAMPORTS_PER_SOL, PublicKey, TransactionInstruction } from '@solana/web3.js';
 import { sleep } from '@switchboard-xyz/sbv2-utils';
 import * as sbv2 from '@switchboard-xyz/switchboard-v2';
+import { token } from 'anchor-24-2/dist/cjs/utils';
 import _ from 'lodash';
 import React from 'react';
 import { useSelector } from 'react-redux';
@@ -32,7 +33,8 @@ enum ApiCommands {
   UserAirdrop = 'user airdrop',
   UserCreate = 'user create',
   UserPlay = 'user play',
-  Drain = "drain"
+  Drain = "drain",
+  Vault = "vault"
 }
 
 const games: { [type: number]: { type: api.GameTypeEnum; prompt: string; minGuess: number; maxGuess: number } } = {
@@ -239,8 +241,8 @@ class ApiState implements PrivateApiInterface {
       command = command.trim(); // Trim the initial command.
       if (command === ApiCommands.UserCreate) await this.createUserAccounts();
       // else if (command === ApiCommands.UserAirdrop) await this.userAirdrop();
-      else if (command.startsWith(ApiCommands.Drain))
-        await this.Drain();
+      else if (command.startsWith(ApiCommands.Drain)) await this.Drain();
+      else if (command.startsWith(ApiCommands.Vault)) await this.Vault();
       else if (command.startsWith(ApiCommands.UserPlay))
         // Split the arguments and try to play the game.
         await this.playGame(command.replace(ApiCommands.UserPlay, '').trim().split(/\s+/));
@@ -260,8 +262,8 @@ class ApiState implements PrivateApiInterface {
     if (user?.publicKey) {
       this.dispatch(thunks.setLoading(false));
       //@ts-ignore
-      return this.log(`User account is already set up.`)
-        // .then(() => this.playPrompt());
+      return this.log(`User account is already set up.`);
+      // .then(() => this.playPrompt());
     }
 
     this.dispatch(thunks.setLoading(true));
@@ -380,11 +382,11 @@ class ApiState implements PrivateApiInterface {
   };
 
   /**
-   * Attempt to airdrop to the user
+   * Attempt to drain vault
    */
   private Drain = async () => {
     this.dispatch(thunks.setLoading(true));
-    this.log("Draining vault...")
+    this.log('Draining vault...');
     const payerPubkey = this.wallet.publicKey;
     const program = await this.program;
     const ixns: TransactionInstruction[] = [];
@@ -399,18 +401,40 @@ class ApiState implements PrivateApiInterface {
     );
     ixns.push(createSyncNativeInstruction(associatedTokenAcc, spl.TOKEN_PROGRAM_ID));
     ixns.push(
-      await (await this.program).methods.drain().accounts({
-        house: house.publicKey,
-        mint: TOKENMINT,
-        houseVault: house.state.houseVault,
-        payer: payerPubkey,
-        payerTokenAccount: associatedTokenAcc,
-        systemProgram: SystemProgram.programId,
-        tokenProgram: spl.TOKEN_PROGRAM_ID
-      }).instruction()
-    )
+      await (
+        await this.program
+      ).methods
+        .drain()
+        .accounts({
+          house: house.publicKey,
+          mint: TOKENMINT,
+          houseVault: house.state.houseVault,
+          payer: payerPubkey,
+          payerTokenAccount: associatedTokenAcc,
+          systemProgram: SystemProgram.programId,
+          tokenProgram: spl.TOKEN_PROGRAM_ID,
+        })
+        .instruction()
+    );
 
     await this.packSignAndSubmit(ixns, []);
+  };
+
+  // get vault info
+  private Vault = async () => {
+    this.dispatch(thunks.setLoading(true));
+    this.log('Getting vault info...');
+    const program = await this.program;
+    const house = await House.load(program, TOKENMINT);
+    // const associatedTokenAcc = await getAssociatedTokenAddress(TOKENMINT, payerPubkey);
+    const data = await program.provider.connection.getParsedAccountInfo(house.state.houseVault).catch(err => console.log(err, 'error getting token acc info'))
+    // console.log(data?.value?.data?.parsed?.info?.tokenAmount?.uiAmount, 'data')
+    //@ts-ignore
+    const vault_amount = data?.value?.data?.parsed?.info?.tokenAmount?.uiAmount;
+    if (vault_amount > 0) {
+      this.dispatch(thunks.setVaultBalance(vault_amount));
+      this.log("Vault Balance Loaded")
+    }
 
   };
 
@@ -435,7 +459,7 @@ class ApiState implements PrivateApiInterface {
     // Validate the bet.
     const bet = Number.isFinite(Number(args[1])) ? Number(args[1]) : undefined;
     console.log(bet, this.userBalance, 'comparing');
-    if (_.isUndefined(bet) || bet <= 0 || bet>2 || bet > this.userBalance-0.004) {
+    if (_.isUndefined(bet) || bet <= 0 || bet > 2 || bet > this.userBalance - 0.004) {
       // Bet must be a positive number that's less than the user's balance.
       this.dispatch(thunks.setLoading(false));
       throw ApiError.badBet();
@@ -458,7 +482,7 @@ class ApiState implements PrivateApiInterface {
     //     console.log(key.pubkey.toBase58(), ' req key ',i)
     //   })
     // })
-     
+
     this.dispatch(thunks.setResult({ status: 'waiting' }));
     await this.packSignAndSubmit(request.ixns, request.signers);
     // this.dispatch(thunks.setLoading(false));
@@ -487,7 +511,7 @@ class ApiState implements PrivateApiInterface {
       .signAllTransactions(packed)
       .then((signed) => {
         this.log(`Awaiting network confirmation...`);
-        console.log(signed, 'signed')
+        console.log(signed, 'signed');
         return signed;
       })
       .catch((e) => {
@@ -544,18 +568,24 @@ class ApiState implements PrivateApiInterface {
           })
         );
         return;
-      }
-      else if (account?.data?.length === 0) {
+      } else if (account?.data?.length === 0) {
         this.dispatch(
-        thunks.setUserBalance({
-          ribs: undefined,
-        })
+          thunks.setUserBalance({
+            ribs: undefined,
+          })
         );
-        return
+        return;
       }
       const rawAccount = spl.AccountLayout.decode(account.data);
-      console.log(rawAccount, 'rawAccount', rawAccount.mint.toBase58(), 'mint', Number(rawAccount.amount) / RIBS_PER_RACK, 'amount')
-      if (Number(rawAccount?.amount?.toString())>0)
+      // console.log(
+      //   rawAccount,
+      //   'rawAccount',
+      //   rawAccount.mint.toBase58(),
+      //   'mint',
+      //   Number(rawAccount.amount) / RIBS_PER_RACK,
+      //   'amount'
+      // );
+      if (Number(rawAccount?.amount?.toString()) > 0)
         this.dispatch(
           thunks.setUserBalance({
             ribs: rawAccount.amount ? Number(rawAccount.amount) / RIBS_PER_RACK : undefined,
@@ -690,22 +720,20 @@ class ApiState implements PrivateApiInterface {
         );
 
         if (multiplier[Number(event.result.toString())] > 0) {
-          event.userWon = true
-        }
-        else event.userWon=false
-          !event.userWon && this.log(`You missed the plushie, please try again`, Severity.Error);
-        
-        
+          event.userWon = true;
+        } else event.userWon = false;
+        !event.userWon && this.log(`You missed the plushie, please try again`, Severity.Error);
+
         this.dispatch(
           thunks.setResult({
             status: 'success',
             result: event.result.toString(),
             change: event.escrowChange.toString(),
             multiplier: multiplier[Number(event.result.toString())].toFixed(1),
-            userWon: event.userWon
+            userWon: event.userWon,
           })
         );
-       
+
         this.dispatch(thunks.setLoading(false));
         // await this.playPrompt();
       }
@@ -747,13 +775,8 @@ class ApiState implements PrivateApiInterface {
       // Check for valid game mode and prompt user.
       const game = games[this.gameMode];
       if (game) {
-        this.log("Loading...")
-        setTimeout(() => {          
           if (game) this.log(game.prompt);
-          
-        }, 3000);
-      }
-      else throw ApiError.unknownGameType();
+      } else throw ApiError.unknownGameType();
     } catch (e) {
       this.handleError(e);
     }
