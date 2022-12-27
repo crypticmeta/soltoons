@@ -22,7 +22,7 @@ const App: React.FC = () => {
  
 
   return (
-    <WalletKitProvider app={{ name: 'Soltoons' }} defaultNetwork={'devnet'} initialStep={ModalStep.Select} >
+    <WalletKitProvider app={{ name: 'Soltoons' }} defaultNetwork={'mainnet-beta'} initialStep={ModalStep.Select} >
       <DataLayer>
         {inputGlobalStyles}
         <div style={{ display: 'flex', flexDirection: 'column' }} className="bg-gray-00 min-h-screen">

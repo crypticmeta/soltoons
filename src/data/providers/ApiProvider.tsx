@@ -27,7 +27,7 @@ const TOKENMINT = new PublicKey("So11111111111111111111111111111111111111112")
  */
 const RIBS_PER_RACK = LAMPORTS_PER_SOL;
 
-type Cluster = 'devnet';
+type Cluster = 'mainnet-beta';
 
 enum ApiCommands {
   UserAirdrop = 'user airdrop',
@@ -126,7 +126,7 @@ class ApiState implements PrivateApiInterface {
   constructor(wallet: ConnectedWallet, dispatch: ThunkDispatch) {
     this.wallet = wallet;
     this.dispatch = dispatch;
-    this.cluster = 'devnet';
+    this.cluster = 'mainnet-beta';
 
     // Upon instantiation of this object, try to fetch user account and balance asynchronously.
     this.user.catch((e) => this.handleError(e));
@@ -139,7 +139,7 @@ class ApiState implements PrivateApiInterface {
    */
   get rpc(): string {
     // @TODO make rpc connection configurable.
-    return api.defaultRpcForCluster(this.cluster);
+    return 'https://solana-mainnet.g.alchemy.com/v2/ywoPVZQTXV1OOXo5fVMD25s6cN4HJftQ';
   }
 
   /**
@@ -166,6 +166,9 @@ class ApiState implements PrivateApiInterface {
    * If the program cannot be retrieved, an {@linkcode ApiError} will be thrown.
    */
   get program(): Promise<api.FlipProgram> {
+    
+    // console.log(this._program, 'pro');
+    // console.log(this.cluster, 'cluster')
     // If the program has already been set, return it.
     if (this._program) return Promise.resolve(this._program);
 
@@ -180,7 +183,7 @@ class ApiState implements PrivateApiInterface {
           })())
       )
       .catch((e) => {
-        console.error(e);
+        console.log(e, 'err loading program');
         this.dispatch(thunks.setLoading(false));
         throw ApiError.getFlipProgram();
       });
@@ -267,11 +270,13 @@ class ApiState implements PrivateApiInterface {
     }
 
     this.dispatch(thunks.setLoading(true));
+    // console.log('here')
 
     // Gather necessary programs.
     const program = await this.program;
     const anchorProvider = new anchor.AnchorProvider(program.provider.connection, this.wallet, {});
     const switchboard = await api.loadSwitchboard(anchorProvider);
+    // console.log(switchboard, 'swb')
 
     // this.log(`Checking if user needs airdrop...`);
     // api.verifyPayerBalance(program.provider.connection, anchorProvider.publicKey);
@@ -718,6 +723,7 @@ class ApiState implements PrivateApiInterface {
           event.result.toString(),
           'result'
         );
+        this.log('Received Result.', Severity.Normal)
 
         if (multiplier[Number(event.result.toString())] > 0) {
           event.userWon = true;

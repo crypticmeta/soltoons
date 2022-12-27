@@ -112,10 +112,10 @@ function Game({ amount, setAmount, step, setStep, handleModalOpen }) {
   //rive movement after loading user
   useEffect(() => {
     if (fireInput) {
-      console.log('fire');
+      // console.log('fire');
       fireInput?.fire();
       setTimeout(() => {
-        console.log('fire 2');
+        // console.log('fire 2');
         fireInput?.fire();
       }, 600);
    }
