@@ -111,7 +111,7 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
         dispatch(thunks.setLoading(false));
         dispatch(thunks.log({ message: 'Failed to get result. Your funds are safe.', severity: Severity.Error }));
         dispatch(thunks.setResult({ status: 'error' }));
-      }, 60000);
+      }, 80000);
     } else if (result && result.status === 'success') {
       // console.log('clearing timeout')
       clearTimeout(timer);
@@ -119,6 +119,7 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
     return () => clearTimeout(timer);
   }, [dispatch, result]);
 
+  console.log(providerMut, 'pm')
   const getReward = async () => {
     if (wallet && balances.ribs && providerMut) {
       try { 

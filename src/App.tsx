@@ -3,7 +3,6 @@ import { WalletKitProvider } from '@gokiprotocol/walletkit';
 import { ModalStep } from '@gokiprotocol/walletkit/dist/cjs/components/WalletSelectorModal';
 import { GlobalStyles } from '@mui/material';
 import React from 'react';
-import NavigationBar from './components/NavigationBar';
 import DataLayer from './data';
 import Router from './Router';
 import { zIndices } from './util/const';
@@ -22,7 +21,14 @@ const App: React.FC = () => {
  
 
   return (
-    <WalletKitProvider app={{ name: 'Soltoons' }} defaultNetwork={'mainnet-beta'} initialStep={ModalStep.Select} >
+    <WalletKitProvider
+      app={{ name: 'Soltoons' }}
+      defaultNetwork={'mainnet-beta'}
+      networkConfigs={{
+        'mainnet-beta': { endpoint: 'https://solana-mainnet.g.alchemy.com/v2/ywoPVZQTXV1OOXo5fVMD25s6cN4HJftQ' },
+      }}
+      initialStep={ModalStep.Select}
+    >
       <DataLayer>
         {inputGlobalStyles}
         <div style={{ display: 'flex', flexDirection: 'column' }} className="bg-gray-00 min-h-screen">
