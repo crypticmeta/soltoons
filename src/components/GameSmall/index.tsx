@@ -60,6 +60,9 @@ const TOKENMINT = new PublicKey('So11111111111111111111111111111111111111112');
 
       useEffect(() => {
         if (result.status === 'waiting') {
+          if (x < 0) {
+            setX(0);
+          }
           setY(30);
         } else {
           setY(0);

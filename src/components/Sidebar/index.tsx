@@ -314,6 +314,8 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
                     Close
                   </button> */}
                 </div>
+
+                <p className="text-xs text-center pt-3">*This converts all your wsol to sol</p>
               </div>
             )}
           </div>

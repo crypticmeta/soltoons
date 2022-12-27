@@ -61,6 +61,9 @@ function Game({ amount, setAmount, step, setStep, handleModalOpen }) {
 
   useEffect(() => {
     if (result.status === 'waiting') {
+      if (x < 0) {
+        setX(0)
+      }
       setY(30);
     } else {
       setY(0);
