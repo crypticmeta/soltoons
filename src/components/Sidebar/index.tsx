@@ -119,7 +119,7 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
     return () => clearTimeout(timer);
   }, [dispatch, result]);
 
-  console.log(providerMut, 'pm')
+  // console.log(providerMut, 'pm')
   const getReward = async () => {
     if (wallet && balances.ribs && providerMut) {
       try { 
