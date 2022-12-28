@@ -592,6 +592,7 @@ export class User {
     // check VRF escrow balance
 
     console.log('five')
+    console.log(vrfContext.publicKeys.vrfEscrow.toBase58(), 'vrfEscrow')
     const vrfEscrowBalance = new anchor.BN(
       (
         await this.program.provider.connection.getTokenAccountBalance(
