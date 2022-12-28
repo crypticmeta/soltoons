@@ -526,10 +526,11 @@ export class User {
     payerPubkey = programWallet(this.program as any).publicKey,
     balance = 0,
   ): Promise<{ ixns: TransactionInstruction[]; signers: Signer[] }> {
-    try {
-      await verifyPayerBalance(this.program.provider.connection, payerPubkey);
-    } catch {}
+    // try {
+    //   await verifyPayerBalance(this.program.provider.connection, payerPubkey);
+    // } catch {}
 
+    console.log('one')
     const signers: Signer[] = [];
     const ixns: TransactionInstruction[] = [];
     const house = await House.load(this.program, TOKENMINT);
@@ -539,9 +540,11 @@ export class User {
     );
     const vrfContext = await loadVrfContext(switchboard, this.state.vrf);
 
+    console.log('two')
     let payersWrappedSolBalance: anchor.BN;
     let payerSwitchTokenAccount: PublicKey;
     if (switchboardTokenAccount) {
+
       
       payerSwitchTokenAccount = switchboardTokenAccount;
       payersWrappedSolBalance = new anchor.BN(
@@ -557,10 +560,12 @@ export class User {
         payerPubkey
       );
 
+      console.log('three')
       const payersWrappedSolAccountInfo =
         await this.program.provider.connection.getAccountInfo(
           payerSwitchTokenAccount
         );
+      console.log('four')
       if (payersWrappedSolAccountInfo === null) {
         ixns.push(
           spl.createAssociatedTokenAccountInstruction(
@@ -585,6 +590,8 @@ export class User {
     // console.log(payerSwitchTokenAccount.toBase58(), 'sta ')
     // console.log(TOKENMINT.toBase58(), 'Tokenmint')
     // check VRF escrow balance
+
+    console.log('five')
     const vrfEscrowBalance = new anchor.BN(
       (
         await this.program.provider.connection.getTokenAccountBalance(
@@ -593,6 +600,7 @@ export class User {
       ).value.amount
     );
 
+    console.log('six')
     const combinedWrappedSolBalance =
       payersWrappedSolBalance.add(vrfEscrowBalance);
 
@@ -634,6 +642,7 @@ export class User {
         )
       );
     }
+    console.log('seven')
     const associatedTokenAcc = await getAssociatedTokenAddress(
       TOKENMINT,
       payerPubkey
@@ -659,6 +668,7 @@ export class User {
     else {
       console.log('enough balance')
     }
+    console.log('eight')
 
     // console.log(TOKENMINT.toBase58(), 'token mint')
 
