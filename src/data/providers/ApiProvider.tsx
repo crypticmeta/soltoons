@@ -139,7 +139,9 @@ class ApiState implements PrivateApiInterface {
    */
   get rpc(): string {
     // @TODO make rpc connection configurable.
-    return 'https://solana-mainnet.g.alchemy.com/v2/ywoPVZQTXV1OOXo5fVMD25s6cN4HJftQ';
+    return process.env.REACT_APP_NETWORK == 'devnet'
+      ? 'https://api.devnet.solana.com'
+      : 'https://solana-mainnet.g.alchemy.com/v2/ywoPVZQTXV1OOXo5fVMD25s6cN4HJftQ';
   }
 
   /**

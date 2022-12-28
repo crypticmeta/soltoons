@@ -14,7 +14,7 @@ export async function loadSwitchboard(
   provider: anchor.AnchorProvider
 ): Promise<anchor24.Program> {
   const switchboardProgram = await loadSwitchboardProgram(
-    "mainnet-beta",
+    process.env.REACT_APP_NETWORK == 'devnet' ? 'devnet' : "mainnet-beta",
     provider.connection,
     ((provider as anchor.AnchorProvider).wallet as AnchorWallet).payer
   );

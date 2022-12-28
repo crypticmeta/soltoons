@@ -23,7 +23,7 @@ const App: React.FC = () => {
   return (
     <WalletKitProvider
       app={{ name: 'Soltoons' }}
-      defaultNetwork={'mainnet-beta'}
+      defaultNetwork={process.env.REACT_APP_NETWORK == 'devnet' ? 'devnet' : 'mainnet-beta'}
       networkConfigs={{
         'mainnet-beta': { endpoint: 'https://solana-mainnet.g.alchemy.com/v2/ywoPVZQTXV1OOXo5fVMD25s6cN4HJftQ' },
       }}
