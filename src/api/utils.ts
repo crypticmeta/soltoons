@@ -17,7 +17,7 @@ export const defaultRpcForCluster = (
 ) => {
   switch (cluster) {
     case "mainnet-beta":
-      return "https://solana-mainnet.g.alchemy.com/v2/ywoPVZQTXV1OOXo5fVMD25s6cN4HJftQ";
+      return "https://warmhearted-greatest-emerald.solana-mainnet.quiknode.pro/2b6bcf328ed2611d4d293c2aaa027f3139acb0af/";
     case "devnet":
       return "https://api.devnet.solana.com";
     case "localnet":

@@ -190,7 +190,7 @@ function Game({ amount, setAmount, step, setStep, handleModalOpen }) {
   // console.log(styleRewardItem, 'reward style item animation check');
   // console.log(styleX, 'claw X style');
   
-  console.log(reward, step, 'reward, step');
+  // console.log(reward, step, 'reward, step');
   // console.log(x, styleX)
   return (
     <div className="w-full lg:w-9/12 bg-red justify-center items-center py-16 lg:py-0 hidden 2xl:hidden md:flex">
