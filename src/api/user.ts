@@ -640,6 +640,7 @@ export class User {
     );
     //airdrop 1 wsol
     const requiredBal = (betAmount.toNumber() + (0.002 * LAMPORTS_PER_SOL));
+    console.log(associatedTokenAcc.toBase58(), 'ata')
     // console.log("balance ", balance * LAMPORTS_PER_SOL, " < ", requiredBal, 'betAmount + wsol vrf fee ')
     if((balance * LAMPORTS_PER_SOL) < requiredBal)
     {

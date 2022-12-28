@@ -157,13 +157,5 @@ export const verifyPayerBalance = async (
     );
   }
 
-  try {
-    console.log(`Requesting airdrop for user ${payer.toBase58()}`);
-    const AIRDROP_AMT = 1 * anchor.web3.LAMPORTS_PER_SOL;
-    const airdropTxn = await connection.requestAirdrop(payer, AIRDROP_AMT);
-    await connection.confirmTransaction(airdropTxn);
-  } catch (error) {
-    console.log(`Failed to request an airdrop`);
-    console.error(error);
-  }
+ return console.log("Low balance")
 };
