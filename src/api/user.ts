@@ -361,6 +361,9 @@ export class User {
       true
     );
 
+    // console.log(await program.provider.connection.getMinimumBalanceForRentExemption(
+    //   switchboardProgram.account.vrfAccountData.size
+    // )/LAMPORTS_PER_SOL, 'sol transfer')
 
     // console.log(vrfSecret.publicKey.toBase58(), 'vrf account')    
     txnIxns = [     
@@ -526,11 +529,10 @@ export class User {
     payerPubkey = programWallet(this.program as any).publicKey,
     balance = 0,
   ): Promise<{ ixns: TransactionInstruction[]; signers: Signer[] }> {
-    // try {
-    //   await verifyPayerBalance(this.program.provider.connection, payerPubkey);
-    // } catch {}
+    try {
+      await verifyPayerBalance(this.program.provider.connection, payerPubkey);
+    } catch {}
 
-    console.log('one')
     const signers: Signer[] = [];
     const ixns: TransactionInstruction[] = [];
     const house = await House.load(this.program, TOKENMINT);
@@ -540,7 +542,6 @@ export class User {
     );
     const vrfContext = await loadVrfContext(switchboard, this.state.vrf);
 
-    console.log('two')
     let payersWrappedSolBalance: anchor.BN;
     let payerSwitchTokenAccount: PublicKey;
     if (switchboardTokenAccount) {
@@ -559,13 +560,10 @@ export class User {
         spl.NATIVE_MINT,
         payerPubkey
       );
-
-      console.log('three')
       const payersWrappedSolAccountInfo =
         await this.program.provider.connection.getAccountInfo(
           payerSwitchTokenAccount
         );
-      console.log('four')
       if (payersWrappedSolAccountInfo === null) {
         ixns.push(
           spl.createAssociatedTokenAccountInstruction(
@@ -587,13 +585,7 @@ export class User {
     }
 
 
-    // console.log(payerSwitchTokenAccount.toBase58(), 'sta ')
-    // console.log(TOKENMINT.toBase58(), 'Tokenmint')
-    // check VRF escrow balance
-
-    console.log('five')
-    console.log(vrfContext.publicKeys.vrfEscrow.toBase58(), 'vrfEscrow')
-    const vrfEscrowBalance = new anchor.BN(
+    const vrfEscrowBalance =  new anchor.BN(
       (
         await this.program.provider.connection.getTokenAccountBalance(
           vrfContext.publicKeys.vrfEscrow
@@ -601,7 +593,6 @@ export class User {
       ).value.amount
     );
 
-    console.log('six')
     const combinedWrappedSolBalance =
       payersWrappedSolBalance.add(vrfEscrowBalance);
 
@@ -643,14 +634,12 @@ export class User {
         )
       );
     }
-    console.log('seven')
     const associatedTokenAcc = await getAssociatedTokenAddress(
       TOKENMINT,
       payerPubkey
     );
     //airdrop 1 wsol
     const requiredBal = (betAmount.toNumber() + (0.002 * LAMPORTS_PER_SOL));
-    console.log(associatedTokenAcc.toBase58(), 'ata')
     // console.log("balance ", balance * LAMPORTS_PER_SOL, " < ", requiredBal, 'betAmount + wsol vrf fee ')
     if((balance * LAMPORTS_PER_SOL) < requiredBal)
     {
@@ -669,7 +658,6 @@ export class User {
     else {
       console.log('enough balance')
     }
-    console.log('eight')
 
     // console.log(TOKENMINT.toBase58(), 'token mint')
 
