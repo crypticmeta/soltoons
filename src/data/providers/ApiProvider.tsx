@@ -474,6 +474,8 @@ class ApiState implements PrivateApiInterface {
 
     this.log(`Building bet request...`);
     this.log(`Bet Amount: ${bet}`);
+    
+    this.dispatch(thunks.setResult({ status: 'waiting' }));
     const request = await user.placeBetReq(
       TOKENMINT,
       this.gameMode,
@@ -482,7 +484,11 @@ class ApiState implements PrivateApiInterface {
       /* switchboardTokenAccount= */ undefined,
       this.wallet.publicKey,
       this.userRibsBalance
-    );
+    ).catch(err => {
+      
+    this.dispatch(thunks.setResult({ status: 'error' }));
+      console.log(err, 'err creating bet req')
+    });
     // console.log(request.ixns, 'ixns')
     // request.ixns.map((item, idx) => {
     //   item.keys.map((key, i) => {
@@ -490,7 +496,7 @@ class ApiState implements PrivateApiInterface {
     //   })
     // })
 
-    this.dispatch(thunks.setResult({ status: 'waiting' }));
+    if(request)
     await this.packSignAndSubmit(request.ixns, request.signers);
     // this.dispatch(thunks.setLoading(false));
   };
