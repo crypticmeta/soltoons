@@ -1,6 +1,6 @@
 {
-  "short_name": "VRF Demo",
-  "name": "Switchboard's VRF Demo App",
+  "short_name": "Soltoons",
+  "name": "Soltoons",
   "icons": [
     {
       "src": "favicon.ico",
@@ -8,12 +8,12 @@
       "type": "image/x-icon"
     },
     {
-      "src": "logo192.png",
+      "src": "favicon.ico",
       "type": "image/png",
       "sizes": "192x192"
     },
     {
-      "src": "logo512.png",
+      "src": "favicon.ico",
       "type": "image/png",
       "sizes": "512x512"
     }
