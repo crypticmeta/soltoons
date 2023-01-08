@@ -315,8 +315,11 @@ export class User {
     const switchboardQueue = house.getQueueAccount(switchboardProgram);
     const switchboardMint = await switchboardQueue.loadMint();
 
+    const testing = process.env.REACT_APP_TESTING;
     const escrowKeypair = anchor.web3.Keypair.generate();
     const vrfSecret = anchor.web3.Keypair.generate();
+    const vrf = new PublicKey("GaUk1U5EMQZdbPapL1b5qJHvEZy2hukcLiSnjvzin1M7")
+    console.log(testing !== "true" ? "using vrfSecret" :"using static vrf = GaUk1U5EMQZdbPapL1b5qJHvEZy2hukcLiSnjvzin1M7")
 
     const [userKey, userBump] = User.fromSeeds(
       program,
@@ -343,7 +346,7 @@ export class User {
       house,
       userKey,
       escrowKeypair.publicKey,
-      vrfSecret.publicKey,
+      testing!=="true" ? vrfSecret.publicKey:vrf,
       rewardAddress,
       TOKENMINT,
     );
@@ -352,12 +355,12 @@ export class User {
       switchboardProgram as any,
       queue.authority,
       switchboardQueue.publicKey,
-      vrfSecret.publicKey
+      testing!=="true" ? vrfSecret.publicKey:vrf
     );
 
     const vrfEscrow = await spl.getAssociatedTokenAddress(
       switchboardMint.address,
-      vrfSecret.publicKey,
+      testing!=="true" ? vrfSecret.publicKey:vrf,
       true
     );
 
@@ -365,79 +368,107 @@ export class User {
     //   switchboardProgram.account.vrfAccountData.size
     // )/LAMPORTS_PER_SOL, 'sol transfer')
 
-    // console.log(vrfSecret.publicKey.toBase58(), 'vrf account')    
-    txnIxns = [     
-      // create VRF account
-      spl.createAssociatedTokenAccountInstruction(
-        payerPubkey,
-        vrfEscrow,
-        vrfSecret.publicKey,
-        switchboardMint.address
-      ),      
-      spl.createSetAuthorityInstruction(
-        vrfEscrow,
-        vrfSecret.publicKey,
-        spl.AuthorityType.AccountOwner,
-        programStateAccount.publicKey
-      ),
-      anchor.web3.SystemProgram.createAccount({
-        fromPubkey: payerPubkey,
-        newAccountPubkey: vrfSecret.publicKey,
-        space: switchboardProgram.account.vrfAccountData.size,
-        lamports:
-          await program.provider.connection.getMinimumBalanceForRentExemption(
-            switchboardProgram.account.vrfAccountData.size
-          ),
-        programId: switchboardProgram.programId,
-      }),
-      await switchboardProgram.methods
-        .vrfInit({
-          stateBump,
-          callback: callback,
-        })
-        .accounts({
-          vrf: vrfSecret.publicKey,
-          escrow: vrfEscrow,
-          authority: userKey,
-          oracleQueue: switchboardQueue.publicKey,
-          programState: programStateAccount.publicKey,
-          tokenProgram: spl.TOKEN_PROGRAM_ID,
-        })
-        .instruction(),
-      // create permission account
-      await switchboardProgram.methods
-        .permissionInit({})
-        .accounts({
-          permission: permissionAccount.publicKey,
-          authority: queue.authority,
-          granter: switchboardQueue.publicKey,
-          grantee: vrfSecret.publicKey,
-          payer: payerPubkey,
-          systemProgram: anchor.web3.SystemProgram.programId,
-        })
-        .instruction(),
-      // create user account
-      await program.methods
-        .userInit({
-          switchboardStateBump: stateBump,
-          vrfPermissionBump: permissionBump,
-        })
-        .accounts({
-          user: userKey,
-          house: house.publicKey,
-          mint: TOKENMINT,
-          authority: payerPubkey,
-          escrow: escrowKeypair.publicKey,
-          rewardAddress: rewardAddress,
-          vrf: vrfSecret.publicKey,
-          payer: payerPubkey,
-          systemProgram: anchor.web3.SystemProgram.programId,
-          tokenProgram: spl.TOKEN_PROGRAM_ID,
-          associatedTokenProgram: spl.ASSOCIATED_TOKEN_PROGRAM_ID,
-          rent: anchor.web3.SYSVAR_RENT_PUBKEY,
-        })
-        .instruction(),
-    ];
+    // console.log(testing!=="true" ? vrfSecret.publicKey:vrf.toBase58(), 'vrf account')    
+    txnIxns =[]
+    if (testing !== "true") {
+      console.log(house.publicKey.toBase58(), 'house ')
+      txnIxns = [
+        // create VRF account
+        spl.createAssociatedTokenAccountInstruction(
+          payerPubkey,
+          vrfEscrow,
+          vrfSecret?.publicKey ,
+          switchboardMint.address
+        ),
+        spl.createSetAuthorityInstruction(
+          vrfEscrow,
+          vrfSecret?.publicKey ,
+          spl.AuthorityType.AccountOwner,
+          programStateAccount.publicKey
+        ),
+        anchor.web3.SystemProgram.createAccount({
+          fromPubkey: payerPubkey,
+          newAccountPubkey: vrfSecret?.publicKey ,
+          space: switchboardProgram.account.vrfAccountData.size,
+          lamports:
+            await program.provider.connection.getMinimumBalanceForRentExemption(
+              switchboardProgram.account.vrfAccountData.size
+            ),
+          programId: switchboardProgram.programId,
+        }),
+        await switchboardProgram.methods
+          .vrfInit({
+            stateBump,
+            callback: callback,
+          })
+          .accounts({
+            vrf: vrfSecret?.publicKey,
+            escrow: vrfEscrow,
+            authority: house.publicKey ,
+            oracleQueue: switchboardQueue.publicKey,
+            programState: programStateAccount.publicKey,
+            tokenProgram: spl.TOKEN_PROGRAM_ID,
+          })
+          .instruction(),
+        // create permission account
+        await switchboardProgram.methods
+          .permissionInit({})
+          .accounts({
+            permission: permissionAccount.publicKey,
+            authority: queue.authority,
+            granter: switchboardQueue.publicKey,
+            grantee: vrfSecret?.publicKey,
+            payer: payerPubkey,
+            systemProgram: anchor.web3.SystemProgram.programId,
+          })
+          .instruction(),
+        // create user account
+        await program.methods
+          .userInit({
+            switchboardStateBump: stateBump,
+            vrfPermissionBump: permissionBump,
+          })
+          .accounts({
+            user: userKey,
+            house: house.publicKey,
+            mint: TOKENMINT,
+            authority: payerPubkey,
+            escrow: escrowKeypair.publicKey,
+            rewardAddress: rewardAddress,
+            vrf: vrfSecret?.publicKey,
+            payer: payerPubkey,
+            systemProgram: anchor.web3.SystemProgram.programId,
+            tokenProgram: spl.TOKEN_PROGRAM_ID,
+            associatedTokenProgram: spl.ASSOCIATED_TOKEN_PROGRAM_ID,
+            rent: anchor.web3.SYSVAR_RENT_PUBKEY,
+          })
+          .instruction(),
+      ];
+    } else {
+      txnIxns = [
+        // create user account
+        await program.methods
+          .userInit({
+            switchboardStateBump: stateBump,
+            vrfPermissionBump: permissionBump,
+          })
+          .accounts({
+            user: userKey,
+            house: house.publicKey,
+            mint: TOKENMINT,
+            authority: payerPubkey,
+            escrow: escrowKeypair.publicKey,
+            rewardAddress: rewardAddress,
+            vrf: vrf,
+            payer: payerPubkey,
+            systemProgram: anchor.web3.SystemProgram.programId,
+            tokenProgram: spl.TOKEN_PROGRAM_ID,
+            associatedTokenProgram: spl.ASSOCIATED_TOKEN_PROGRAM_ID,
+            rent: anchor.web3.SYSVAR_RENT_PUBKEY,
+          })
+          .instruction(),
+      ];
+    }
     if (!rewardAddressInitialized) {
       txnIxns.unshift(spl.createAssociatedTokenAccountInstruction(
         payerPubkey,
@@ -449,12 +480,13 @@ export class User {
 
     return {
       ixns: txnIxns,
-      signers: [vrfSecret, escrowKeypair],
+      signers: testing !== "true" ? [vrfSecret, escrowKeypair] :[escrowKeypair],
       account: userKey,
     };
   }
 
   async placeBet(
+    user: User,
     TOKENMINT: PublicKey,
     gameType: GameTypeValue,
     userGuess: number,
@@ -463,6 +495,7 @@ export class User {
     payerPubkey = programWallet(this.program as any).publicKey
   ): Promise<string> {
     const req = await this.placeBetReq(
+      user,
       TOKENMINT,
       gameType,
       userGuess,
@@ -521,6 +554,7 @@ export class User {
   }
 
   async placeBetReq(
+    user: User,
     TOKENMINT:PublicKey,
     gameType: GameTypeValue,
     userGuess: number,
@@ -531,7 +565,9 @@ export class User {
   ): Promise<{ ixns: TransactionInstruction[]; signers: Signer[] }> {
     try {
       await verifyPayerBalance(this.program.provider.connection, payerPubkey);
-    } catch {}
+    } catch { }
+    
+
 
     const signers: Signer[] = [];
     const ixns: TransactionInstruction[] = [];
@@ -540,6 +576,7 @@ export class User {
     const switchboard = await loadSwitchboard(
       this.program.provider as anchor.AnchorProvider
     );
+
     const vrfContext = await loadVrfContext(switchboard, this.state.vrf);
 
     let payersWrappedSolBalance: anchor.BN;
@@ -638,8 +675,10 @@ export class User {
       TOKENMINT,
       payerPubkey
     );
+    
     //airdrop 1 wsol
     const requiredBal = (betAmount.toNumber() + (0.002 * LAMPORTS_PER_SOL));
+    balance = Number(balance.toFixed(4))
     // console.log("balance ", balance * LAMPORTS_PER_SOL, " < ", requiredBal, 'betAmount + wsol vrf fee ')
     if((balance * LAMPORTS_PER_SOL) < requiredBal)
     {
@@ -659,7 +698,30 @@ export class User {
       console.log('enough balance')
     }
 
-    // console.log(TOKENMINT.toBase58(), 'token mint')
+    console.log(TOKENMINT.toBase58(), 'token mint')
+    const vrfIxCoder = new anchor.BorshInstructionCoder(this.program.idl);
+    console.log(vrfIxCoder.encode("userSettle", {}), 'arg')
+    console.log(String.fromCharCode(...[145, 72, 9, 94, 61, 97, 126, 106]), 'arg2')
+    console.log(new anchor.BN(vrfIxCoder.encode("userSettle", {})).toArray(), 'h')
+    ixns.push(
+      await this.program.methods
+        .setCallback({})
+        .accounts({
+          user: this.publicKey,
+          house: this.state.house,
+          mint: TOKENMINT,
+          houseVault: house.state.houseVault,
+          authority: this.state.authority,
+          escrow: this.state.escrow,
+          vrfPayer: payerSwitchTokenAccount,
+          ...vrfContext.publicKeys,
+          payer: payerPubkey,
+          flipPayer: this.state.rewardAddress,
+          recentBlockhashes: SYSVAR_RECENT_BLOCKHASHES_PUBKEY,
+          tokenProgram: spl.TOKEN_PROGRAM_ID,
+        })
+        .instruction()
+    );
 
     ixns.push(
       await this.program.methods
@@ -740,6 +802,7 @@ export class User {
   }
 
   async placeBetAndAwaitFlip(
+    user:User,
     TOKENMINT:PublicKey,
     gameType: GameTypeValue,
     userGuess: number,
@@ -753,6 +816,7 @@ export class User {
 
     try {
       const placeBetTxn = await this.placeBet(
+        user,
         TOKENMINT,
         gameType,
         userGuess,
@@ -847,7 +911,7 @@ export class User {
 
   watch(
     betPlaced: (event: UserBetPlaced) => Promise<void> | void,
-    betSettled: (event: UserBetSettled) => Promise<void> | void
+    betSettled: (event: UserBetSettled) => Promise<void> | void, user:any
   ) {
     this._programEventListeners.push(
       this.program.addEventListener(
@@ -869,6 +933,12 @@ export class User {
       this.program.addEventListener(
         "UserBetSettled",
         async (event: UserBetSettled, slot: number, signature: string) => {
+          console.log(signature, 'sign')
+          console.log(await user, 'user')
+          console.log(await user, 'USER=>check roundID')
+          console.log(event, event.roundId.toString(), 'VRF=>check roundID')
+          console.log( 'are equal?')
+            //TODO:// user.roundId === vrf.roundID
           if (!this.publicKey.equals(event.user)) {
             return;
           }

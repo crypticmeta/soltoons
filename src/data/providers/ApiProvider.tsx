@@ -474,21 +474,23 @@ class ApiState implements PrivateApiInterface {
 
     this.log(`Building bet request...`);
     this.log(`Bet Amount: ${bet}`);
-    
+
     this.dispatch(thunks.setResult({ status: 'waiting' }));
-    const request = await user.placeBetReq(
-      TOKENMINT,
-      this.gameMode,
-      guess,
-      new anchor.BN(bet * LAMPORTS_PER_SOL),
-      /* switchboardTokenAccount= */ undefined,
-      this.wallet.publicKey,
-      this.userRibsBalance
-    ).catch(err => {
-      
-    this.dispatch(thunks.setResult({ status: 'error' }));
-      console.log(err, 'err creating bet req')
-    });
+    const request = await user
+      .placeBetReq(
+        await this.user,
+        TOKENMINT,
+        this.gameMode,
+        guess,
+        new anchor.BN(bet * LAMPORTS_PER_SOL),
+        /* switchboardTokenAccount= */ undefined,
+        this.wallet.publicKey,
+        this.userRibsBalance
+      )
+      .catch((err) => {
+        this.dispatch(thunks.setResult({ status: 'error' }));
+        console.log(err, 'err creating bet req');
+      });
     // console.log(request.ixns, 'ixns')
     // request.ixns.map((item, idx) => {
     //   item.keys.map((key, i) => {
@@ -496,9 +498,48 @@ class ApiState implements PrivateApiInterface {
     //   })
     // })
 
-    if(request)
-    await this.packSignAndSubmit(request.ixns, request.signers);
+    // if (request) await this.packSignAndSubmit(request.ixns, request.signers);
     // this.dispatch(thunks.setLoading(false));
+    if (request) {
+      const program = await this.program;
+    const packed = await sbv2.packTransactions(
+      program.provider.connection,
+      [new anchor.web3.Transaction().add(...request.ixns)],
+      request.signers as anchor.web3.Keypair[],
+      this.wallet.publicKey
+    );
+    const signedTxs = await this.wallet.signAllTransactions(packed);
+
+    const sigs: string[] = [];
+    // await this.packSignAndSubmit(request.ixns, request.signers);
+
+    // Try to load the new user accounts.
+
+    for (let k = 0; k < packed.length; k += 1) {
+      const sig = await program.provider.connection
+        .sendRawTransaction(
+          signedTxs[k].serialize(),
+          // req.signers,
+          {
+            skipPreflight: false,
+            maxRetries: 10,
+          }
+        )
+        .catch((e) => {
+          console.log(e, 'error signing instruction');
+          if (e instanceof ApiError) throw e;
+        });
+      // console.log(sig, 'signed tx ', k);
+      if (sig)
+        await program.provider.connection.confirmTransaction(sig).catch((e) => {
+          console.log(e, 'error confirming transaction');
+          if (e instanceof ApiError) throw e;
+        });
+      if (sig) sigs.push(sig);
+      // console.log('sleeping for a sec');
+      await sleep(500);
+    }
+    }
   };
 
   private packSignAndSubmit = async (ixns: anchor.web3.TransactionInstruction[], signers: anchor.web3.Signer[]) => {
@@ -511,12 +552,17 @@ class ApiState implements PrivateApiInterface {
       this.wallet.publicKey
     );
 
-    // console.log(packed[0].instructions, 'packed')
-    // packed[0].instructions.map((item, idx) => {
-    //   item.keys.map((key, i) => {
-    //     console.log(key.pubkey.toBase58(), ' key ',i)
-    //   })
+    // console.log(packed.length, 'packed')
+    // packed.map((tx, i) => {
+    //   console.log(tx.signature, "sign of tx "+i)
+    //   tx.instructions.map((item, idx) => {
+    //     console.log(item.programId.toBase58(), ' handles this instruction')
+    //     item.keys.map((key, i) => {
+    //       console.log(key.pubkey.toBase58(), ' key ', i);
+    //     });
+    //   });
     // })
+    
 
     // Sign transactions.
     this.log(`Requesting user signature...`);
@@ -535,6 +581,7 @@ class ApiState implements PrivateApiInterface {
         throw ApiError.walletSignature();
       });
 
+    console.log('sending tx')
     // Submit transactions and await confirmation
     for (const tx of signed) {
       await program.provider.connection
@@ -750,7 +797,7 @@ class ApiState implements PrivateApiInterface {
 
         this.dispatch(thunks.setLoading(false));
         // await this.playPrompt();
-      }
+      }, await this.user
     );
     return user;
   };
