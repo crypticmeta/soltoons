@@ -671,38 +671,32 @@ export class User {
         )
       );
     }
-    const associatedTokenAcc = await getAssociatedTokenAddress(
-      TOKENMINT,
-      payerPubkey
-    );
+    // const associatedTokenAcc = await getAssociatedTokenAddress(
+    //   TOKENMINT,
+    //   payerPubkey
+    // );
     
-    //airdrop 1 wsol
-    const requiredBal = (betAmount.toNumber() + (0.002 * LAMPORTS_PER_SOL));
-    balance = Number(balance.toFixed(4))
-    // console.log("balance ", balance * LAMPORTS_PER_SOL, " < ", requiredBal, 'betAmount + wsol vrf fee ')
-    if((balance * LAMPORTS_PER_SOL) < requiredBal)
-    {
-      console.log('low balance')
-      ixns.push(
-      SystemProgram.transfer({
-        fromPubkey: payerPubkey,
-        toPubkey: associatedTokenAcc,
-        lamports: requiredBal-(balance*LAMPORTS_PER_SOL) ,
-      })
-    );
-    ixns.push(
-      createSyncNativeInstruction(associatedTokenAcc, TOKEN_PROGRAM_ID)
-      );
-    }
-    else {
-      console.log('enough balance')
-    }
-
-    console.log(TOKENMINT.toBase58(), 'token mint')
-    const vrfIxCoder = new anchor.BorshInstructionCoder(this.program.idl);
-    console.log(vrfIxCoder.encode("userSettle", {}), 'arg')
-    console.log(String.fromCharCode(...[145, 72, 9, 94, 61, 97, 126, 106]), 'arg2')
-    console.log(new anchor.BN(vrfIxCoder.encode("userSettle", {})).toArray(), 'h')
+    // //airdrop 1 wsol
+    // const requiredBal = (betAmount.toNumber() + (0.002 * LAMPORTS_PER_SOL));
+    // balance = Number(balance.toFixed(4))
+    // // console.log("balance ", balance * LAMPORTS_PER_SOL, " < ", requiredBal, 'betAmount + wsol vrf fee ')
+    // if((balance * LAMPORTS_PER_SOL) < requiredBal)
+    // {
+    //   console.log('low balance')
+    //   ixns.push(
+    //   SystemProgram.transfer({
+    //     fromPubkey: payerPubkey,
+    //     toPubkey: associatedTokenAcc,
+    //     lamports: requiredBal-(balance*LAMPORTS_PER_SOL) ,
+    //   })
+    // );
+    // ixns.push(
+    //   createSyncNativeInstruction(associatedTokenAcc, TOKEN_PROGRAM_ID)
+    //   );
+    // }
+    // else {
+    //   console.log('enough balance')
+    // }
     ixns.push(
       await this.program.methods
         .setCallback({})
@@ -933,12 +927,6 @@ export class User {
       this.program.addEventListener(
         "UserBetSettled",
         async (event: UserBetSettled, slot: number, signature: string) => {
-          console.log(signature, 'sign')
-          console.log(await user, 'user')
-          console.log(await user, 'USER=>check roundID')
-          console.log(event, event.roundId.toString(), 'VRF=>check roundID')
-          console.log( 'are equal?')
-            //TODO:// user.roundId === vrf.roundID
           if (!this.publicKey.equals(event.user)) {
             return;
           }

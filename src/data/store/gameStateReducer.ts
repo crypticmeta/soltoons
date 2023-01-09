@@ -24,6 +24,7 @@ export interface GameState {
   user: any;
   result: any;
   vaultBalance: number;
+  userVaultBalance: number;
 }
 
 /**
@@ -36,6 +37,7 @@ const initialState: GameState = {
   user: {},
   result: {},
   vaultBalance: 0,
+  userVaultBalance: 0,
 };
 
 /**
@@ -63,7 +65,7 @@ const gameStateSlice = createSlice({
       state.loading = action.payload
     },
     setUser: (state: GameState, action: PayloadAction<any>) => {
-      console.log('setting user = ', action.payload)
+      // console.log('setting user = ', action.payload)
       state.user = action.payload
     },
     setResult: (state: GameState, action: PayloadAction<any>) => {
@@ -74,8 +76,12 @@ const gameStateSlice = createSlice({
       console.log('setting vault balance = ', action.payload)
       state.vaultBalance = action.payload
     },
+    setUserVaultBalance: (state: GameState, action: PayloadAction<any>) => {
+      console.log('setting user vault balance = ', action.payload)
+      state.vaultBalance = action.payload
+    },
   },
 });
 
-export const { setUserBalance, setLoading, setUser, setResult, setVaultBalance } = gameStateSlice.actions;
+export const { setUserBalance, setLoading, setUser, setResult, setVaultBalance, setUserVaultBalance } = gameStateSlice.actions;
 export default gameStateSlice.reducer;

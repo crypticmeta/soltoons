@@ -3,6 +3,7 @@ import BN from "bn.js" // eslint-disable-line @typescript-eslint/no-unused-vars
 import * as borsh from "@project-serum/borsh" // eslint-disable-line @typescript-eslint/no-unused-vars
 import * as types from "../types" // eslint-disable-line @typescript-eslint/no-unused-vars
 import { PROGRAM_ID } from "../programId"
+import { stringify } from "uuid"
 
 export interface UserStateFields {
   bump: number
@@ -20,6 +21,7 @@ export interface UserStateFields {
 }
 
 export interface UserStateJSON {
+  publicKey?: String
   bump: number
   authority: string
   house: string
