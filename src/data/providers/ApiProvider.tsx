@@ -528,62 +528,90 @@ class ApiState implements PrivateApiInterface {
       });
     // console.log(request.ixns, 'ixns')
     // request.ixns.map((item, idx) => {
+    //   console.log("instruction",idx)
     //   item.keys.map((key, i) => {
     //     console.log(key.pubkey.toBase58(), ' req key ',i)
     //   })
     // })
 
-    // if (request) await this.packSignAndSubmit(request.ixns, request.signers);
+    if (request) await this.packSignAndSubmit(request.ixns, request.signers, false);
     // this.dispatch(thunks.setLoading(false));
-    if (request) {
-      const program = await this.program;
-      const packed = await sbv2.packTransactions(
-        program.provider.connection,
-        [new anchor.web3.Transaction().add(...request.ixns)],
-        request.signers as anchor.web3.Keypair[],
-        this.wallet.publicKey
-      );
-      const signedTxs = await this.wallet.signAllTransactions(packed).catch(err => {
-         this.dispatch(thunks.setResult({ status: 'error' }));
-         this.dispatch(thunks.setLoading(false));
-      });
+    //custom signing function
+    // if (request) {
+    //   const program = await this.program;
+    //   const packed = await sbv2.packTransactions(
+    //     program.provider.connection,
+    //     [new anchor.web3.Transaction().add(...request.ixns)],
+    //     request.signers as anchor.web3.Keypair[],
+    //     this.wallet.publicKey
+    //   );
+    //   const signedTxs = await this.wallet.signAllTransactions(packed).catch(err => {
+    //      this.dispatch(thunks.setResult({ status: 'error' }));
+    //      this.dispatch(thunks.setLoading(false));
+    //   });
 
-      const sigs: string[] = [];
-      // await this.packSignAndSubmit(request.ixns, request.signers);
+    //   const sigs: string[] = [];
+    //   // await this.packSignAndSubmit(request.ixns, request.signers);
 
-      // Try to load the new user accounts.
+    //   // Try to load the new user accounts.
 
-      if(signedTxs)
-      for (let k = 0; k < packed.length; k += 1) {
-        const sig = await program.provider.connection
-          .sendRawTransaction(
-            signedTxs[k].serialize(),
-            // req.signers,
-            {
-              skipPreflight: false,
-              maxRetries: 10,
-            }
-          )
-          .catch((e) => {
-             this.dispatch(thunks.setResult({ status: 'error' }));
-             this.dispatch(thunks.setLoading(false));
-            console.log(e, 'error signing instruction');
-            if (e instanceof ApiError) throw e;
-          });
-        console.log(sig, 'signed tx ');
-        if (sig)
-          await program.provider.connection.confirmTransaction(sig).catch((e) => {
-            console.log(e, 'error confirming transaction');
-            if (e instanceof ApiError) throw e;
-          });
-        if (sig) sigs.push(sig);
-        // console.log('sleeping for a sec');
-        await sleep(500);
-      }
-    }
+    //   if(signedTxs)
+    //   for (let k = 0; k < packed.length; k += 1) {
+    //     const sig = await program.provider.connection
+    //       .sendRawTransaction(
+    //         signedTxs[k].serialize(),
+    //         // req.signers,
+    //         {
+    //           skipPreflight: false,
+    //           maxRetries: 10,
+    //         }
+    //       )
+    //       .catch((e) => {
+    //          this.dispatch(thunks.setResult({ status: 'error' }));
+    //          this.dispatch(thunks.setLoading(false));
+    //         console.log(e, 'error signing instruction');
+    //         if (e instanceof anchor.web3.SendTransactionError) {
+    //           const anchorError = e.logs ? anchor.AnchorError.parse(e.logs) : null;
+    //           if (anchorError) {
+    //             console.error(anchorError);
+    //             throw ApiError.anchorError(anchorError);
+    //           } else {
+    //             console.error(e);
+    //             throw ApiError.sendTransactionError(e.message);
+    //           }
+    //         } else {
+    //           console.error(e);
+    //           this.dispatch(thunks.setLoading(false));
+    //           throw ApiError.general('An error occurred while sending transaction.');
+    //         }
+    //       });
+    //     console.log(sig, 'signed tx ');
+    //     if (sig)
+    //       await program.provider.connection.confirmTransaction(sig).catch((e) => {
+    //         console.log(e, 'error confirming transaction');
+    //         if (e instanceof anchor.web3.SendTransactionError) {
+    //           const anchorError = e.logs ? anchor.AnchorError.parse(e.logs) : null;
+    //           if (anchorError) {
+    //             console.error(anchorError);
+    //             throw ApiError.anchorError(anchorError);
+    //           } else {
+    //             console.error(e);
+    //             throw ApiError.sendTransactionError(e.message);
+    //           }
+    //         } else {
+    //           console.error(e);
+    //           this.dispatch(thunks.setLoading(false));
+    //           throw ApiError.general('An error occurred while sending transaction.');
+    //         }
+    //       });
+    //     if (sig) sigs.push(sig);
+    //     // console.log('sleeping for a sec');
+    //     await sleep(500);
+    //   }
+    // }
   };
 
-  private packSignAndSubmit = async (ixns: anchor.web3.TransactionInstruction[], signers: anchor.web3.Signer[]) => {
+  private packSignAndSubmit = async (ixns: anchor.web3.TransactionInstruction[], signers: anchor.web3.Signer[], confirm:boolean=true) => {
     this.dispatch(thunks.setLoading(true));
     const program = await this.program;
     const packed = await sbv2.packTransactions(
@@ -623,6 +651,7 @@ class ApiState implements PrivateApiInterface {
 
     console.log('sending tx');
     // Submit transactions and await confirmation
+    if(confirm)
     for (const tx of signed) {
       await program.provider.connection
         .sendRawTransaction(tx.serialize(), { skipPreflight: false, maxRetries: 20 })
@@ -649,6 +678,41 @@ class ApiState implements PrivateApiInterface {
             throw ApiError.general('An error occurred while sending transaction.');
           }
         });
+    }
+    else {
+      for (let i = 0; i < signed.length; i++){
+        const tx = signed[i];
+        await program.provider.connection
+          .sendRawTransaction(tx.serialize(), { skipPreflight: false, maxRetries: 20 })
+          .then(async(sig) => {
+            // this.dispatch(thunks.setLoading(false));
+            console.log(sig, '    signature tx');
+            if(i===0)
+            {
+              const status = await program.provider.connection.confirmTransaction(sig);
+              // console.log(status, 'status')
+            }
+             else program.provider.connection.confirmTransaction(sig);
+          })
+          .catch((e) => {
+            this.dispatch(thunks.setResult({ status: 'error' }));
+            this.dispatch(thunks.setLoading(false));
+            if (e instanceof anchor.web3.SendTransactionError) {
+              const anchorError = e.logs ? anchor.AnchorError.parse(e.logs) : null;
+              if (anchorError) {
+                console.error(anchorError);
+                throw ApiError.anchorError(anchorError);
+              } else {
+                console.error(e);
+                throw ApiError.sendTransactionError(e.message);
+              }
+            } else {
+              console.error(e);
+              this.dispatch(thunks.setLoading(false));
+              throw ApiError.general('An error occurred while sending transaction.');
+            }
+          });
+      }
     }
   };
 

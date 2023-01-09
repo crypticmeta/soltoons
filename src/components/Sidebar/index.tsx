@@ -190,7 +190,7 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
       <div className="part3 h-[35%] 2xl:h-[35%] bg-brand_yellow rounded-3xl border-4 border-black text-sm p-6 flex flex-col justify-between">
         {userAccountExists ? (
           <>
-            {userVaultBal > 0.037 && lastGameStatus.includes("Settled") ? (
+            {step===0 && userVaultBal > 0.0362616 &&  result.status!=="claimed" && lastGameStatus.includes('Settled') ? (
               <>
                 <button
                   onClick={() => {
@@ -251,7 +251,7 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
                 <div className="center space-x-4 flex-wrap text-sm md:text-xl">
                   <button
                     className="bg-[#a23acd] border-2 rounded-3xl border-black uppercase font-extrabold px-4 py-2 cursor-pointer"
-                    onClick={() => api.handleCommand("collect reward")}
+                    onClick={() => api.handleCommand('collect reward')}
                   >
                     Collect Reward
                   </button>
@@ -262,7 +262,6 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
                     Close
                   </button> */}
                 </div>
-                <p className="text-xs text-center pt-3">*This converts all your wsol to sol</p>
               </div>
             )}
           </div>

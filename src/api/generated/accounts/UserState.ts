@@ -21,7 +21,7 @@ export interface UserStateFields {
 }
 
 export interface UserStateJSON {
-  publicKey?: String
+  publicKey?: string
   bump: number
   authority: string
   house: string
