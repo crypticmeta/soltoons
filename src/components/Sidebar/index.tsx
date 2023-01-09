@@ -9,6 +9,7 @@ import { Severity } from '../../util/const';
 import Modal from '@mui/material/Modal';
 import { LAMPORTS_PER_SOL } from '@solana/web3.js';
 import LinearProgress from '@mui/material/LinearProgress';
+import useSound from 'use-sound';
 const Alert = React.forwardRef<HTMLDivElement, AlertProps>(function Alert(props, ref) {
   return <MuiAlert elevation={6} ref={ref} variant="filled" {...props} />;
 });
@@ -59,6 +60,15 @@ const WalletButton: React.FC = () => {
 };
 //@ts-ignore
 function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal }) {
+    const [playLoading, stopLoading] = useSound('/assets/audio/loading.m4a', {
+      volume: 0.7,
+    });
+    const [playWin, stopWin] = useSound('/assets/audio/win.m4a', {
+      volume: 1,
+    });
+  const [playLose, stopLose] = useSound('/assets/audio/lose.m4a', {
+    volume: 1,
+  });
   const [open, setOpen] = React.useState(false);
 
 
@@ -115,6 +125,7 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
       }, 100000);
     } else if (result && result.status === 'success') {
       // console.log('clearing timeout')
+      
       clearTimeout(timer);
     } else if (result && result.status === 'claimed') {
       handleModalClose()
@@ -124,7 +135,7 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
 
   useEffect(() => {
     let interval:any;
-    if (result.status ==="waiting" && wait<100 ) {
+    if (result.status === "waiting" && wait < 100) {
      interval = setInterval(() => {
         console.log(wait, 'second')
         setWait(wait+1)
@@ -133,8 +144,30 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
     else {
       clearInterval(interval);    
     }
-     return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval)
+    };
   }, [result, wait])
+
+  useEffect(() => {
+    if (result && result?.status === "waiting") {
+      
+      playLoading();
+    }
+    else if (result?.status === "success") {
+      stopLoading.stop();
+      if (result.userWon) {
+        playWin();
+        
+      } else {
+        playLose();
+      }
+    }
+    else {
+      stopLoading.stop();
+    }
+  }, [result])
+  
   
 
 
