@@ -404,14 +404,14 @@ class ApiState implements PrivateApiInterface {
     const ixns: TransactionInstruction[] = [];
     const house = await House.load(program, TOKENMINT);
     const associatedTokenAcc = await getAssociatedTokenAddress(TOKENMINT, payerPubkey);
-    ixns.push(
-      SystemProgram.transfer({
-        fromPubkey: payerPubkey,
-        toPubkey: associatedTokenAcc,
-        lamports: 0.002 * LAMPORTS_PER_SOL,
-      })
-    );
-    ixns.push(createSyncNativeInstruction(associatedTokenAcc, spl.TOKEN_PROGRAM_ID));
+    // ixns.push(
+    //   SystemProgram.transfer({
+    //     fromPubkey: payerPubkey,
+    //     toPubkey: associatedTokenAcc,
+    //     lamports: 0.002 * LAMPORTS_PER_SOL,
+    //   })
+    // );
+    // ixns.push(createSyncNativeInstruction(associatedTokenAcc, spl.TOKEN_PROGRAM_ID));
     ixns.push(
       await (
         await this.program
@@ -440,8 +440,9 @@ class ApiState implements PrivateApiInterface {
     const house = await House.load(program, TOKENMINT);
     // const associatedTokenAcc = await getAssociatedTokenAddress(TOKENMINT, payerPubkey);
     const data = await program.provider.connection.getBalance(house.publicKey)
-    if (data > 0) {
-      this.dispatch(thunks.setVaultBalance(data));
+    if (data && data > 0) {
+      console.log(data, 'setting this as vault balance')
+      this.dispatch(thunks.setVaultBalance(data/LAMPORTS_PER_SOL));
       this.log('Vault Balance Loaded');
     }
   };
@@ -659,7 +660,7 @@ class ApiState implements PrivateApiInterface {
       this.dispatch(thunks.setUserBalance({ sol: account ? account.lamports / LAMPORTS_PER_SOL : undefined }));
     };
     const onUserVaultAccountChange = (account: anchor.web3.AccountInfo<Buffer> | null) => {
-      this.dispatch(thunks.setUserVaultBalance({ sol: account ? account.lamports / LAMPORTS_PER_SOL : undefined }));
+      this.dispatch(thunks.setUserVaultBalance( account ? account.lamports / LAMPORTS_PER_SOL : undefined ));
     };
     const onRibsAccountChange = (account: anchor.web3.AccountInfo<Buffer> | null) => {
       // console.log(account, 'acc')

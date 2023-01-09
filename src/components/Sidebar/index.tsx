@@ -1,16 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import * as sbv2 from '@switchboard-xyz/switchboard-v2';
-import * as spl from '@solana/spl-token-v2';
 import { hooks, Store, thunks } from '../../data';
-import { useConnectedWallet, useWalletKit, useSolana } from '@gokiprotocol/walletkit';
+import { useConnectedWallet, useWalletKit } from '@gokiprotocol/walletkit';
 import { useSelector } from 'react-redux';
 import CircularProgress from '@mui/material/CircularProgress';
 import Snackbar from '@mui/material/Snackbar';
 import MuiAlert, { AlertProps } from '@mui/material/Alert';
 import { Severity } from '../../util/const';
-import * as anchor from 'anchor-24-2';
 import Modal from '@mui/material/Modal';
-import { LAMPORTS_PER_SOL, PublicKey } from '@solana/web3.js';
+import { LAMPORTS_PER_SOL } from '@solana/web3.js';
 const Alert = React.forwardRef<HTMLDivElement, AlertProps>(function Alert(props, ref) {
   return <MuiAlert elevation={6} ref={ref} variant="filled" {...props} />;
 });
@@ -76,8 +73,6 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
     setOpen(false);
   };
 
-  const { providerMut } = useSolana();
-  const wallet = useConnectedWallet();
   const api = hooks.useApi();
   const dispatch = hooks.useThunkDispatch();
   const logs = useSelector(({ HUDLogger }: Store) => HUDLogger.logs);

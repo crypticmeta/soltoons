@@ -80,7 +80,6 @@ function Admin() {
     const api = hooks.useApi();    
   const logs = useSelector(({ HUDLogger }: Store) => HUDLogger.logs);
     const vault_balance = useSelector((store: Store) => store.gameState.vaultBalance);
-    const balances = useSelector((store: Store) => store.gameState.userBalances);
     const wallet = useConnectedWallet();
       useEffect(() => {
         handleClick();
