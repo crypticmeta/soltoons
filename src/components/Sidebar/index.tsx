@@ -8,6 +8,7 @@ import MuiAlert, { AlertProps } from '@mui/material/Alert';
 import { Severity } from '../../util/const';
 import Modal from '@mui/material/Modal';
 import { LAMPORTS_PER_SOL } from '@solana/web3.js';
+import LinearProgress from '@mui/material/LinearProgress';
 const Alert = React.forwardRef<HTMLDivElement, AlertProps>(function Alert(props, ref) {
   return <MuiAlert elevation={6} ref={ref} variant="filled" {...props} />;
 });
@@ -83,6 +84,7 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
     const userVaultBal = useSelector((store: Store) => store.gameState.userVaultBalance);
   const [userAccountExists, setUserAccountExists] = useState(true);
   const [lastGameStatus, setLastGameStatus] = useState("");
+  const [wait, setWait] = useState(0)
   useEffect(() => {
     // console.log(logs, 'LOGS');
     if (logs && logs[0]?.severity === 'error') {
@@ -105,11 +107,12 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
     let timer: any;
     if (result && result.status === 'waiting') {
       // console.log('starting timer');
+      setWait(1)
       timer = setTimeout(() => {
         dispatch(thunks.setLoading(false));
         dispatch(thunks.log({ message: 'Failed to get result. Your funds are safe.', severity: Severity.Error }));
         dispatch(thunks.setResult({ status: 'error' }));
-      }, 80000);
+      }, 100000);
     } else if (result && result.status === 'success') {
       // console.log('clearing timeout')
       clearTimeout(timer);
@@ -119,6 +122,20 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
     return () => clearTimeout(timer);
   }, [dispatch, handleModalClose, result]);
 
+  useEffect(() => {
+    let interval:any;
+    if (result.status ==="waiting" && wait<100 ) {
+     interval = setInterval(() => {
+        console.log(wait, 'second')
+        setWait(wait+1)
+     },1000)
+    }
+    else {
+      clearInterval(interval);    
+    }
+     return () => clearInterval(interval);
+  }, [result, wait])
+  
 
 
   return (
@@ -190,7 +207,8 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
       <div className="part3 h-[35%] 2xl:h-[35%] bg-brand_yellow rounded-3xl border-4 border-black text-sm p-6 flex flex-col justify-between">
         {userAccountExists ? (
           <>
-            {step===0 && userVaultBal > 0.0362616 &&  result.status!=="claimed" && lastGameStatus.includes('Settled') ? (
+            {/* {console.log(step === 0, userVaultBal > 0.0362616, !result?.status, lastGameStatus.includes('Settled'))} */}
+            {step === 0 && userVaultBal > 0.0362616 && !result?.status && lastGameStatus.includes('Settled') ? (
               <>
                 <button
                   onClick={() => {
@@ -209,6 +227,7 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
                 api={api}
                 balances={balances}
                 result={result}
+                wait={wait}
               />
             )}
           </>
@@ -282,12 +301,16 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
 }
 
 //@ts-ignore
-const Play = ({amount, setAmount, api, balances, loading, result}) => {
+const Play = ({amount, setAmount, api, balances, loading, result, wait}) => {
   return (
     <>
       {loading && result?.status === 'waiting' ? (
-        <div className="center h-full text-white border-white">
-          <CircularProgress color="inherit" />
+        <div className="center h-full text-white border-white p-6">
+          {/* <CircularProgress color="inherit" /> */}
+          <img src="/assets/images/coin-transparent.gif" alt="loading" />
+          {/* <div className="bg-red-00 w-full">
+            <LinearProgress sx={{ height: 10, borderRadius: '30px' }} variant="determinate" value={wait} />
+          </div> */}
         </div>
       ) : (
         <>
@@ -317,8 +340,10 @@ const Play = ({amount, setAmount, api, balances, loading, result}) => {
               {/* <span className="pl-4">
                 {Number(result && result.status === 'claimed' ? 0 : balances.ribs || 0).toFixed(4)} wsol
               </span> */}
-              </p>
-              {Number(amount)>2 && (<p className='text-red-800 text-xs pt-2 text-center'>Amount should be less than 2 SOL</p>)}
+            </p>
+            {Number(amount) > 2 && (
+              <p className="text-red-800 text-xs pt-2 text-center">Amount should be less than 2 SOL</p>
+            )}
           </div>
         </>
       )}
