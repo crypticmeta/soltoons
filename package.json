@@ -20,6 +20,7 @@
     "@switchboard-xyz/sbv2-utils": "^0.1.53",
     "@switchboard-xyz/switchboard-v2": "^0.0.159",
     "anchor-24-2": "npm:@project-serum/anchor@0.24.2",
+    "axios": "^1.2.2",
     "big.js": "^6.2.1",
     "chalk": "4",
     "dateformat": "^5.0.3",

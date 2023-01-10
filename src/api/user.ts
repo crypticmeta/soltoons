@@ -318,8 +318,8 @@ export class User {
     const testing = process.env.REACT_APP_TESTING;
     const escrowKeypair = anchor.web3.Keypair.generate();
     const vrfSecret = anchor.web3.Keypair.generate();
-    const vrf = new PublicKey("GaUk1U5EMQZdbPapL1b5qJHvEZy2hukcLiSnjvzin1M7")
-    console.log(testing !== "true" ? "using vrfSecret" :"using static vrf = GaUk1U5EMQZdbPapL1b5qJHvEZy2hukcLiSnjvzin1M7")
+    const vrf = new PublicKey("3r9hCdNhQPqh1ZcWTjgNkTRhHHBmgUScKKaWZt1zjzKn")
+    console.log(testing !== "true" ? "using vrfSecret" :"using static vrf = 3r9hCdNhQPqh1ZcWTjgNkTRhHHBmgUScKKaWZt1zjzKn")
 
     const [userKey, userBump] = User.fromSeeds(
       program,
@@ -486,7 +486,7 @@ export class User {
   }
 
   async placeBet(
-    user: User,
+    vrf: PublicKey,
     TOKENMINT: PublicKey,
     gameType: GameTypeValue,
     userGuess: number,
@@ -495,7 +495,7 @@ export class User {
     payerPubkey = programWallet(this.program as any).publicKey
   ): Promise<string> {
     const req = await this.placeBetReq(
-      user,
+      vrf,
       TOKENMINT,
       gameType,
       userGuess,
@@ -554,7 +554,7 @@ export class User {
   }
 
   async placeBetReq(
-    user: User,
+    vrf: PublicKey,
     TOKENMINT:PublicKey,
     gameType: GameTypeValue,
     userGuess: number,
@@ -577,7 +577,7 @@ export class User {
       this.program.provider as anchor.AnchorProvider
     );
 
-    const vrfContext = await loadVrfContext(switchboard, this.state.vrf);
+    const vrfContext = await loadVrfContext(switchboard, vrf);
 
     let payersWrappedSolBalance: anchor.BN;
     let payerSwitchTokenAccount: PublicKey;
@@ -697,25 +697,30 @@ export class User {
     // else {
     //   console.log('enough balance')
     // }
-    ixns.push(
-      await this.program.methods
-        .setCallback({})
-        .accounts({
-          user: this.publicKey,
-          house: this.state.house,
-          mint: TOKENMINT,
-          houseVault: house.state.houseVault,
-          authority: this.state.authority,
-          escrow: this.state.escrow,
-          vrfPayer: payerSwitchTokenAccount,
-          ...vrfContext.publicKeys,
-          payer: payerPubkey,
-          flipPayer: this.state.rewardAddress,
-          recentBlockhashes: SYSVAR_RECENT_BLOCKHASHES_PUBKEY,
-          tokenProgram: spl.TOKEN_PROGRAM_ID,
-        })
-        .instruction()
-    );
+
+    console.log(vrfContext, 'vrfContext',
+      vrfContext.publicKeys.permission.toBase58(), 'permission')
+    console.log(vrfContext.publicKeys.vrf.toBase58())
+    //Enable below for setCallback
+    // ixns.push(
+    //   await this.program.methods
+    //     .setCallback({})
+    //     .accounts({
+    //       user: this.publicKey,
+    //       house: this.state.house,
+    //       mint: TOKENMINT,
+    //       houseVault: house.state.houseVault,
+    //       authority: this.state.authority,
+    //       escrow: this.state.escrow,
+    //       vrfPayer: payerSwitchTokenAccount,
+    //       ...vrfContext.publicKeys,
+    //       payer: payerPubkey,
+    //       flipPayer: this.state.rewardAddress,
+    //       recentBlockhashes: SYSVAR_RECENT_BLOCKHASHES_PUBKEY,
+    //       tokenProgram: spl.TOKEN_PROGRAM_ID,
+    //     })
+    //     .instruction()
+    // );
 
     ixns.push(
       await this.program.methods

@@ -2,7 +2,7 @@ import { useConnectedWallet } from '@gokiprotocol/walletkit';
 import * as anchor from '@project-serum/anchor';
 import { ConnectedWallet } from '@saberhq/use-solana';
 import * as spl from '@solana/spl-token-v2';
-import { createSyncNativeInstruction, getAssociatedTokenAddress } from '@solana/spl-token-v2';
+import {  getAssociatedTokenAddress } from '@solana/spl-token-v2';
 import { SystemProgram, SYSVAR_RECENT_BLOCKHASHES_PUBKEY } from '@solana/web3.js';
 import { LAMPORTS_PER_SOL, PublicKey, TransactionInstruction } from '@solana/web3.js';
 import { sleep } from '@switchboard-xyz/sbv2-utils';
@@ -531,7 +531,7 @@ class ApiState implements PrivateApiInterface {
     this.dispatch(thunks.setResult({ status: 'waiting' }));
     const request = await user
       .placeBetReq(
-        await this.user,
+        new PublicKey('BNWo1Xzh6w2KfgyDwx7XbARVTVPh6FVxMfgDoWXTb9uW'),
         TOKENMINT,
         this.gameMode,
         guess,
