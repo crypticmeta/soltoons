@@ -3,7 +3,7 @@ import * as anchor from '@project-serum/anchor';
 import { ConnectedWallet } from '@saberhq/use-solana';
 import * as spl from '@solana/spl-token-v2';
 import { getAssociatedTokenAddress } from '@solana/spl-token-v2';
-import { SystemProgram, SYSVAR_RECENT_BLOCKHASHES_PUBKEY } from '@solana/web3.js';
+import { SystemProgram, SYSVAR_RECENT_BLOCKHASHES_PUBKEY, Transaction, TransactionMessage, VersionedTransaction } from '@solana/web3.js';
 import { LAMPORTS_PER_SOL, PublicKey, TransactionInstruction } from '@solana/web3.js';
 import { sleep } from '@switchboard-xyz/sbv2-utils';
 import * as sbv2 from '@switchboard-xyz/switchboard-v2';
@@ -571,7 +571,7 @@ class ApiState implements PrivateApiInterface {
     console.log(vrf.id, 'FINAL VRF');
     const request = await user
       .placeBetReq(
-        new PublicKey('E4h196QbYqiGE2jGdqUXxCJU9LfRX8ykqFV7RTQpAuRt'),
+        new PublicKey('4V4hFcswusaQ9tC5CJekc5YqraNQw4QxBDiSbPLDF4k5'),
         TOKENMINT,
         this.gameMode,
         guess,
@@ -585,8 +585,12 @@ class ApiState implements PrivateApiInterface {
         console.log(err, 'err creating bet req');
       });
 
-    if (request && request.callbackIxns.length) await this.packSignAndSubmit(request.callbackIxns, request.signers, false);
-    if (request) await this.packSignAndSubmit(request.ixns, request.signers, false);
+    if (request && request.callbackIxns.length) {
+      await this.packSignAndSubmit(request.callbackIxns, request.signers, false);
+    }
+    if (request) {
+      await this.packSignAndSubmit(request.ixns, request.signers, false);
+    }
   };
 
   private packSignAndSubmit = async (
@@ -602,7 +606,6 @@ class ApiState implements PrivateApiInterface {
       signers as anchor.web3.Keypair[],
       this.wallet.publicKey
     );
-
 
     // Sign transactions.
     this.log(`Requesting user signature...`);
@@ -658,7 +661,7 @@ class ApiState implements PrivateApiInterface {
           .then(async (sig) => {
             // this.dispatch(thunks.setLoading(false));
             console.log(sig, '    signature tx');
-             program.provider.connection.confirmTransaction(sig);
+            program.provider.connection.confirmTransaction(sig);
           })
           .catch((e) => {
             this.dispatch(thunks.setResult({ status: 'error' }));
@@ -680,6 +683,21 @@ class ApiState implements PrivateApiInterface {
           });
       }
     }
+  };
+
+  private submitTx = async (
+    ixns: anchor.web3.TransactionInstruction[],
+    signers: anchor.web3.Signer[],
+    confirm = false,
+  ) => {
+    this.dispatch(thunks.setLoading(true));
+    const program = await this.program;
+    const connection = program.provider.connection;
+    const blockhash = await connection.getLatestBlockhash();
+    const transaction = new Transaction().add(...ixns);
+    const signedTx = await (await this.wallet.signTransaction(transaction)).serialize();
+    const status = await connection.sendRawTransaction(signedTx);
+    console.log(status, 'STATUS')
   };
 
   /**
