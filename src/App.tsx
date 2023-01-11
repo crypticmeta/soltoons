@@ -26,8 +26,7 @@ const App: React.FC = () => {
       defaultNetwork={process.env.REACT_APP_NETWORK == 'devnet' ? 'devnet' : 'mainnet-beta'}
       networkConfigs={{
         'mainnet-beta': {
-          endpoint:
-            'https://warmhearted-greatest-emerald.solana-mainnet.quiknode.pro/2b6bcf328ed2611d4d293c2aaa027f3139acb0af/',
+          endpoint: process.env.REACT_APP_RPC,
         },
       }}
       initialStep={ModalStep.Select}

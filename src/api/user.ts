@@ -318,7 +318,7 @@ export class User {
     const testing = process.env.REACT_APP_TESTING;
     const escrowKeypair = anchor.web3.Keypair.generate();
     const vrfSecret = anchor.web3.Keypair.generate();
-    const vrf = new PublicKey("3r9hCdNhQPqh1ZcWTjgNkTRhHHBmgUScKKaWZt1zjzKn")
+    const vrf = process.env.REACT_APP_NETWORK === "" ? new PublicKey("3r9hCdNhQPqh1ZcWTjgNkTRhHHBmgUScKKaWZt1zjzKn") : new PublicKey("BbhoscM2Za4zNNLohLvSMkdNTDkfQwPgiWN8MAsbr36o")
     console.log(testing !== "true" ? "using vrfSecret" :"using static vrf = 3r9hCdNhQPqh1ZcWTjgNkTRhHHBmgUScKKaWZt1zjzKn")
 
     const [userKey, userBump] = User.fromSeeds(
@@ -562,7 +562,7 @@ export class User {
     switchboardTokenAccount?: PublicKey,
     payerPubkey = programWallet(this.program as any).publicKey,
     balance = 0,
-  ): Promise<{ ixns: TransactionInstruction[]; signers: Signer[] }> {
+  ): Promise<{ callbackIxns: TransactionInstruction[]; ixns: TransactionInstruction[]; signers: Signer[] }> {
     try {
       await verifyPayerBalance(this.program.provider.connection, payerPubkey);
     } catch { }
@@ -571,6 +571,7 @@ export class User {
 
     const signers: Signer[] = [];
     const ixns: TransactionInstruction[] = [];
+    const callbackIxns: TransactionInstruction[] = [];
     const house = await House.load(this.program, TOKENMINT);
 
     const switchboard = await loadSwitchboard(
@@ -643,7 +644,6 @@ export class User {
         false
       );
     
-
       signers.push(ephemeralAccount);
       ixns.push(
         spl.createAssociatedTokenAccountInstruction(
@@ -652,6 +652,7 @@ export class User {
           ephemeralAccount.publicKey,
           spl.NATIVE_MINT
         ),
+        //transfer 0.002 sol from wallet to wsol
         SystemProgram.transfer({
           fromPubkey: payerPubkey,
           toPubkey: ephemeralWallet,
@@ -671,6 +672,27 @@ export class User {
         )
       );
     }
+
+    //Enable below for setCallback
+    callbackIxns.push(
+      await this.program.methods
+        .setCallback({})
+        .accounts({
+          user: this.publicKey,
+          house: this.state.house,
+          mint: TOKENMINT,
+          houseVault: house.state.houseVault,
+          authority: this.state.authority,
+          escrow: this.state.escrow,
+          vrfPayer: payerSwitchTokenAccount,
+          ...vrfContext.publicKeys,
+          payer: payerPubkey,
+          flipPayer: this.state.rewardAddress,
+          recentBlockhashes: SYSVAR_RECENT_BLOCKHASHES_PUBKEY,
+          tokenProgram: spl.TOKEN_PROGRAM_ID,
+        })
+        .instruction()
+    );
     // const associatedTokenAcc = await getAssociatedTokenAddress(
     //   TOKENMINT,
     //   payerPubkey
@@ -698,30 +720,14 @@ export class User {
     //   console.log('enough balance')
     // }
 
-    console.log(vrfContext, 'vrfContext',
-      vrfContext.publicKeys.permission.toBase58(), 'permission')
-    console.log(vrfContext.publicKeys.vrf.toBase58())
-    //Enable below for setCallback
-    // ixns.push(
-    //   await this.program.methods
-    //     .setCallback({})
-    //     .accounts({
-    //       user: this.publicKey,
-    //       house: this.state.house,
-    //       mint: TOKENMINT,
-    //       houseVault: house.state.houseVault,
-    //       authority: this.state.authority,
-    //       escrow: this.state.escrow,
-    //       vrfPayer: payerSwitchTokenAccount,
-    //       ...vrfContext.publicKeys,
-    //       payer: payerPubkey,
-    //       flipPayer: this.state.rewardAddress,
-    //       recentBlockhashes: SYSVAR_RECENT_BLOCKHASHES_PUBKEY,
-    //       tokenProgram: spl.TOKEN_PROGRAM_ID,
-    //     })
-    //     .instruction()
-    // );
+    console.log(vrfContext.publicKeys.permission.toBase58(), 'permission')
+    console.log(vrfContext.publicKeys.switchboardProgramState.toBase58(), 'programState')
+    console.log(vrfContext.publicKeys.oracleQueue.toBase58(),'queue')
+    console.log(vrfContext.publicKeys.vrf.toBase58(), 'vrf')
+    console.log(vrfContext.publicKeys.vrfEscrow.toBase58(), 'vrf escrow');
+    console.log(payerSwitchTokenAccount.toBase58(), 'vrfPayer')
 
+   
     ixns.push(
       await this.program.methods
         .userBet({
@@ -747,7 +753,7 @@ export class User {
     );
 
 
-    return { ixns, signers };
+    return { callbackIxns, ixns, signers };
   }
 
   async awaitFlip(

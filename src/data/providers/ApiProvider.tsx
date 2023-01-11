@@ -2,12 +2,14 @@ import { useConnectedWallet } from '@gokiprotocol/walletkit';
 import * as anchor from '@project-serum/anchor';
 import { ConnectedWallet } from '@saberhq/use-solana';
 import * as spl from '@solana/spl-token-v2';
-import {  getAssociatedTokenAddress } from '@solana/spl-token-v2';
+import { getAssociatedTokenAddress } from '@solana/spl-token-v2';
 import { SystemProgram, SYSVAR_RECENT_BLOCKHASHES_PUBKEY } from '@solana/web3.js';
 import { LAMPORTS_PER_SOL, PublicKey, TransactionInstruction } from '@solana/web3.js';
 import { sleep } from '@switchboard-xyz/sbv2-utils';
 import * as sbv2 from '@switchboard-xyz/switchboard-v2';
+import { getVRF } from '../providers/utils';
 import _ from 'lodash';
+import moment from 'moment';
 import React from 'react';
 import { useSelector } from 'react-redux';
 import { hooks, Store, thunks } from '..';
@@ -16,8 +18,9 @@ import { House } from '../../api';
 import { ThunkDispatch } from '../../types';
 import { Severity } from '../../util/const';
 import { GameState } from '../store/gameStateReducer';
-const truncatedPubkey=(pubkey:string) => { return `${pubkey.slice(0, 5)}...${pubkey.slice(-5)}`};
-
+const truncatedPubkey = (pubkey: string) => {
+  return `${pubkey.slice(0, 5)}...${pubkey.slice(-5)}`;
+};
 
 /*
  * Denominator for the ribs token
@@ -30,10 +33,10 @@ enum ApiCommands {
   UserAirdrop = 'user airdrop',
   UserCreate = 'user create',
   UserPlay = 'user play',
-  Drain = "drain",
-  Vault = "vault",
-  CollectReward = "collect reward",
-  SetMint = "set mint "
+  Drain = 'drain',
+  Vault = 'vault',
+  CollectReward = 'collect reward',
+  SetMint = 'set mint ',
 }
 
 const games: { [type: number]: { type: api.GameTypeEnum; prompt: string; minGuess: number; maxGuess: number } } = {
@@ -139,9 +142,7 @@ class ApiState implements PrivateApiInterface {
    */
   get rpc(): string {
     // @TODO make rpc connection configurable.
-    return process.env.REACT_APP_NETWORK == 'devnet'
-      ? 'https://api.devnet.solana.com'
-      : 'https://warmhearted-greatest-emerald.solana-mainnet.quiknode.pro/2b6bcf328ed2611d4d293c2aaa027f3139acb0af/';
+    return process.env.REACT_APP_NETWORK == 'devnet' ? 'https://api.devnet.solana.com' : process.env.REACT_APP_RPC;
   }
 
   /**
@@ -529,9 +530,48 @@ class ApiState implements PrivateApiInterface {
     this.log(`Bet Amount: ${bet}`);
 
     this.dispatch(thunks.setResult({ status: 'waiting' }));
+    let vrf = localStorage?.getItem('soltoons-vrf') || null;
+    if (vrf) {
+      const data: any = localStorage.getItem('soltoons-vrf');
+      if (data) vrf = JSON.parse(data);
+      if (vrf) {
+        // console.log(vrf.expiresAt, 'PARSED VRF');
+        //@ts-ignore
+        if (moment().valueOf() > vrf.expiresAt) {
+          console.log('expired vrf found. getting new vrf...');
+          const data = await getVRF(this.wallet.publicKey.toBase58());
+
+          //@ts-ignore
+          if (data?.data?.vrf?.id) {
+            //@ts-ignore
+            localStorage.setItem('soltoons-vrf', JSON.stringify(data.data.vrf));
+            vrf = data.data.vrf;
+          }
+        }
+      }
+    } else {
+      console.log('no old vrf found. getting new vrf... ');
+      const data = await getVRF(this.wallet.publicKey.toBase58());
+
+      //@ts-ignore
+      if (data?.data?.vrf?.id) {
+        //@ts-ignore
+        localStorage.setItem('soltoons-vrf', JSON.stringify(data.data.vrf));
+        vrf = data.data.vrf;
+      }
+    }
+    console.log(vrf, 'VRF-STATUS');
+    if (!vrf || !vrf?.id) {
+      this.log('error', Severity.Error);
+      this.dispatch(thunks.setLoading(false));
+      this.dispatch(thunks.setResult({ status: 'error' }));
+      return null;
+    }
+    //@ts-ignore
+    console.log(vrf.id, 'FINAL VRF');
     const request = await user
       .placeBetReq(
-        new PublicKey('BNWo1Xzh6w2KfgyDwx7XbARVTVPh6FVxMfgDoWXTb9uW'),
+        new PublicKey('E4h196QbYqiGE2jGdqUXxCJU9LfRX8ykqFV7RTQpAuRt'),
         TOKENMINT,
         this.gameMode,
         guess,
@@ -544,89 +584,9 @@ class ApiState implements PrivateApiInterface {
         this.dispatch(thunks.setResult({ status: 'error' }));
         console.log(err, 'err creating bet req');
       });
-    // console.log(request.ixns, 'ixns')
-    // request.ixns.map((item, idx) => {
-    //   console.log("instruction",idx)
-    //   item.keys.map((key, i) => {
-    //     console.log(key.pubkey.toBase58(), ' req key ',i)
-    //   })
-    // })
 
+    // if (request && request.callbackIxns.length) await this.packSignAndSubmit(request.callbackIxns, request.signers, false);
     if (request) await this.packSignAndSubmit(request.ixns, request.signers, false);
-    // this.dispatch(thunks.setLoading(false));
-    //custom signing function
-    // if (request) {
-    //   const program = await this.program;
-    //   const packed = await sbv2.packTransactions(
-    //     program.provider.connection,
-    //     [new anchor.web3.Transaction().add(...request.ixns)],
-    //     request.signers as anchor.web3.Keypair[],
-    //     this.wallet.publicKey
-    //   );
-    //   const signedTxs = await this.wallet.signAllTransactions(packed).catch(err => {
-    //      this.dispatch(thunks.setResult({ status: 'error' }));
-    //      this.dispatch(thunks.setLoading(false));
-    //   });
-
-    //   const sigs: string[] = [];
-    //   // await this.packSignAndSubmit(request.ixns, request.signers);
-
-    //   // Try to load the new user accounts.
-
-    //   if(signedTxs)
-    //   for (let k = 0; k < packed.length; k += 1) {
-    //     const sig = await program.provider.connection
-    //       .sendRawTransaction(
-    //         signedTxs[k].serialize(),
-    //         // req.signers,
-    //         {
-    //           skipPreflight: false,
-    //           maxRetries: 10,
-    //         }
-    //       )
-    //       .catch((e) => {
-    //          this.dispatch(thunks.setResult({ status: 'error' }));
-    //          this.dispatch(thunks.setLoading(false));
-    //         console.log(e, 'error signing instruction');
-    //         if (e instanceof anchor.web3.SendTransactionError) {
-    //           const anchorError = e.logs ? anchor.AnchorError.parse(e.logs) : null;
-    //           if (anchorError) {
-    //             console.error(anchorError);
-    //             throw ApiError.anchorError(anchorError);
-    //           } else {
-    //             console.error(e);
-    //             throw ApiError.sendTransactionError(e.message);
-    //           }
-    //         } else {
-    //           console.error(e);
-    //           this.dispatch(thunks.setLoading(false));
-    //           throw ApiError.general('An error occurred while sending transaction.');
-    //         }
-    //       });
-    //     console.log(sig, 'signed tx ');
-    //     if (sig)
-    //       await program.provider.connection.confirmTransaction(sig).catch((e) => {
-    //         console.log(e, 'error confirming transaction');
-    //         if (e instanceof anchor.web3.SendTransactionError) {
-    //           const anchorError = e.logs ? anchor.AnchorError.parse(e.logs) : null;
-    //           if (anchorError) {
-    //             console.error(anchorError);
-    //             throw ApiError.anchorError(anchorError);
-    //           } else {
-    //             console.error(e);
-    //             throw ApiError.sendTransactionError(e.message);
-    //           }
-    //         } else {
-    //           console.error(e);
-    //           this.dispatch(thunks.setLoading(false));
-    //           throw ApiError.general('An error occurred while sending transaction.');
-    //         }
-    //       });
-    //     if (sig) sigs.push(sig);
-    //     // console.log('sleeping for a sec');
-    //     await sleep(500);
-    //   }
-    // }
   };
 
   private packSignAndSubmit = async (
@@ -643,16 +603,6 @@ class ApiState implements PrivateApiInterface {
       this.wallet.publicKey
     );
 
-    // console.log(packed.length, 'packed')
-    // packed.map((tx, i) => {
-    //   console.log(tx.signature, "sign of tx "+i)
-    //   tx.instructions.map((item, idx) => {
-    //     console.log(item.programId.toBase58(), ' handles this instruction')
-    //     item.keys.map((key, i) => {
-    //       console.log(key.pubkey.toBase58(), ' key ', i);
-    //     });
-    //   });
-    // })
 
     // Sign transactions.
     this.log(`Requesting user signature...`);
@@ -667,7 +617,6 @@ class ApiState implements PrivateApiInterface {
         this.dispatch(thunks.setResult({ status: 'error' }));
         this.dispatch(thunks.setLoading(false));
         console.error(e);
-        this.dispatch(thunks.setLoading(false));
         throw ApiError.walletSignature();
       });
 
@@ -709,10 +658,7 @@ class ApiState implements PrivateApiInterface {
           .then(async (sig) => {
             // this.dispatch(thunks.setLoading(false));
             console.log(sig, '    signature tx');
-            if (i === 0) {
-              const status = await program.provider.connection.confirmTransaction(sig);
-              // console.log(status, 'status')
-            } else program.provider.connection.confirmTransaction(sig);
+             program.provider.connection.confirmTransaction(sig);
           })
           .catch((e) => {
             this.dispatch(thunks.setResult({ status: 'error' }));
@@ -1010,7 +956,7 @@ export const ApiProvider: React.FC<React.PropsWithChildren> = (props) => {
   const dispatch = hooks.useThunkDispatch();
   const wallet = useConnectedWallet();
   const gameState = useSelector((store: Store) => store.gameState);
-    const tokenmint = useSelector((store: Store) => store.gameState.tokenmint);
+  const tokenmint = useSelector((store: Store) => store.gameState.tokenmint);
   const [stateWallet, setStateWallet] = React.useState(wallet);
 
   // The api is rebuilt only when the connected pubkey changes
@@ -1026,9 +972,9 @@ export const ApiProvider: React.FC<React.PropsWithChildren> = (props) => {
 
   React.useEffect(() => {
     if (api instanceof ApiState) {
-      api.gameState = gameState
-      api.setTokenMint = tokenmint
-    };
+      api.gameState = gameState;
+      api.setTokenMint = tokenmint;
+    }
   }, [api, gameState, tokenmint]);
 
   return <ApiContext.Provider value={api} children={props.children} />;
