@@ -587,12 +587,12 @@ class ApiState implements PrivateApiInterface {
         console.log(err, 'err creating bet req');
       });
     
-    // if (request && request.callbackIxns.length) {
-    //   await this.packSignAndSubmit(request.callbackIxns, request.signers, false);
-    // }
-    if (request) {
-      await this.packSignAndSubmit(request.ixns, request.signers, false);
+    if (request && request.callbackIxns.length) {
+      await this.packSignAndSubmit(request.callbackIxns, request.signers, false);
     }
+    // if (request) {
+    //   await this.packSignAndSubmit(request.ixns, request.signers, false);
+    // }
   };
 
   private packSignAndSubmit = async (
