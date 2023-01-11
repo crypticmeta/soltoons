@@ -23,7 +23,7 @@ const App: React.FC = () => {
   return (
     <WalletKitProvider
       app={{ name: 'Soltoons' }}
-      defaultNetwork={process.env.REACT_APP_NETWORK == 'devnet' ? 'devnet' : 'mainnet-beta'}
+      defaultNetwork={process.env.REACT_APP_NETWORK === 'devnet' ? 'devnet' : 'mainnet-beta'}
       networkConfigs={{
         'mainnet-beta': {
           endpoint: process.env.REACT_APP_RPC,

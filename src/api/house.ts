@@ -1,23 +1,15 @@
-import * as anchor from "@project-serum/anchor";
-import * as anchor24 from "anchor-24-2";
-import * as spl from "@solana/spl-token-v2";
-import {
-  PublicKey,
-  Signer,
-  Transaction,
-  TransactionInstruction,
-} from "@solana/web3.js";
-import { sleep } from "@switchboard-xyz/sbv2-utils";
-import {
-  OracleQueueAccount,
-  programWallet,
-} from "@switchboard-xyz/switchboard-v2";
-import { HouseState, HouseStateJSON } from "./generated/accounts";
-import { FlipProgram } from "./types";
+import * as anchor from '@project-serum/anchor';
+import * as spl from '@solana/spl-token-v2';
+import { PublicKey, Signer, Transaction, TransactionInstruction } from '@solana/web3.js';
+import { sleep } from '@switchboard-xyz/common';
+import { QueueAccount, SwitchboardProgram } from '@switchboard-xyz/solana.js';
+import { HouseState, HouseStateJSON } from './generated/accounts';
+import { FlipProgram } from './types';
+import { programWallet } from '../util/wallet';
 
 export class HouseAccountDoesNotExist extends Error {
-  readonly name = "HouseAccountDoesNotExist";
-  readonly msg = "Failed to fetch the HouseState account.";
+  readonly name = 'HouseAccountDoesNotExist';
+  readonly msg = 'Failed to fetch the HouseState account.';
 
   constructor() {
     super("HouseAccountDoesNotExist: Failed to fetch the HouseState account.");
@@ -64,17 +56,17 @@ export class House {
     };
   }
 
-  getQueueAccount(switchboardProgram: anchor24.Program): OracleQueueAccount {
-    const queueAccount = new OracleQueueAccount({
-      program: switchboardProgram as any,
-      publicKey: this.state.switchboardQueue,
-    });
+  getQueueAccount(switchboardProgram: SwitchboardProgram): QueueAccount {
+    const queueAccount = new QueueAccount(
+      switchboardProgram,
+      this.state.switchboardQueue,
+    );
     return queueAccount;
   }
 
   static async create(
     program: FlipProgram,
-    switchboardQueue: OracleQueueAccount,
+    switchboardQueue: QueueAccount,
     TOKENMINT: PublicKey,
     mintKeypair = anchor.web3.Keypair.generate(),
   ): Promise<House> {
@@ -104,7 +96,7 @@ export class House {
 
   static async createReq(
     program: FlipProgram,
-    switchboardQueue: OracleQueueAccount,
+    switchboardQueue: QueueAccount,
     mintKeypair = anchor.web3.Keypair.generate(),
     TOKENMINT:PublicKey
   ): Promise<{
@@ -112,10 +104,8 @@ export class House {
     signers: Signer[];
     account: PublicKey;
   }> {
-    const payer = programWallet(program as any);
+    const payer = switchboardQueue.program.walletPubkey;
     const [houseKey, houseBump] = House.fromSeeds(program, TOKENMINT);
-
-    const switchboardMint = await switchboardQueue.loadMint();
 
     const tokenVault = await spl.getAssociatedTokenAddress(
       TOKENMINT,
@@ -128,12 +118,12 @@ export class House {
         .houseInit({})
         .accounts({
           house: houseKey,
-          authority: payer.publicKey,
-          switchboardMint: switchboardMint.address,
+          authority: payer,
+          switchboardMint: switchboardQueue.program.mint.address,
           switchboardQueue: switchboardQueue.publicKey,
           mint: TOKENMINT,
           houseVault: tokenVault,
-          payer: payer.publicKey,
+          payer: payer,
           systemProgram: anchor.web3.SystemProgram.programId,
           tokenProgram: spl.TOKEN_PROGRAM_ID,
           associatedTokenProgram: spl.ASSOCIATED_TOKEN_PROGRAM_ID,
@@ -165,7 +155,7 @@ export class House {
 
   static async getOrCreate(
     program: FlipProgram,
-    switchboardQueue: OracleQueueAccount,
+    switchboardQueue: QueueAccount,
     TOKENMINT:PublicKey
   ): Promise<House> {
     try {
