@@ -561,12 +561,12 @@ class ApiState implements PrivateApiInterface {
       }
     }
     console.log(vrf, 'VRF-STATUS');
-    if (!vrf || !vrf?.id) {
-      this.log('error', Severity.Error);
-      this.dispatch(thunks.setLoading(false));
-      this.dispatch(thunks.setResult({ status: 'error' }));
-      return null;
-    }
+    // if (!vrf || !vrf?.id) {
+    //   this.log('error', Severity.Error);
+    //   this.dispatch(thunks.setLoading(false));
+    //   this.dispatch(thunks.setResult({ status: 'error' }));
+    //   return null;
+    // }
     //@ts-ignore
     console.log(vrf.id, 'FINAL VRF');
     const request = await user
