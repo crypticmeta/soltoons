@@ -555,6 +555,8 @@ export class User {
 
   async placeBetReq(
     vrf: PublicKey,
+    bump: number,
+    state_bump: number,
     TOKENMINT:PublicKey,
     gameType: GameTypeValue,
     userGuess: number,
@@ -734,6 +736,8 @@ export class User {
           gameType: gameType,
           userGuess,
           betAmount,
+          switchboardStateBump: state_bump,
+          vrfPermissionBump: bump,
         })
         .accounts({
           user: this.publicKey,

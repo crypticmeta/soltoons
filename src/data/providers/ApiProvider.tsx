@@ -571,7 +571,9 @@ class ApiState implements PrivateApiInterface {
     console.log(vrf.id, 'FINAL VRF');
     const request = await user
       .placeBetReq(
-        new PublicKey('E4h196QbYqiGE2jGdqUXxCJU9LfRX8ykqFV7RTQpAuRt'),
+        new PublicKey('DgDX1DW6fgrsjtrN3EneTcJb9Ka5jCakacoYsMJUoiND'),
+        255,
+        249,
         TOKENMINT,
         this.gameMode,
         guess,
@@ -585,109 +587,12 @@ class ApiState implements PrivateApiInterface {
         console.log(err, 'err creating bet req');
       });
     
-    if (request) {
-      const program = await this.program;
-      
-    const packed = await sbv2.packTransactions(
-      program.provider.connection,
-      [new anchor.web3.Transaction().add(...request.callbackIxns)],
-      request.signers as anchor.web3.Keypair[],
-      this.wallet.publicKey
-    );
-    const signedTxs = await this.wallet.signAllTransactions(packed);
-
-    const sigs: string[] = [];
-    // await this.packSignAndSubmit(request.ixns, request.signers);
-
-    // Try to load the new user accounts.
-
-    for (let k = 0; k < packed.length; k += 1) {
-      // console.log('executing tx no. ', k);
-      // console.log(signedTxs[k]?.instructions.length, ' instruction length for k = ',k)
-      // console.log(signedTxs[k]?.instructions[1]?.programId?.toBase58(), ' tx ', k)
-      // if (k == 1)
-      //   signedTxs[k].instructions.map((item, idx) => {
-      //     console.log('keys for instruction ', idx, ' of k=', k);
-      //     if (idx == 1)
-      //       item.keys.map((key, i) => {
-      //         if (i == 0) console.log('user key');
-      //         if (i == 1) console.log('house key');
-      //         if (i == 2) console.log('mint key');
-      //         if (i == 3) console.log('authority key');
-      //         if (i == 4) console.log('escrow key');
-      //         if (i == 5) console.log('reward_address key');
-      //         if (i == 6) console.log('vrf key');
-      //         if (i == 7) console.log('payer key');
-      //         console.log(key.pubkey.toBase58(), ' key ', i, ' of ', item.keys.length);
-      //       });
-      //   });
-      const sig = await program.provider.connection
-        .sendRawTransaction(
-          signedTxs[k].serialize(),
-          // req.signers,
-          {
-            skipPreflight: false,
-            maxRetries: 10,
-          }
-        )
-        .catch((e) => {
-          console.log(e, 'error signing instruction');
-          if (e instanceof ApiError) throw e;
-        });
-      console.log(sig, 'signed tx ', k);
-      if (sig)
-        await program.provider.connection.confirmTransaction(sig).catch((e) => {
-          console.log(e, 'error confirming transaction');
-          if (e instanceof ApiError) throw e;
-        });
-      if (sig) sigs.push(sig);
-      // console.log('sleeping for 5 sec');
-      await sleep(5000);
-    }
-
-    let retryCount = 5;
-      while (retryCount) {
-      console.log('retrying...')
-      // const userState = await api.UserState.fetch(program.provider.connection, request.account);
-      // if (userState !== null) {
-      //   this.log('User Account Created Successfully', Severity.Normal);
-      //   this.dispatch(thunks.setLoading(false));
-      //   return (async () => {
-      //     const pubkey = this.wallet.publicKey;
-      //     const program = await this.program;
-      //     return api.User.load(program, pubkey, TOKENMINT)
-      //       .then(
-      //         (user) =>
-      //           (this._user ??= (() => {
-      //             // If there is not yet a known user, set it, log it, and return it.
-      //             // this.log(`Accounts retrieved for user: ${truncatedPubkey(pubkey.toBase58())}`);
-      //             const temp_user = user.state.toJSON();
-      //             temp_user.publicKey = user.publicKey.toBase58();
-      //             this.dispatch(thunks.setUser(temp_user));
-      //             this.watchUserAccounts();
-      //             return user;
-      //           })())
-      //       )
-      //       .catch((e) => {
-      //         this.dispatch(thunks.setLoading(false));
-      //         if (e instanceof ApiError) throw e;
-      //         else throw ApiError.userAccountMissing();
-      //       });
-      //   })();
-      // }
-      await sleep(1000);
-      --retryCount;
-    }
-    this.dispatch(thunks.setLoading(false));
-    this.log('A transaction failed to confirm.', Severity.Error);
-    }
-
     // if (request && request.callbackIxns.length) {
     //   await this.packSignAndSubmit(request.callbackIxns, request.signers, false);
     // }
-    // if (request) {
-    //   await this.packSignAndSubmit(request.ixns, request.signers, false);
-    // }
+    if (request) {
+      await this.packSignAndSubmit(request.ixns, request.signers, false);
+    }
   };
 
   private packSignAndSubmit = async (
