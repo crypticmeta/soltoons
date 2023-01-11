@@ -5,9 +5,8 @@ import * as spl from '@solana/spl-token-v2';
 import { createSyncNativeInstruction, getAssociatedTokenAddress } from '@solana/spl-token-v2';
 import { SystemProgram } from '@solana/web3.js';
 import { LAMPORTS_PER_SOL, PublicKey, TransactionInstruction } from '@solana/web3.js';
-import { sleep } from '@switchboard-xyz/sbv2-utils';
-import * as sbv2 from '@switchboard-xyz/switchboard-v2';
-import { token } from 'anchor-24-2/dist/cjs/utils';
+import { sleep } from '@switchboard-xyz/common';
+import * as sbv2 from '@switchboard-xyz/solana.js';
 import _ from 'lodash';
 import React from 'react';
 import { useSelector } from 'react-redux';
@@ -18,9 +17,11 @@ import { ThunkDispatch } from '../../types';
 import { Severity } from '../../util/const';
 import { GameState } from '../store/gameStateReducer';
 
-const truncatedPubkey=(pubkey:string) => { return `${pubkey.slice(0, 5)}...${pubkey.slice(-5)}`};
+const truncatedPubkey = (pubkey: string) => {
+  return `${pubkey.slice(0, 5)}...${pubkey.slice(-5)}`;
+};
 
-const TOKENMINT = new PublicKey("So11111111111111111111111111111111111111112")
+const TOKENMINT = new PublicKey('So11111111111111111111111111111111111111112');
 
 /*
  * Denominator for the ribs token
@@ -33,8 +34,8 @@ enum ApiCommands {
   UserAirdrop = 'user airdrop',
   UserCreate = 'user create',
   UserPlay = 'user play',
-  Drain = "drain",
-  Vault = "vault"
+  Drain = 'drain',
+  Vault = 'vault',
 }
 
 const games: { [type: number]: { type: api.GameTypeEnum; prompt: string; minGuess: number; maxGuess: number } } = {
@@ -139,7 +140,7 @@ class ApiState implements PrivateApiInterface {
    */
   get rpc(): string {
     // @TODO make rpc connection configurable.
-    return process.env.REACT_APP_NETWORK == 'devnet'
+    return process.env.REACT_APP_NETWORK === 'devnet'
       ? 'https://api.devnet.solana.com'
       : 'https://warmhearted-greatest-emerald.solana-mainnet.quiknode.pro/2b6bcf328ed2611d4d293c2aaa027f3139acb0af/';
   }
@@ -168,7 +169,6 @@ class ApiState implements PrivateApiInterface {
    * If the program cannot be retrieved, an {@linkcode ApiError} will be thrown.
    */
   get program(): Promise<api.FlipProgram> {
-    
     // console.log(this._program, 'pro');
     // console.log(this.cluster, 'cluster')
     // If the program has already been set, return it.
@@ -287,8 +287,8 @@ class ApiState implements PrivateApiInterface {
     this.log(`Building user accounts...`);
     const rewardAddress = await spl.getAssociatedTokenAddress(TOKENMINT, anchorProvider.publicKey, true);
     const accountInfo = await spl.getAccount(anchorProvider.connection, rewardAddress).catch((err) => console.log(err));
-    // Build out and sign transactions.
-    const request = await api.User.createReq(
+
+    const [userKey, userInitTxns] = await api.User.createReq(
       program,
       switchboard,
       TOKENMINT,
@@ -296,12 +296,8 @@ class ApiState implements PrivateApiInterface {
       accountInfo?.isInitialized || false
     );
 
-    const packed = await sbv2.packTransactions(
-      program.provider.connection,
-      [new anchor.web3.Transaction().add(...request.ixns)],
-      request.signers as anchor.web3.Keypair[],
-      this.wallet.publicKey
-    );
+    const blockhash = await program.provider.connection.getLatestBlockhash();
+    const packed = userInitTxns.map((txn) => txn.toTxn(blockhash));
     const signedTxs = await this.wallet.signAllTransactions(packed);
 
     const sigs: string[] = [];
@@ -355,7 +351,7 @@ class ApiState implements PrivateApiInterface {
 
     let retryCount = 5;
     while (retryCount) {
-      const userState = await api.UserState.fetch(program.provider.connection, request.account);
+      const userState = await api.UserState.fetch(program.provider.connection, userKey);
       if (userState !== null) {
         this.log('User Account Created Successfully', Severity.Normal);
         this.dispatch(thunks.setLoading(false));
@@ -434,15 +430,16 @@ class ApiState implements PrivateApiInterface {
     const program = await this.program;
     const house = await House.load(program, TOKENMINT);
     // const associatedTokenAcc = await getAssociatedTokenAddress(TOKENMINT, payerPubkey);
-    const data = await program.provider.connection.getParsedAccountInfo(house.state.houseVault).catch(err => console.log(err, 'error getting token acc info'))
+    const data = await program.provider.connection
+      .getParsedAccountInfo(house.state.houseVault)
+      .catch((err) => console.log(err, 'error getting token acc info'));
     // console.log(data?.value?.data?.parsed?.info?.tokenAmount?.uiAmount, 'data')
     //@ts-ignore
     const vault_amount = data?.value?.data?.parsed?.info?.tokenAmount?.uiAmount;
     if (vault_amount > 0) {
       this.dispatch(thunks.setVaultBalance(vault_amount));
-      this.log("Vault Balance Loaded")
+      this.log('Vault Balance Loaded');
     }
-
   };
 
   /**
@@ -474,21 +471,24 @@ class ApiState implements PrivateApiInterface {
 
     this.log(`Building bet request...`);
     this.log(`Bet Amount: ${bet}`);
-    
+
     this.dispatch(thunks.setResult({ status: 'waiting' }));
-    const request = await user.placeBetReq(
-      TOKENMINT,
-      this.gameMode,
-      guess,
-      new anchor.BN(bet * LAMPORTS_PER_SOL),
-      /* switchboardTokenAccount= */ undefined,
-      this.wallet.publicKey,
-      this.userRibsBalance
-    ).catch(err => {
-      
-    this.dispatch(thunks.setResult({ status: 'error' }));
-      console.log(err, 'err creating bet req')
-    });
+    const request = await user
+      .placeBetReq(
+        {
+          TOKENMINT,
+          gameType: this.gameMode,
+          userGuess: guess,
+          betAmount: new anchor.BN(bet * LAMPORTS_PER_SOL),
+          switchboardTokenAccount: undefined,
+        },
+        this.wallet.publicKey,
+        this.userRibsBalance
+      )
+      .catch((err) => {
+        this.dispatch(thunks.setResult({ status: 'error' }));
+        console.log(err, 'err creating bet req');
+      });
     // console.log(request.ixns, 'ixns')
     // request.ixns.map((item, idx) => {
     //   item.keys.map((key, i) => {
@@ -496,8 +496,7 @@ class ApiState implements PrivateApiInterface {
     //   })
     // })
 
-    if(request)
-    await this.packSignAndSubmit(request.ixns, request.signers);
+    if (request) await this.packSignAndSubmit(request.ixns, request.signers);
     // this.dispatch(thunks.setLoading(false));
   };
 
@@ -731,7 +730,7 @@ class ApiState implements PrivateApiInterface {
           event.result.toString(),
           'result'
         );
-        this.log('Received Result.', Severity.Normal)
+        this.log('Received Result.', Severity.Normal);
 
         if (multiplier[Number(event.result.toString())] > 0) {
           event.userWon = true;
@@ -789,7 +788,7 @@ class ApiState implements PrivateApiInterface {
       // Check for valid game mode and prompt user.
       const game = games[this.gameMode];
       if (game) {
-          if (game) this.log(game.prompt);
+        if (game) this.log(game.prompt);
       } else throw ApiError.unknownGameType();
     } catch (e) {
       this.handleError(e);
@@ -833,7 +832,7 @@ export const ApiProvider: React.FC<React.PropsWithChildren> = (props) => {
   const dispatch = hooks.useThunkDispatch();
   const wallet = useConnectedWallet();
   const gameState = useSelector((store: Store) => store.gameState);
-    const result = useSelector((store: Store) => store.gameState.result);
+  const result = useSelector((store: Store) => store.gameState.result);
   const [stateWallet, setStateWallet] = React.useState(wallet);
 
   // The api is rebuilt only when the connected pubkey changes

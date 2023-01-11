@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import * as sbv2 from '@switchboard-xyz/switchboard-v2';
+import * as sbv2 from '@switchboard-xyz/solana.js';
 import * as spl from '@solana/spl-token-v2';
 import { hooks, Store, thunks } from '../../data';
 import { useConnectedWallet, useWalletKit, useSolana } from '@gokiprotocol/walletkit';
@@ -63,7 +63,6 @@ const WalletButton: React.FC = () => {
 function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal }) {
   const [open, setOpen] = React.useState(false);
 
-
   const handleClick = () => {
     setOpen(true);
   };
@@ -122,7 +121,7 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
   // console.log(providerMut, 'pm')
   const getReward = async () => {
     if (wallet && balances.ribs && providerMut) {
-      try { 
+      try {
         let ixns = [];
         dispatch(thunks.setLoading(true));
         // console.log(user.rewardAddress, 'user');
@@ -171,21 +170,19 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
             });
           if (sig) console.log(sig, ' tx signature');
           if (sig) {
-            handleModalClose()
+            handleModalClose();
             dispatch(thunks.setLoading(false));
             dispatch(thunks.log({ message: 'Successfully claimed funds. ', severity: Severity.Success }));
             dispatch(thunks.setResult({ status: 'claimed' }));
           }
         }
-      }
-      catch (e) {
+      } catch (e) {
         dispatch(thunks.setLoading(false));
         dispatch(thunks.log({ message: 'Error converting wsol to sol. ', severity: Severity.Error }));
-        console.log(e, 'error')
+        console.log(e, 'error');
       }
     }
   };
-
 
   return (
     <div className="flex h-full flex-col max-h-[800px] justify-start md:justify-center w-full lg:w-3/12 p-6 font-bold">
@@ -337,7 +334,7 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
 }
 
 //@ts-ignore
-const Play = ({amount, setAmount, api, balances, loading, result}) => {
+const Play = ({ amount, setAmount, api, balances, loading, result }) => {
   return (
     <>
       {loading && result?.status === 'waiting' ? (
@@ -372,12 +369,14 @@ const Play = ({amount, setAmount, api, balances, loading, result}) => {
               <span className="pl-4">
                 {Number(result && result.status === 'claimed' ? 0 : balances.ribs || 0).toFixed(4)} wsol
               </span>
-              </p>
-              {Number(amount)>2 && (<p className='text-red-800 text-xs pt-2 text-center'>Amount should be less than 2 SOL</p>)}
+            </p>
+            {Number(amount) > 2 && (
+              <p className="text-red-800 text-xs pt-2 text-center">Amount should be less than 2 SOL</p>
+            )}
           </div>
         </>
       )}
     </>
   );
-}
+};
 export default Sidebar;

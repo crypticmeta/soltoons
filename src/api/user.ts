@@ -1,40 +1,21 @@
-import * as anchor from "@project-serum/anchor";
-import * as anchor24 from "anchor-24-2";
-import * as spl from "@solana/spl-token-v2";
+import * as anchor from '@project-serum/anchor';
+import * as spl from '@solana/spl-token-v2';
+import { PublicKey, SYSVAR_RECENT_BLOCKHASHES_PUBKEY } from '@solana/web3.js';
+import { promiseWithTimeout, sleep } from '@switchboard-xyz/common';
 import {
-  Keypair,
-  LAMPORTS_PER_SOL,
-  PublicKey,
-  Signer,
-  SystemProgram,
-  SYSVAR_RECENT_BLOCKHASHES_PUBKEY,
-  Transaction,
-  TransactionInstruction,
-} from "@solana/web3.js";
-import { promiseWithTimeout, sleep } from "@switchboard-xyz/sbv2-utils";
-import {
-  AnchorWallet,
   Callback,
-  OracleQueueAccount,
-  packTransactions,
+  QueueAccount,
   PermissionAccount,
-  ProgramStateAccount,
-  programWallet,
   VrfAccount,
-} from "@switchboard-xyz/switchboard-v2";
-import { UserState, UserStateJSON } from "./generated/accounts";
-import { House } from "./house";
-import { loadSwitchboard, loadVrfContext } from "./switchboard";
-import {
-  convertGameType,
-  FlipProgram,
-  GameTypeEnum,
-  GameTypeValue,
-} from "./types";
-import { verifyPayerBalance } from "./utils";
-import { Wallet } from "@project-serum/anchor";
-import { createSyncNativeInstruction, TOKEN_PROGRAM_ID } from "@solana/spl-token-v2";
-import { getAssociatedTokenAddress } from "@solana/spl-token-v2";
+  SwitchboardProgram,
+  TransactionObject,
+} from '@switchboard-xyz/solana.js';
+import { UserState, UserStateJSON } from './generated/accounts';
+import { House } from './house';
+import { loadSwitchboard, loadVrfContext } from './switchboard';
+import { convertGameType, FlipProgram, GameTypeEnum, GameTypeValue } from './types';
+import { verifyPayerBalance } from './utils';
+import { programWallet } from '../util/wallet';
 
 export interface UserBetPlaced {
   roundId: anchor.BN;
@@ -78,13 +59,9 @@ export class User {
   }
 
   static async load(program: FlipProgram, authority: PublicKey, TOKENMINT: PublicKey): Promise<User> {
-    
     const [houseKey] = House.fromSeeds(program, TOKENMINT);
     const [userKey] = User.fromSeeds(program, houseKey, authority);
-    const userState = await UserState.fetch(
-      program.provider.connection,
-      userKey
-    );
+    const userState = await UserState.fetch(program.provider.connection, userKey);
     if (!userState) {
       throw new Error(`User account does not exist`);
     }
@@ -105,46 +82,27 @@ export class User {
   //   return User.create(program, houseKey);
   // }
 
-  getVrfAccount(switchboardProgram: anchor24.Program): VrfAccount {
-    const vrfAccount = new VrfAccount({
-      program: switchboardProgram as any,
-      publicKey: this.state.vrf,
-    });
+  getVrfAccount(switchboardProgram: SwitchboardProgram): VrfAccount {
+    const vrfAccount = new VrfAccount(switchboardProgram, this.state.vrf);
     return vrfAccount;
   }
 
-  async getQueueAccount(
-    switchboardProgram: anchor24.Program
-  ): Promise<OracleQueueAccount> {
+  async getQueueAccount(switchboardProgram: SwitchboardProgram): Promise<QueueAccount> {
     const vrfAccount = this.getVrfAccount(switchboardProgram);
     const vrfState = await vrfAccount.loadData();
-    const queueAccount = new OracleQueueAccount({
-      program: switchboardProgram as any,
-      publicKey: vrfState.oracleQueue,
-    });
+    const queueAccount = new QueueAccount(switchboardProgram, vrfState.oracleQueue);
     return queueAccount;
   }
 
-  static fromSeeds(
-    program: FlipProgram,
-    housePubkey: PublicKey,
-    authority: PublicKey
-  ): [PublicKey, number] {
+  static fromSeeds(program: FlipProgram, housePubkey: PublicKey, authority: PublicKey): [PublicKey, number] {
     return anchor.utils.publicKey.findProgramAddressSync(
-      [
-        Buffer.from("USERSTATESEED"),
-        housePubkey.toBytes(),
-        authority.toBytes(),
-      ],
+      [Buffer.from('USERSTATESEED'), housePubkey.toBytes(), authority.toBytes()],
       program.programId
     );
   }
 
   async reload(): Promise<void> {
-    const newState = await UserState.fetch(
-      this.program.provider.connection,
-      this.publicKey
-    );
+    const newState = await UserState.fetch(this.program.provider.connection, this.publicKey);
     if (newState === null) {
       throw new Error(`Failed to fetch the new User account state`);
     }
@@ -165,12 +123,12 @@ export class User {
     escrow: PublicKey,
     vrf: PublicKey,
     rewardAddress: PublicKey,
-    TOKENMINT: PublicKey,
+    TOKENMINT: PublicKey
   ): Promise<Callback> {
     const ixnCoder = new anchor.BorshInstructionCoder(program.idl);
     const callback: Callback = {
       programId: program.programId,
-      ixData: ixnCoder.encode("userSettle", {}),
+      ixData: ixnCoder.encode('userSettle', {}),
       accounts: [
         {
           pubkey: user,
@@ -185,7 +143,7 @@ export class User {
         {
           pubkey: TOKENMINT,
           isWritable: false,
-          isSigner: false
+          isSigner: false,
         },
         {
           pubkey: escrow,
@@ -220,72 +178,23 @@ export class User {
   static async create(
     userWallet: anchor.AnchorProvider,
     program: FlipProgram,
-    switchboardProgram: anchor24.Program,
-    TOKENMINT: PublicKey,
+    switchboardProgram: SwitchboardProgram,
+    TOKENMINT: PublicKey
   ): Promise<User> {
-   
-    const req = await User.createReq(program, switchboardProgram, TOKENMINT, userWallet.wallet.publicKey, false);
-
-    const packedTxns = await packTransactions(
-      program.provider.connection,
-      [new Transaction().add(...req.ixns)],
-      req.signers as Keypair[],
-      userWallet.publicKey
+    const [userKey, txns] = await User.createReq(
+      program,
+      switchboardProgram,
+      TOKENMINT,
+      userWallet.wallet.publicKey,
+      false
     );
-
-    // console.log('signing with ', userWallet.wallet.publicKey.toBase58())
-
-    const signedTxs = await userWallet.wallet.signAllTransactions(packedTxns);
-    const promises = [];
-    const sigs: string[] = [];
-    for (let k = 0; k < packedTxns.length; k += 1) {
-      // console.log(signedTxs[k]?.instructions.length, ' instruction length for k = ',k)
-      // console.log(signedTxs[k]?.instructions[1]?.programId?.toBase58(), ' tx ', k)
-      // if(k==1)
-      // signedTxs[k].instructions.map((item, idx) => { 
-      //   console.log('keys for instruction ', idx, ' of k=', k)
-      //   if(idx == 1)
-      //     item.keys.map((key, i) => {
-      //       if (i == 0)
-      //         console.log("user key")
-      //       if (i == 1)
-      //         console.log("house key")
-      //       if (i == 2)
-      //         console.log("mint key")
-      //       if (i == 3)
-      //         console.log("authority key")
-      //       if (i == 4)
-      //         console.log("escrow key")
-      //       if (i == 5)
-      //         console.log("reward_address key")
-      //       if (i == 6)
-      //         console.log("vrf key")
-      //       if (i == 7)
-      //         console.log("payer key")
-      //     console.log(key.pubkey.toBase58(), ' key ',i, ' of ', item.keys.length)
-      //   })
-      // })
-      const sig = await program.provider.connection.sendRawTransaction(
-        signedTxs[k].serialize(),
-        // req.signers,
-        {
-          skipPreflight: false,
-          maxRetries: 10,
-        }
-      );
-      console.log(sig, 'signed tx ',k)
-      await program.provider.connection.confirmTransaction(sig);
-      sigs.push(sig);
-    }
+    const signatures = await switchboardProgram.signAndSendAll(txns);
 
     let retryCount = 5;
     while (retryCount) {
-      const userState = await UserState.fetch(
-        program.provider.connection,
-        req.account
-      );
+      const userState = await UserState.fetch(program.provider.connection, userKey);
       if (userState !== null) {
-        return new User(program, req.account, userState);
+        return new User(program, userKey, userState);
       }
       await sleep(1000);
       --retryCount;
@@ -296,431 +205,186 @@ export class User {
 
   static async createReq(
     program: FlipProgram,
-    switchboardProgram: anchor24.Program,
+    switchboardProgram: SwitchboardProgram,
     TOKENMINT: PublicKey,
     payerPubkey = programWallet(program as any).publicKey,
     rewardAddressInitialized: boolean
-  ): Promise<{
-    ixns: TransactionInstruction[];
-    signers: Signer[];
-    account: PublicKey;
-  }> {
-
-
-    let txnIxns: TransactionInstruction[];
-
+  ): Promise<[PublicKey, Array<TransactionObject>]> {
     const house = await House.load(program, TOKENMINT);
     const flipMint = await house.loadMint();
 
     const switchboardQueue = house.getQueueAccount(switchboardProgram);
-    const switchboardMint = await switchboardQueue.loadMint();
 
     const escrowKeypair = anchor.web3.Keypair.generate();
     const vrfSecret = anchor.web3.Keypair.generate();
 
-    const [userKey, userBump] = User.fromSeeds(
-      program,
-      house.publicKey,
-      payerPubkey
-    );
+    const [userKey, userBump] = User.fromSeeds(program, house.publicKey, payerPubkey);
     // console.log(userKey.toBase58(), 'userKey', payerPubkey.toBase58(), 'payer')
-    const rewardAddress = await spl.getAssociatedTokenAddress(
-      flipMint.address,
-      payerPubkey,
-      true
-    );
-    
-    // console.log(rewardAddress.toBase58(), 'reward address')
+    const rewardAddress = await spl.getAssociatedTokenAddress(flipMint.address, payerPubkey, true);
 
-
-    const [programStateAccount, stateBump] = ProgramStateAccount.fromSeed(
-      switchboardProgram as any
-    );
-    const queue = await switchboardQueue.loadData();
-
-    const callback = await User.getCallback(      
+    const callback = await User.getCallback(
       program,
       house,
       userKey,
       escrowKeypair.publicKey,
       vrfSecret.publicKey,
       rewardAddress,
-      TOKENMINT,
+      TOKENMINT
     );
+
+    const queue = await switchboardQueue.loadData();
+
+    const [vrfAccount, vrfInitTxn] = await switchboardQueue.createVrfInstructions(payerPubkey, {
+      vrfKeypair: vrfSecret,
+      callback: callback,
+      authority: userKey,
+    });
 
     const [permissionAccount, permissionBump] = PermissionAccount.fromSeed(
-      switchboardProgram as any,
+      switchboardProgram,
       queue.authority,
       switchboardQueue.publicKey,
-      vrfSecret.publicKey
-    );
-
-    const vrfEscrow = await spl.getAssociatedTokenAddress(
-      switchboardMint.address,
-      vrfSecret.publicKey,
-      true
+      vrfAccount.publicKey
     );
 
     // console.log(await program.provider.connection.getMinimumBalanceForRentExemption(
     //   switchboardProgram.account.vrfAccountData.size
     // )/LAMPORTS_PER_SOL, 'sol transfer')
 
-    // console.log(vrfSecret.publicKey.toBase58(), 'vrf account')    
-    txnIxns = [     
-      // create VRF account
-      spl.createAssociatedTokenAccountInstruction(
-        payerPubkey,
-        vrfEscrow,
-        vrfSecret.publicKey,
-        switchboardMint.address
-      ),      
-      spl.createSetAuthorityInstruction(
-        vrfEscrow,
-        vrfSecret.publicKey,
-        spl.AuthorityType.AccountOwner,
-        programStateAccount.publicKey
-      ),
-      anchor.web3.SystemProgram.createAccount({
-        fromPubkey: payerPubkey,
-        newAccountPubkey: vrfSecret.publicKey,
-        space: switchboardProgram.account.vrfAccountData.size,
-        lamports:
-          await program.provider.connection.getMinimumBalanceForRentExemption(
-            switchboardProgram.account.vrfAccountData.size
-          ),
-        programId: switchboardProgram.programId,
-      }),
-      await switchboardProgram.methods
-        .vrfInit({
-          stateBump,
-          callback: callback,
-        })
-        .accounts({
-          vrf: vrfSecret.publicKey,
-          escrow: vrfEscrow,
-          authority: userKey,
-          oracleQueue: switchboardQueue.publicKey,
-          programState: programStateAccount.publicKey,
-          tokenProgram: spl.TOKEN_PROGRAM_ID,
-        })
-        .instruction(),
-      // create permission account
-      await switchboardProgram.methods
-        .permissionInit({})
-        .accounts({
-          permission: permissionAccount.publicKey,
-          authority: queue.authority,
-          granter: switchboardQueue.publicKey,
-          grantee: vrfSecret.publicKey,
-          payer: payerPubkey,
-          systemProgram: anchor.web3.SystemProgram.programId,
-        })
-        .instruction(),
-      // create user account
-      await program.methods
-        .userInit({
-          switchboardStateBump: stateBump,
-          vrfPermissionBump: permissionBump,
-        })
-        .accounts({
-          user: userKey,
-          house: house.publicKey,
-          mint: TOKENMINT,
-          authority: payerPubkey,
-          escrow: escrowKeypair.publicKey,
-          rewardAddress: rewardAddress,
-          vrf: vrfSecret.publicKey,
-          payer: payerPubkey,
-          systemProgram: anchor.web3.SystemProgram.programId,
-          tokenProgram: spl.TOKEN_PROGRAM_ID,
-          associatedTokenProgram: spl.ASSOCIATED_TOKEN_PROGRAM_ID,
-          rent: anchor.web3.SYSVAR_RENT_PUBKEY,
-        })
-        .instruction(),
-    ];
-    if (!rewardAddressInitialized) {
-      txnIxns.unshift(spl.createAssociatedTokenAccountInstruction(
-        payerPubkey,
-        rewardAddress,
-        payerPubkey,
-        TOKENMINT
-      ))
-    }
+    // console.log(vrfSecret.publicKey.toBase58(), 'vrf account')
+    const userInitIxn = await program.methods
+      .userInit({
+        switchboardStateBump: switchboardProgram.programState.bump,
+        vrfPermissionBump: permissionBump,
+      })
+      .accounts({
+        user: userKey,
+        house: house.publicKey,
+        mint: TOKENMINT,
+        authority: payerPubkey,
+        escrow: escrowKeypair.publicKey,
+        rewardAddress: rewardAddress,
+        vrf: vrfSecret.publicKey,
+        payer: payerPubkey,
+        systemProgram: anchor.web3.SystemProgram.programId,
+        tokenProgram: spl.TOKEN_PROGRAM_ID,
+        associatedTokenProgram: spl.ASSOCIATED_TOKEN_PROGRAM_ID,
+        rent: anchor.web3.SYSVAR_RENT_PUBKEY,
+      })
+      .instruction();
 
-    return {
-      ixns: txnIxns,
-      signers: [vrfSecret, escrowKeypair],
-      account: userKey,
-    };
+    const userInitTxn = new TransactionObject(
+      payerPubkey,
+      !rewardAddressInitialized
+        ? [spl.createAssociatedTokenAccountInstruction(payerPubkey, rewardAddress, payerPubkey, TOKENMINT), userInitIxn]
+        : [userInitIxn],
+      []
+    );
+
+    return [userKey, TransactionObject.pack([vrfInitTxn, userInitTxn])];
   }
 
-  async placeBet(
-    TOKENMINT: PublicKey,
-    gameType: GameTypeValue,
-    userGuess: number,
-    betAmount: anchor.BN,
-    switchboardTokenAccount?: PublicKey,
-    payerPubkey = programWallet(this.program as any).publicKey
-  ): Promise<string> {
-    const req = await this.placeBetReq(
-      TOKENMINT,
-      gameType,
-      userGuess,
-      betAmount,
-      switchboardTokenAccount,
-      payerPubkey
-    );
-    
-    // req.ixns.map((items, idx) => {
-    //   items.keys.map((item, i) => {
-    //     if (i == 1) {
-    //       console.log("house")
-    //       console.log(item.pubkey.toBase58(), ' key at ', i)
-    //     }
-    //     else if (i == 3) {
-    //       console.log("house_vault")
-    //       console.log(item.pubkey.toBase58(), ' key at ', i)
-    //     }
-    //     else if (i == 5) {
-    //       console.log("escrow")
-    //       console.log(item.pubkey.toBase58(), ' key at ', i)
-    //     }
-    //     else if (i == 11) {
-    //       console.log("vrf_escrow")
-    //       console.log(item.pubkey.toBase58(), ' key at ', i)
-    //     }
-    //     else if (i == 12) {
-    //       console.log("switchboard_program_state")
-    //       console.log(item.pubkey.toBase58(), ' key at ', i)
-    //     }
-    //     else if (i == 14) {
-    //       console.log("payer")
-    //       console.log(item.pubkey.toBase58(), ' key at ', i)
-    //     }
-    //     else if (i == 15) {
-    //       console.log("vrf_payer")
-    //       console.log(item.pubkey.toBase58(), ' key at ', i)
-    //     }
-    //     else if (i == 16) {
-    //       console.log("flip_payer")
-    //       console.log(item.pubkey.toBase58(), ' key at ', i)
-    //     }
-    //     else {
-    //       console.log(item.pubkey.toBase58(), ' key at ', i)
-    //     }
-        
-    //   })
-    // })
-
-    const signature = await this.program.provider.sendAndConfirm!(
-      new Transaction().add(...req.ixns),
-      req.signers
-    );
-
+  async placeBet(params: PlaceBetParams, payerPubkey = programWallet(this.program as any).publicKey): Promise<string> {
+    const switchboard = await loadSwitchboard(this.program.provider as anchor.AnchorProvider);
+    const betTxn = await this.placeBetReq(params, payerPubkey);
+    const signature = await switchboard.signAndSend(betTxn);
     return signature;
   }
 
   async placeBetReq(
-    TOKENMINT:PublicKey,
-    gameType: GameTypeValue,
-    userGuess: number,
-    betAmount: anchor.BN,
-    switchboardTokenAccount?: PublicKey,
+    params: PlaceBetParams,
     payerPubkey = programWallet(this.program as any).publicKey,
-    balance = 0,
-  ): Promise<{ ixns: TransactionInstruction[]; signers: Signer[] }> {
+    balance = 0
+  ): Promise<TransactionObject> {
     try {
       await verifyPayerBalance(this.program.provider.connection, payerPubkey);
     } catch {}
 
-    const signers: Signer[] = [];
-    const ixns: TransactionInstruction[] = [];
-    const house = await House.load(this.program, TOKENMINT);
+    const house = await House.load(this.program, params.TOKENMINT);
 
-    const switchboard = await loadSwitchboard(
-      this.program.provider as anchor.AnchorProvider
-    );
+    const switchboard = await loadSwitchboard(this.program.provider as anchor.AnchorProvider);
     const vrfContext = await loadVrfContext(switchboard, this.state.vrf);
 
-    let payersWrappedSolBalance: anchor.BN;
-    let payerSwitchTokenAccount: PublicKey;
-    if (switchboardTokenAccount) {
-
-      
-      payerSwitchTokenAccount = switchboardTokenAccount;
-      payersWrappedSolBalance = new anchor.BN(
-        (
-          await this.program.provider.connection.getTokenAccountBalance(
-            switchboardTokenAccount
-          )
-        ).value.amount
-      );
-    } else {
-      payerSwitchTokenAccount = await spl.getAssociatedTokenAddress(
-        spl.NATIVE_MINT,
-        payerPubkey
-      );
-      const payersWrappedSolAccountInfo =
-        await this.program.provider.connection.getAccountInfo(
-          payerSwitchTokenAccount
-        );
-      if (payersWrappedSolAccountInfo === null) {
-        ixns.push(
-          spl.createAssociatedTokenAccountInstruction(
-            payerPubkey,
-            payerSwitchTokenAccount,
-            payerPubkey,
-            spl.NATIVE_MINT
-          )
-        );
-        payersWrappedSolBalance = new anchor.BN(0);
-      } else {
-        const tokenAccount = spl.AccountLayout.decode(
-          payersWrappedSolAccountInfo.data
-        );
-        payersWrappedSolBalance = new anchor.BN(
-          tokenAccount.amount.toString(10)
-        );
-      }
+    const vrfEscrowBalance = await switchboard.mint.fetchBalance(vrfContext.publicKeys.vrfEscrow);
+    if (!vrfEscrowBalance) {
+      throw new Error(`Failed to fetch VRF Escrow account`);
     }
 
+    const wrapAmount = vrfEscrowBalance >= 0.002 ? 0 : 0.002 - vrfEscrowBalance;
 
-    const vrfEscrowBalance =  new anchor.BN(
-      (
-        await this.program.provider.connection.getTokenAccountBalance(
-          vrfContext.publicKeys.vrfEscrow
-        )
-      ).value.amount
-    );
-
-    const combinedWrappedSolBalance =
-      payersWrappedSolBalance.add(vrfEscrowBalance);
-
-    if (combinedWrappedSolBalance.lt(VRF_REQUEST_AMOUNT)) {
-      const wrapAmount = VRF_REQUEST_AMOUNT.sub(combinedWrappedSolBalance);
-
-      const ephemeralAccount = Keypair.generate();
-      const ephemeralWallet = await spl.getAssociatedTokenAddress(
-        spl.NATIVE_MINT,
-        ephemeralAccount.publicKey,
-        false
-      );
-    
-
-      signers.push(ephemeralAccount);
-      ixns.push(
-        spl.createAssociatedTokenAccountInstruction(
-          payerPubkey,
-          ephemeralWallet,
-          ephemeralAccount.publicKey,
-          spl.NATIVE_MINT
-        ),
-        SystemProgram.transfer({
-          fromPubkey: payerPubkey,
-          toPubkey: ephemeralWallet,
-          lamports: wrapAmount.toNumber(),
-        }),
-        spl.createSyncNativeInstruction(ephemeralWallet),
-        spl.createTransferInstruction(
-          ephemeralWallet,
-          vrfContext.publicKeys.vrfEscrow,
-          ephemeralAccount.publicKey,
-          wrapAmount.toNumber()
-        ),
-        spl.createCloseAccountInstruction(
-          ephemeralWallet,
-          payerPubkey,
-          ephemeralAccount.publicKey
-        )
-      );
-    }
-    const associatedTokenAcc = await getAssociatedTokenAddress(
-      TOKENMINT,
-      payerPubkey
-    );
-    //airdrop 1 wsol
-    const requiredBal = (betAmount.toNumber() + (0.002 * LAMPORTS_PER_SOL));
-    // console.log("balance ", balance * LAMPORTS_PER_SOL, " < ", requiredBal, 'betAmount + wsol vrf fee ')
-    if((balance * LAMPORTS_PER_SOL) < requiredBal)
-    {
-      console.log('low balance')
-      ixns.push(
-      SystemProgram.transfer({
-        fromPubkey: payerPubkey,
-        toPubkey: associatedTokenAcc,
-        lamports: requiredBal-(balance*LAMPORTS_PER_SOL) ,
-      })
-    );
-    ixns.push(
-      createSyncNativeInstruction(associatedTokenAcc, TOKEN_PROGRAM_ID)
-      );
-    }
-    else {
-      console.log('enough balance')
-    }
+    const [payerWrappedSolAccount, wrapTxn] = params.switchboardTokenAccount
+      ? await (async function (): Promise<[PublicKey, TransactionObject | undefined]> {
+          const balance = await switchboard.mint.fetchBalance(params.switchboardTokenAccount!);
+          if (balance && balance >= wrapAmount) {
+            return [params.switchboardTokenAccount!, undefined];
+          }
+          const wrapTxn = await switchboard.mint.wrapInstructions(payerPubkey, {
+            fundUpTo: 0.002,
+          });
+          return [params.switchboardTokenAccount!, wrapTxn];
+        })()
+      : await switchboard.mint.getOrCreateWrappedUserInstructions(payerPubkey, {
+          fundUpTo: wrapAmount,
+        });
 
     // console.log(TOKENMINT.toBase58(), 'token mint')
 
-    ixns.push(
-      await this.program.methods
-        .userBet({
-          gameType: gameType,
-          userGuess,
-          betAmount,
-        })
-        .accounts({
-          user: this.publicKey,
-          house: this.state.house,
-          mint: TOKENMINT,
-          houseVault: house.state.houseVault,
-          authority: this.state.authority,
-          escrow: this.state.escrow,
-          vrfPayer: payerSwitchTokenAccount,
-          ...vrfContext.publicKeys,
-          payer: payerPubkey,
-          flipPayer: this.state.rewardAddress,
-          recentBlockhashes: SYSVAR_RECENT_BLOCKHASHES_PUBKEY,
-          tokenProgram: spl.TOKEN_PROGRAM_ID,
-        })
-        .instruction()
-    );
+    const userBetIxn = await this.program.methods
+      .userBet({
+        gameType: params.gameType,
+        userGuess: params.userGuess,
+        betAmount: params.betAmount,
+      })
+      .accounts({
+        user: this.publicKey,
+        house: this.state.house,
+        mint: params.TOKENMINT,
+        houseVault: house.state.houseVault,
+        authority: this.state.authority,
+        escrow: this.state.escrow,
+        vrfPayer: payerWrappedSolAccount,
+        ...vrfContext.publicKeys,
+        payer: payerPubkey,
+        flipPayer: this.state.rewardAddress,
+        recentBlockhashes: SYSVAR_RECENT_BLOCKHASHES_PUBKEY,
+        tokenProgram: spl.TOKEN_PROGRAM_ID,
+      })
+      .instruction();
 
+    if (wrapTxn) {
+      return wrapTxn.add(userBetIxn);
+    }
 
-    return { ixns, signers };
+    return new TransactionObject(payerPubkey, [userBetIxn], []);
   }
 
-  async awaitFlip(
-    expectedCounter: anchor.BN,
-    timeout = 30
-  ): Promise<UserState> {
+  async awaitFlip(expectedCounter: anchor.BN, timeout = 30): Promise<UserState> {
     let accountWs: number;
-    const awaitUpdatePromise = new Promise(
-      (resolve: (value: UserState) => void) => {
-        // console.log('resolving...')
-        console.log('monitoring... ', this?.publicKey.toBase58())
-        accountWs = this.program.provider.connection.onAccountChange(
-          this?.publicKey ?? PublicKey.default,
-          async (accountInfo) => {
-            // console.log(accountInfo, 'accountInfo')
-            const user = UserState.decode(accountInfo.data);
-            // console.log(user.escrow.toBase58(), 'user')
-            // console.log(user.currentRound.result, 'result')
-            if (!expectedCounter.eq(user.currentRound.roundId)) {
-              // console.log('returning null')
-              return;
-            }
-            if (user.currentRound.result === 0) {
-              // console.log('returning null 2')
-              return;
-            }
-            resolve(user);
+    const awaitUpdatePromise = new Promise((resolve: (value: UserState) => void) => {
+      // console.log('resolving...')
+      console.log('monitoring... ', this?.publicKey.toBase58());
+      accountWs = this.program.provider.connection.onAccountChange(
+        this?.publicKey ?? PublicKey.default,
+        async (accountInfo) => {
+          // console.log(accountInfo, 'accountInfo')
+          const user = UserState.decode(accountInfo.data);
+          // console.log(user.escrow.toBase58(), 'user')
+          // console.log(user.currentRound.result, 'result')
+          if (!expectedCounter.eq(user.currentRound.roundId)) {
+            // console.log('returning null')
+            return;
           }
-        );
-        // console.log(accountWs, 'accountWs')
-      }
-    );
+          if (user.currentRound.result === 0) {
+            // console.log('returning null 2')
+            return;
+          }
+          resolve(user);
+        }
+      );
+      // console.log(accountWs, 'accountWs')
+    });
 
-    console.log('getting result...')
+    console.log('getting result...');
 
     const result = await promiseWithTimeout(
       timeout * 1000,
@@ -739,37 +403,21 @@ export class User {
     return result;
   }
 
-  async placeBetAndAwaitFlip(
-    TOKENMINT:PublicKey,
-    gameType: GameTypeValue,
-    userGuess: number,
-    betAmount: anchor.BN,
-    switchboardTokenAccount?: PublicKey,
-    timeout = 30
-  ): Promise<UserState> {
+  async placeBetAndAwaitFlip(params: PlaceBetParams, timeout = 30): Promise<UserState> {
     await this.reload();
     const currentCounter = this.state.currentRound.roundId;
     // console.log(currentCounter, 'current Counter')
 
     try {
-      const placeBetTxn = await this.placeBet(
-        TOKENMINT,
-        gameType,
-        userGuess,
-        betAmount,
-        switchboardTokenAccount
-      );
-      console.log(placeBetTxn, 'tx')
+      const placeBetTxn = await this.placeBet(params);
+      console.log(placeBetTxn, 'tx');
     } catch (error) {
       console.error(error);
       throw error;
     }
 
     try {
-      const userState = await this.awaitFlip(
-        currentCounter.add(new anchor.BN(1)),
-        timeout
-      );
+      const userState = await this.awaitFlip(currentCounter.add(new anchor.BN(1)), timeout);
       // console.log(userState, 'userState')
       return userState;
     } catch (error) {
@@ -850,29 +498,26 @@ export class User {
     betSettled: (event: UserBetSettled) => Promise<void> | void
   ) {
     this._programEventListeners.push(
-      this.program.addEventListener(
-        "UserBetPlaced",
-        async (event: UserBetPlaced, slot: number, signature: string) => {
-          if (!this.publicKey.equals(event.user)) {
-            return;
-          }
-          // const gameType = GameTypeValue.TWENTY_SIDED_DICE_ROLL;
-          await betPlaced({
-            ...event,
-            gameType: convertGameType(event.gameType),
-          });
+      this.program.addEventListener('UserBetPlaced', async (event: UserBetPlaced, slot: number, signature: string) => {
+        if (!this.publicKey.equals(event.user)) {
+          return;
         }
-      )
+        // const gameType = GameTypeValue.TWENTY_SIDED_DICE_ROLL;
+        await betPlaced({
+          ...event,
+          gameType: convertGameType(event.gameType),
+        });
+      })
     );
 
     this._programEventListeners.push(
       this.program.addEventListener(
-        "UserBetSettled",
+        'UserBetSettled',
         async (event: UserBetSettled, slot: number, signature: string) => {
           if (!this.publicKey.equals(event.user)) {
             return;
           }
-          console.log(signature, ' bet settled tx')
+          console.log(signature, ' bet settled tx');
           await betSettled({
             ...event,
             gameType: convertGameType(event.gameType),
@@ -885,7 +530,15 @@ export class User {
   async unwatch() {
     while (this._programEventListeners.length) {
       const id = this._programEventListeners.pop();
-      if (Number.isFinite(id)) await this.program.removeEventListener(id);
+      if (id && Number.isFinite(id)) await this.program.removeEventListener(id);
     }
   }
+}
+
+export interface PlaceBetParams {
+  TOKENMINT: PublicKey;
+  gameType: GameTypeValue;
+  userGuess: number;
+  betAmount: anchor.BN;
+  switchboardTokenAccount?: PublicKey;
 }

@@ -1,26 +1,18 @@
-import * as anchor from "@project-serum/anchor";
-import * as anchor24 from "anchor-24-2";
-import * as spl from "@solana/spl-token-v2";
-import {
-  PublicKey,
-  Signer,
-  Transaction,
-  TransactionInstruction,
-} from "@solana/web3.js";
-import { sleep } from "@switchboard-xyz/sbv2-utils";
-import {
-  OracleQueueAccount,
-  programWallet,
-} from "@switchboard-xyz/switchboard-v2";
-import { HouseState, HouseStateJSON } from "./generated/accounts";
-import { FlipProgram } from "./types";
+import * as anchor from '@project-serum/anchor';
+import * as spl from '@solana/spl-token-v2';
+import { PublicKey, Signer, Transaction, TransactionInstruction } from '@solana/web3.js';
+import { sleep } from '@switchboard-xyz/common';
+import { QueueAccount, SwitchboardProgram } from '@switchboard-xyz/solana.js';
+import { HouseState, HouseStateJSON } from './generated/accounts';
+import { FlipProgram } from './types';
+import { programWallet } from '../util/wallet';
 
 export class HouseAccountDoesNotExist extends Error {
-  readonly name = "HouseAccountDoesNotExist";
-  readonly msg = "Failed to fetch the HouseState account.";
+  readonly name = 'HouseAccountDoesNotExist';
+  readonly msg = 'Failed to fetch the HouseState account.';
 
   constructor() {
-    super("HouseAccountDoesNotExist: Failed to fetch the HouseState account.");
+    super('HouseAccountDoesNotExist: Failed to fetch the HouseState account.');
   }
 }
 
@@ -39,18 +31,15 @@ export class House {
     this.state = state;
   }
 
-  static fromSeeds(program: FlipProgram, TOKENMINT:PublicKey): [PublicKey, number] {
+  static fromSeeds(program: FlipProgram, TOKENMINT: PublicKey): [PublicKey, number] {
     return anchor.utils.publicKey.findProgramAddressSync(
-      [Buffer.from("HOUSESTATESEED"), TOKENMINT.toBytes()],
+      [Buffer.from('HOUSESTATESEED'), TOKENMINT.toBytes()],
       program.programId
     );
   }
 
   async reload(): Promise<void> {
-    const newState = await HouseState.fetch(
-      this.program.provider.connection,
-      this.publicKey
-    );
+    const newState = await HouseState.fetch(this.program.provider.connection, this.publicKey);
     if (newState === null) {
       throw new Error(`Failed to fetch the new House account state`);
     }
@@ -64,34 +53,27 @@ export class House {
     };
   }
 
-  getQueueAccount(switchboardProgram: anchor24.Program): OracleQueueAccount {
-    const queueAccount = new OracleQueueAccount({
-      program: switchboardProgram as any,
-      publicKey: this.state.switchboardQueue,
-    });
+  getQueueAccount(switchboardProgram: SwitchboardProgram): QueueAccount {
+    const queueAccount = new QueueAccount(switchboardProgram, this.state.switchboardQueue);
     return queueAccount;
   }
 
   static async create(
     program: FlipProgram,
-    switchboardQueue: OracleQueueAccount,
+    switchboardQueue: QueueAccount,
     TOKENMINT: PublicKey,
-    mintKeypair = anchor.web3.Keypair.generate(),
+    mintKeypair = anchor.web3.Keypair.generate()
   ): Promise<House> {
     // console.log(TOKENMINT.toBase58(), 'tokenmint')
     const req = await House.createReq(program, switchboardQueue, mintKeypair, TOKENMINT);
 
-    const signature = await program.provider.sendAndConfirm!(
-      new Transaction().add(...req.ixns),
-      req.signers
-    ).catch(err=>console.log(err, 'err creating house'));
+    const signature = await program.provider.sendAndConfirm!(new Transaction().add(...req.ixns), req.signers).catch(
+      (err) => console.log(err, 'err creating house')
+    );
 
     let retryCount = 5;
     while (retryCount) {
-      const houseState = await HouseState.fetch(
-        program.provider.connection,
-        req.account
-      );
+      const houseState = await HouseState.fetch(program.provider.connection, req.account);
       if (houseState !== null) {
         return new House(program, req.account, houseState);
       }
@@ -104,36 +86,30 @@ export class House {
 
   static async createReq(
     program: FlipProgram,
-    switchboardQueue: OracleQueueAccount,
+    switchboardQueue: QueueAccount,
     mintKeypair = anchor.web3.Keypair.generate(),
-    TOKENMINT:PublicKey
+    TOKENMINT: PublicKey
   ): Promise<{
     ixns: TransactionInstruction[];
     signers: Signer[];
     account: PublicKey;
   }> {
-    const payer = programWallet(program as any);
+    const payer = switchboardQueue.program.walletPubkey;
     const [houseKey, houseBump] = House.fromSeeds(program, TOKENMINT);
 
-    const switchboardMint = await switchboardQueue.loadMint();
-
-    const tokenVault = await spl.getAssociatedTokenAddress(
-      TOKENMINT,
-      houseKey,
-      true
-    );
+    const tokenVault = await spl.getAssociatedTokenAddress(TOKENMINT, houseKey, true);
 
     const txnIxns: TransactionInstruction[] = [
       await program.methods
         .houseInit({})
         .accounts({
           house: houseKey,
-          authority: payer.publicKey,
-          switchboardMint: switchboardMint.address,
+          authority: payer,
+          switchboardMint: switchboardQueue.program.mint.address,
           switchboardQueue: switchboardQueue.publicKey,
           mint: TOKENMINT,
           houseVault: tokenVault,
-          payer: payer.publicKey,
+          payer: payer,
           systemProgram: anchor.web3.SystemProgram.programId,
           tokenProgram: spl.TOKEN_PROGRAM_ID,
           associatedTokenProgram: spl.ASSOCIATED_TOKEN_PROGRAM_ID,
@@ -149,7 +125,7 @@ export class House {
     };
   }
 
-  static async load(program: FlipProgram, TOKENMINT:PublicKey): Promise<House> {
+  static async load(program: FlipProgram, TOKENMINT: PublicKey): Promise<House> {
     const connection = program.provider.connection;
     const [houseKey, houseBump] = House.fromSeeds(program, TOKENMINT);
     // console.log(houseKey.toBase58(), 'houseKey')
@@ -163,32 +139,22 @@ export class House {
     throw new Error(`House account has not been created yet`);
   }
 
-  static async getOrCreate(
-    program: FlipProgram,
-    switchboardQueue: OracleQueueAccount,
-    TOKENMINT:PublicKey
-  ): Promise<House> {
+  static async getOrCreate(program: FlipProgram, switchboardQueue: QueueAccount, TOKENMINT: PublicKey): Promise<House> {
     try {
-      
       const house = await House.load(program, TOKENMINT);
       return house;
     } catch (error: any) {
-      if (
-        !error.toString().includes("House account has not been created yet")
-      ) {
+      if (!error.toString().includes('House account has not been created yet')) {
         throw error;
       }
     }
 
-    console.log('no active house key found')
+    console.log('no active house key found');
     return House.create(program, switchboardQueue, TOKENMINT);
   }
 
   async loadMint(): Promise<spl.Mint> {
-    const mint = await spl.getMint(
-      this.program.provider.connection,
-      this.state.mint
-    );
+    const mint = await spl.getMint(this.program.provider.connection, this.state.mint);
     return mint;
   }
 }
