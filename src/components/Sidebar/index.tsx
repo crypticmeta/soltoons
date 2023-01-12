@@ -140,6 +140,7 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
      },1000)
     }
     else {
+      setWait(0)
       clearInterval(interval);    
     }
     return () => {
@@ -284,9 +285,9 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
           </>
         )}
       </div>
-      <div className="bg-red-00 w-full py-2">
+      {wait >0 && (<div className="bg-red-00 w-full py-2">
             <LinearProgress sx={{ height: 5, borderRadius: '30px' }} variant="determinate" value={wait} />
-          </div>
+          </div>)}
       <Modal open={openModal} onClose={handleModalClose}>
         <div className="bg-black w-full h-screen center bg-opacity-75">
           <div className="bg-brand_yellow rounded-xl md:w-6/12 2xl:w-4/12 p-6 text-xl">
