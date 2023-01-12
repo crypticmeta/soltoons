@@ -342,7 +342,7 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
 const Play = ({amount, setAmount, api, balances, loading, result, wait}) => {
   return (
     <>
-      {loading && (result?.status === 'loading' || result?.status === 'waiting') ? (
+      {loading && (result?.status === 'loading' || result?.status === 'waiting' ) ? (
         <div className="center h-full text-white border-white p-6">
           {/* <CircularProgress color="inherit" /> */}
           <img src="/assets/images/coin-transparent.gif" alt="loading" />
