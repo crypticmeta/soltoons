@@ -502,6 +502,7 @@ class ApiState implements PrivateApiInterface {
     //Throw error if no VRF
     if (!vrf || !vrf.id) {
       this.log("No VRF Available")
+      this.dispatch(thunks.setResult({ status: 'error' }));
       return
     }
     console.info("VRF used is: ", vrf.id)
@@ -512,15 +513,18 @@ class ApiState implements PrivateApiInterface {
           gameType: this.gameMode,
           userGuess: guess,
           betAmount: new anchor.BN(bet * LAMPORTS_PER_SOL),
-          switchboardTokenAccount: undefined
-        }, this.wallet.publicKey,        
-        new PublicKey(vrf ? vrf.id : (
-          process.env.REACT_APP_NETWORK === "devnet" ?
-            "4V4hFcswusaQ9tC5CJekc5YqraNQw4QxBDiSbPLDF4k5" :
-            'DgDX1DW6fgrsjtrN3EneTcJb9Ka5jCakacoYsMJUoiND')
+          switchboardTokenAccount: undefined,
+        },
+        this.wallet.publicKey,
+        new PublicKey(
+          vrf
+            ? vrf.id
+            : process.env.REACT_APP_NETWORK === 'devnet'
+            ? '4V4hFcswusaQ9tC5CJekc5YqraNQw4QxBDiSbPLDF4k5'
+            : '8fGps8aCBrkNguLHt9SKHwNvtg7UeTH6MvVQ5y8dDySs'
         ),
-        vrf.permission_bump||255,
-        vrf.state_bump||249,
+        vrf.permission_bump || 255,
+        vrf.state_bump || 249,
         this.userRibsBalance
       )
       .catch((err) => {
@@ -543,6 +547,7 @@ class ApiState implements PrivateApiInterface {
     const sign = request.sign(blockhash, request.signers);
     const signedTxs = await this.wallet.signAllTransactions([sign]).catch(e => {
       this.dispatch(thunks.setResult({ status: 'error' }));
+      this.log("User Rejected to sign Tx", Severity.Error)
       this.dispatch(thunks.setLoading(false));
       if (e instanceof anchor.web3.SendTransactionError) {
         const anchorError = e.logs ? anchor.AnchorError.parse(e.logs) : null;
@@ -560,7 +565,7 @@ class ApiState implements PrivateApiInterface {
     {
       if (id === "userBet") {
       this.dispatch(thunks.setResult({ status: 'waiting' }));
-    }
+      }
       for (const tx of signedTxs) {
       const serialTx = tx.serialize();
       await program.provider.connection
