@@ -384,25 +384,23 @@ export class User {
     
 
     //Enable below for setCallback
-    // callbackIxns.push(
-    //   await this.program.methods
-    //     .setCallback({})
-    //     .accounts({
-    //       user: this.publicKey,
-    //       house: this.state.house,
-    //       mint: TOKENMINT,
-    //       houseVault: house.state.houseVault,
-    //       authority: this.state.authority,
-    //       escrow: this.state.escrow,
-    //       vrfPayer: payerSwitchTokenAccount,
-    //       ...vrfContext.publicKeys,
-    //       payer: payerPubkey,
-    //       flipPayer: this.state.rewardAddress,
-    //       recentBlockhashes: SYSVAR_RECENT_BLOCKHASHES_PUBKEY,
-    //       tokenProgram: spl.TOKEN_PROGRAM_ID,
-    //     })
-    //     .instruction()
-    // );
+    const callbackIxns =  await this.program.methods
+        .setCallback({})
+        .accounts({
+        user: this.publicKey,
+        house: this.state.house,
+        mint: params.TOKENMINT,
+        houseVault: house.state.houseVault,
+        authority: this.state.authority,
+        escrow: this.state.escrow,
+        vrfPayer: payerWrappedSolAccount,
+        ...vrfContext.publicKeys,
+        payer: payerPubkey,
+        flipPayer: this.state.rewardAddress,
+        recentBlockhashes: SYSVAR_RECENT_BLOCKHASHES_PUBKEY,
+        tokenProgram: spl.TOKEN_PROGRAM_ID,
+        })
+        .instruction()
 
     console.log(vrfContext.publicKeys.permission.toBase58(), 'permission')
     console.log(vrfContext.publicKeys.switchboardProgramState.toBase58(), 'programState')
@@ -434,11 +432,11 @@ export class User {
       })
       .instruction()
     
-    if (wrapTxn) {
-      return wrapTxn.add(userBetIxn);
-    }
+    // if (wrapTxn) {
+    //   return wrapTxn.add(userBetIxn);
+    // }
 
-    return new TransactionObject(payerPubkey, [userBetIxn], [])
+    return new TransactionObject(payerPubkey, [callbackIxns], [])
   }
 
   // async awaitFlip(

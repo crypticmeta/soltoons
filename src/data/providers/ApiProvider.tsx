@@ -143,6 +143,8 @@ class ApiState implements PrivateApiInterface {
    */
   get rpc(): string {
     // @TODO make rpc connection configurable.
+
+    //@ts-ignore
     return process.env.REACT_APP_NETWORK === 'devnet' ? 'https://api.devnet.solana.com' : process.env.REACT_APP_RPC;
   }
 
@@ -594,6 +596,29 @@ class ApiState implements PrivateApiInterface {
       const blockhash = await program.provider.connection.getLatestBlockhash();
       const packed = pack.map((txn) => txn.toTxn(blockhash));
       const signedTxs = await this.wallet.signAllTransactions(packed);
+      console.log(signedTxs, 'signedTxs')
+      for (const tx of signedTxs) {
+        console.log('serializing tx....')
+        const serialTx = tx.serialize();
+        console.log(serialTx, 'serialTX')
+        await program.provider.connection.sendRawTransaction(serialTx, {skipPreflight: true})
+          .then((sig) => {
+            console.log(sig, ' tx')
+          }).catch((e) => {
+            this.dispatch(thunks.setResult({ status: 'error' }));
+            this.dispatch(thunks.setLoading(false));
+            if (e instanceof anchor.web3.SendTransactionError) {
+              const anchorError = e.logs ? anchor.AnchorError.parse(e.logs) : null;
+              if (anchorError) {
+                console.error(anchorError);
+                throw ApiError.anchorError(anchorError);
+              } else {
+                console.error(e);
+                throw ApiError.sendTransactionError(e.message);
+              }
+            }
+          })
+      }
       // await this.packSignAndSubmit(request.ixns, request.signers, false);
     }
   };
