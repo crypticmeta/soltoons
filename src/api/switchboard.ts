@@ -50,14 +50,6 @@ export async function loadVrfContext(
   const [queueAccount, queue] = await QueueAccount.load(program, vrf.oracleQueue);
   const programStateAccount = new ProgramStateAccount(program, program.programState.publicKey)
 
-
-  console.log('keys passed to derive permission are: ')
-  console.log("**************************")
-  console.log(program.programId.toBase58(), 'program')
-  console.log(queue.authority.toBase58(), 'authority')
-  console.log(queueAccount.publicKey.toBase58(), 'queue')
-  console.log(vrfPubkey.toBase58(), 'vrf')
-  console.log("*************************")
   const [permissionAccount, permissionBump] = PermissionAccount.fromSeed(
     program,
     queue.authority,

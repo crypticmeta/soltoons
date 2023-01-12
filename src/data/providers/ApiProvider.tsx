@@ -471,9 +471,7 @@ class ApiState implements PrivateApiInterface {
     const program = await this.program;
     const user = await this.user;
     const house = await House.load(program, TOKENMINT);
-    const ixns: TransactionInstruction[] = [];
-    ixns.push(
-      await (
+    const ixns = await (
         await this.program
       ).methods
         .collectReward({})
@@ -487,13 +485,42 @@ class ApiState implements PrivateApiInterface {
           tokenProgram: spl.TOKEN_PROGRAM_ID,
         })
         .instruction()
-    );
 
-    await this.packSignAndSubmit(ixns, []);
-    this.log('Reward collected Successfully!');
-    this.dispatch(thunks.setLoading(false));
-    this.dispatch(thunks.log({ message: 'Successfully claimed funds. ', severity: Severity.Success }));
-    this.dispatch(thunks.setResult({ status: 'claimed' }));
+    const request = new TransactionObject(this.wallet.publicKey, [ixns], [])
+    if (request) {
+      // const pack = TransactionObject.pack([request])
+      const program = await this.program;
+      const blockhash = await program.provider.connection.getLatestBlockhash();
+      const sign = request.sign(blockhash, request.signers);
+      const signedTxs = await this.wallet.signAllTransactions([sign]);
+      for (const tx of signedTxs) {
+        const serialTx = tx.serialize();
+        await program.provider.connection
+          .sendRawTransaction(serialTx, { skipPreflight: true })
+          .then((sig) => {
+            console.log(sig, ' tx');            
+            this.log('Reward collected Successfully!');
+            this.dispatch(thunks.setLoading(false));
+            this.dispatch(thunks.log({ message: 'Successfully claimed funds. ', severity: Severity.Success }));
+            this.dispatch(thunks.setResult({ status: 'claimed' }));
+          })
+          .catch((e) => {
+            this.dispatch(thunks.setResult({ status: 'error' }));
+            this.dispatch(thunks.setLoading(false));
+            if (e instanceof anchor.web3.SendTransactionError) {
+              const anchorError = e.logs ? anchor.AnchorError.parse(e.logs) : null;
+              if (anchorError) {
+                console.error(anchorError);
+                throw ApiError.anchorError(anchorError);
+              } else {
+                console.error(e);
+                throw ApiError.sendTransactionError(e.message);
+              }
+            }
+          });
+      }
+      // await this.packSignAndSubmit(request.ixns, request.signers, false);
+    }
   };
 
   /**
@@ -529,45 +556,46 @@ class ApiState implements PrivateApiInterface {
     this.log(`Bet Amount: ${bet}`);
 
     this.dispatch(thunks.setResult({ status: 'waiting' }));
-    let vrf = localStorage?.getItem('soltoons-vrf') || null;
-    if (vrf) {
-      const data: any = localStorage.getItem('soltoons-vrf');
-      if (data) vrf = JSON.parse(data);
-      if (vrf) {
-        // console.log(vrf.expiresAt, 'PARSED VRF');
-        //@ts-ignore
-        if (moment().valueOf() > vrf.expiresAt) {
-          console.log('expired vrf found. getting new vrf...');
-          const data = await getVRF(this.wallet.publicKey.toBase58());
+    // let vrf: any;
+    //   vrf =localStorage?.getItem('soltoons-vrf') || null;
+    // if (vrf) {
+    //   const data: any = localStorage.getItem('soltoons-vrf');
+    //   if (data) vrf = JSON.parse(data);
+    //   if (vrf) {
+    //     // console.log(vrf.expiresAt, 'PARSED VRF');
+    //     //@ts-ignore
+    //     if (moment().valueOf() > vrf.expiresAt) {
+    //       console.log('expired vrf found. getting new vrf...');
+    //       const data = await getVRF(this.wallet.publicKey.toBase58());
 
-          //@ts-ignore
-          if (data?.data?.vrf?.id) {
-            //@ts-ignore
-            localStorage.setItem('soltoons-vrf', JSON.stringify(data.data.vrf));
-            vrf = data.data.vrf;
-          }
-        }
-      }
-    } else {
-      console.log('no old vrf found. getting new vrf... ');
-      const data = await getVRF(this.wallet.publicKey.toBase58());
+    //       //@ts-ignore
+    //       if (data?.data?.vrf?.id) {
+    //         //@ts-ignore
+    //         localStorage.setItem('soltoons-vrf', JSON.stringify(data.data.vrf));
+    //         vrf = data.data.vrf;
+    //       }
+    //     }
+    //   }
+    // } else {
+    //   console.log('no old vrf found. getting new vrf... ');
+    //   const data = await getVRF(this.wallet.publicKey.toBase58());
 
-      //@ts-ignore
-      if (data?.data?.vrf?.id) {
-        //@ts-ignore
-        localStorage.setItem('soltoons-vrf', JSON.stringify(data.data.vrf));
-        vrf = data.data.vrf;
-      }
-    }
-    console.log(vrf, 'VRF-STATUS');
+    //   //@ts-ignore
+    //   if (data?.data?.vrf?.id) {
+    //     //@ts-ignore
+    //     localStorage.setItem('soltoons-vrf', JSON.stringify(data.data.vrf));
+    //     vrf = data.data.vrf;
+    //   }
+    // }
+    // console.log(vrf, 'VRF-STATUS');
     // if (!vrf || !vrf?.id) {
     //   this.log('error', Severity.Error);
     //   this.dispatch(thunks.setLoading(false));
     //   this.dispatch(thunks.setResult({ status: 'error' }));
     //   return null;
     // }
-    //@ts-ignore
-    console.log(vrf.id, 'FINAL VRF');
+    // //@ts-ignore
+    const vrf:any =  await getVRF(this.wallet.publicKey.toBase58());
     const request = await user
       .placeBetReq(
         {
@@ -576,52 +604,80 @@ class ApiState implements PrivateApiInterface {
           userGuess: guess,
           betAmount: new anchor.BN(bet * LAMPORTS_PER_SOL),
           switchboardTokenAccount: undefined
-        },this.wallet.publicKey,
-        new PublicKey('DgDX1DW6fgrsjtrN3EneTcJb9Ka5jCakacoYsMJUoiND'),
-        255,
-        249,
+        }, this.wallet.publicKey,        
+        new PublicKey(vrf ? vrf.id : (
+          process.env.REACT_APP_NETWORK === "devnet" ?
+            "4V4hFcswusaQ9tC5CJekc5YqraNQw4QxBDiSbPLDF4k5" :
+            'DgDX1DW6fgrsjtrN3EneTcJb9Ka5jCakacoYsMJUoiND')
+        ),
+        vrf.permission_bump||254,
+        vrf.state_bump||249,
         this.userRibsBalance
       )
       .catch((err) => {
         this.dispatch(thunks.setResult({ status: 'error' }));
         console.log(err, 'err creating bet req');
       });
-    
-    // if (request && request.callbackIxns.length) {
-    //   await this.packSignAndSubmit(request.callbackIxns, request.signers, false);
-    // }
-    if (request) {
-      const pack = TransactionObject.pack([request])
-      const program = await this.program;
-      const blockhash = await program.provider.connection.getLatestBlockhash();
-      const packed = pack.map((txn) => txn.toTxn(blockhash));
-      const signedTxs = await this.wallet.signAllTransactions(packed);
-      console.log(signedTxs, 'signedTxs')
-      for (const tx of signedTxs) {
-        console.log('serializing tx....')
-        const serialTx = tx.serialize();
-        console.log(serialTx, 'serialTX')
-        await program.provider.connection.sendRawTransaction(serialTx, {skipPreflight: true})
-          .then((sig) => {
-            console.log(sig, ' tx')
-          }).catch((e) => {
-            this.dispatch(thunks.setResult({ status: 'error' }));
-            this.dispatch(thunks.setLoading(false));
-            if (e instanceof anchor.web3.SendTransactionError) {
-              const anchorError = e.logs ? anchor.AnchorError.parse(e.logs) : null;
-              if (anchorError) {
-                console.error(anchorError);
-                throw ApiError.anchorError(anchorError);
-              } else {
-                console.error(e);
-                throw ApiError.sendTransactionError(e.message);
-              }
-            }
-          })
-      }
-      // await this.packSignAndSubmit(request.ixns, request.signers, false);
+    if(request)
+      await this.packSignAndSubmit(request, "userBet")
+    else {
+      this.dispatch(thunks.setResult({ status: 'error' }));
     }
   };
+
+  private packSignAndSubmit = async (
+    request: TransactionObject,
+    id?: string,
+  ) => {
+    const program = await this.program;
+    const blockhash = await program.provider.connection.getLatestBlockhash();
+    const sign = request.sign(blockhash, request.signers);
+    const signedTxs = await this.wallet.signAllTransactions([sign]).catch(e => {
+      this.dispatch(thunks.setResult({ status: 'error' }));
+      this.dispatch(thunks.setLoading(false));
+      if (e instanceof anchor.web3.SendTransactionError) {
+        const anchorError = e.logs ? anchor.AnchorError.parse(e.logs) : null;
+        if (anchorError) {
+          console.error(anchorError);
+          throw ApiError.anchorError(anchorError);
+        } else {
+          console.error(e);
+          throw ApiError.general('An error occurred while sending transaction.');
+          // throw ApiError.sendTransactionError(e.message);
+        }
+      }
+    });
+    if(signedTxs)
+    for (const tx of signedTxs) {
+      const serialTx = tx.serialize();
+      await program.provider.connection
+        .sendRawTransaction(serialTx, { skipPreflight: true })
+        .then((sig) => {
+          console.log(sig, ' tx');
+          console.log(new Date().toLocaleString())
+          this.dispatch(thunks.setLoading(false));
+          if (id === "userBet")            
+          this.dispatch(thunks.log({ message: 'Waiting for Tx confirmation... ', severity: Severity.Success }));
+            else
+          this.dispatch(thunks.log({ message: 'Tx sent successfully. ', severity: Severity.Success }));
+        })
+        .catch((e) => {
+          this.dispatch(thunks.setResult({ status: 'error' }));
+          this.dispatch(thunks.setLoading(false));
+          if (e instanceof anchor.web3.SendTransactionError) {
+            const anchorError = e.logs ? anchor.AnchorError.parse(e.logs) : null;
+            if (anchorError) {
+              console.error(anchorError);
+              throw ApiError.anchorError(anchorError);
+            } else {
+              console.error(e);
+              throw ApiError.general('An error occurred while sending transaction.');
+              // throw ApiError.sendTransactionError(e.message);
+            }
+          }
+        });
+    }
+  }
 
   // private packSignAndSubmit = async (
   //   ixns: anchor.web3.TransactionInstruction[],

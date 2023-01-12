@@ -359,9 +359,8 @@ export class User {
     );
 
     const vrfContext = await loadVrfContext(switchboard, vrf);
-
     const vrfEscrowBalance = await switchboard.mint.fetchBalance(vrfContext.publicKeys.vrfEscrow);
-    if (!vrfEscrowBalance) {
+    if (!vrfEscrowBalance && vrfEscrowBalance!==0) {
       throw new Error(`Failed to fetch VRF Escrow account`);
     }
 
@@ -382,31 +381,6 @@ export class User {
         fundUpTo: wrapAmount,
       });
     
-
-    //Enable below for setCallback
-    const callbackIxns =  await this.program.methods
-        .setCallback({})
-        .accounts({
-        user: this.publicKey,
-        house: this.state.house,
-        mint: params.TOKENMINT,
-        houseVault: house.state.houseVault,
-        authority: this.state.authority,
-        escrow: this.state.escrow,
-        vrfPayer: payerWrappedSolAccount,
-        ...vrfContext.publicKeys,
-        payer: payerPubkey,
-        flipPayer: this.state.rewardAddress,
-        recentBlockhashes: SYSVAR_RECENT_BLOCKHASHES_PUBKEY,
-        tokenProgram: spl.TOKEN_PROGRAM_ID,
-        })
-        .instruction()
-
-    console.log(vrfContext.publicKeys.permission.toBase58(), 'permission')
-    console.log(vrfContext.publicKeys.switchboardProgramState.toBase58(), 'programState')
-    console.log(vrfContext.publicKeys.oracleQueue.toBase58(), 'queue')
-    console.log(vrfContext.publicKeys.vrf.toBase58(), 'vrf')
-    console.log(vrfContext.publicKeys.vrfEscrow.toBase58(), 'vrf escrow');
 
     const userBetIxn = await this.program.methods
       .userBet({
@@ -432,11 +406,10 @@ export class User {
       })
       .instruction()
     
-    // if (wrapTxn) {
-    //   return wrapTxn.add(userBetIxn);
-    // }
-
-    return new TransactionObject(payerPubkey, [callbackIxns], [])
+    if (wrapTxn) {
+      return wrapTxn.add(userBetIxn);
+    }
+    return new TransactionObject(payerPubkey, [userBetIxn], [])
   }
 
   // async awaitFlip(
