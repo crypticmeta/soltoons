@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { hooks, Store, thunks } from '../../data';
-import { useConnectedWallet, useWalletKit } from '@gokiprotocol/walletkit';
+import { useWallet } from '@solana/wallet-adapter-react';
+import { WalletMultiButton } from '@solana/wallet-adapter-material-ui';
+// import { useConnectedWallet, useWalletKit } from '@gokiprotocol/walletkit';
 import { useSelector } from 'react-redux';
 import CircularProgress from '@mui/material/CircularProgress';
 import Snackbar from '@mui/material/Snackbar';
@@ -14,50 +16,7 @@ const Alert = React.forwardRef<HTMLDivElement, AlertProps>(function Alert(props,
   return <MuiAlert elevation={6} ref={ref} variant="filled" {...props} />;
 });
 
-const WalletButton: React.FC = () => {
-  const walletKit = useWalletKit();
 
-  const wallet = useConnectedWallet();
-
-  const dispatch = hooks.useThunkDispatch();
-  const [hovered, setHovered] = React.useState(false);
-
-  useEffect(() => {
-    if (wallet?.connected) {
-    }
-  }, [wallet]);
-
-  const disconnect = React.useCallback(() => {
-    if (wallet) {
-      dispatch(thunks.log({ message: `Disconnecting wallet ${wallet.publicKey.toBase58()}` }));
-      wallet.disconnect();
-    }
-  }, [dispatch, wallet]);
-
-  const content = React.useMemo(() => {
-    if (wallet) {
-      if (hovered) return 'Disconnect';
-
-      const pubkey = wallet.publicKey.toBase58();
-      const truncatedPubkey = `${pubkey.slice(0, 5)}...${pubkey.slice(-5)}`;
-      return (
-        <div style={{ display: 'flex', flexDirection: 'column' }}>
-          <span>{truncatedPubkey}</span>
-        </div>
-      );
-    }
-    return 'Connect Wallet';
-  }, [wallet, hovered]);
-
-  return (
-    <div
-      className="bg-brand_yellow border-4 rounded-3xl border-black w-full text-center py-2 cursor-pointer"
-      onClick={wallet ? disconnect : walletKit.connect}
-    >
-      {content}
-    </div>
-  );
-};
 //@ts-ignore
 function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal }) {
     const [playLoading, stopLoading] = useSound('/assets/audio/loading.mp3', {
@@ -177,7 +136,11 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
   return (
     <div className="flex h-full flex-col max-h-[800px] justify-start md:justify-center w-full lg:w-3/12 p-6 font-bold">
       <div className="part1 h-[20%] center w-full">
-        <WalletButton />
+        <WalletMultiButton
+          variant="outlined"
+          color="secondary"
+          className={"walletMultiButton"}
+        />
       </div>
       {/* <div className="part2 h-[50%] 2xl:h-[60%] bg-brand_yellow  border-4 border-black rounded-3xl p-2 text-sm overflow-hidden">
         <div className="flex justify-between font-extrabold h-[10%]">
@@ -285,9 +248,11 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
           </>
         )}
       </div>
-      {wait >0 && (<div className="bg-red-00 w-full py-2">
-            <LinearProgress sx={{ height: 5, borderRadius: '30px' }} variant="determinate" value={wait} />
-          </div>)}
+      {wait > 0 && (
+        <div className="bg-red-00 w-full py-2">
+          <LinearProgress sx={{ height: 5, borderRadius: '30px' }} variant="determinate" value={wait} />
+        </div>
+      )}
       <Modal open={openModal} onClose={handleModalClose}>
         <div className="bg-black w-full h-screen center bg-opacity-75">
           <div className="bg-brand_yellow rounded-xl md:w-6/12 2xl:w-4/12 p-6 text-xl">

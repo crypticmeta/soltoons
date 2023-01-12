@@ -1,7 +1,6 @@
 import React from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { InternalLinks } from './util';
-import HomePage from './views/HomePage';
 import Home from './views/Home';
 import Admin from './views/Admin'
 const Router: React.FC = () => {

@@ -1,18 +1,13 @@
 import * as anchor from "@project-serum/anchor";
 import * as spl from "@solana/spl-token-v2";
-import {promiseWithTimeout, sleep } from '@switchboard-xyz/common'
+import {sleep } from '@switchboard-xyz/common'
 import {
-  Keypair,
   PublicKey,
-  Signer,
-  SystemProgram,
   SYSVAR_RECENT_BLOCKHASHES_PUBKEY,
-  TransactionInstruction,
 } from "@solana/web3.js";
 import {
   Callback,
   QueueAccount,
-  PermissionAccount,
   VrfAccount,
   SwitchboardProgram,
   TransactionObject
@@ -28,6 +23,7 @@ import {
 } from "./types";
 import { programWallet } from "../util/wallet";
 
+import { Buffer } from 'buffer';
 export interface UserBetPlaced {
   roundId: anchor.BN;
   user: PublicKey;
@@ -217,7 +213,7 @@ export class User {
   ): Promise<User> {
    
     const [userKey, txns] = await User.createReq(program, switchboardProgram, TOKENMINT, userWallet.wallet.publicKey, false);
-    const signatures = await switchboardProgram.signAndSendAll(txns);
+    // const signatures = await switchboardProgram.signAndSendAll(txns);
 
     let retryCount = 5;
     while (retryCount) {

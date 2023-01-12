@@ -1,12 +1,15 @@
 import * as anchor from '@project-serum/anchor';
 import * as spl from '@solana/spl-token-v2';
-import { PublicKey } from '@solana/web3.js';
+import { ConfirmOptions, Connection, PublicKey, Signer, Transaction, TransactionSignature } from '@solana/web3.js';
 import { AnchorWallet, QueueAccount, SwitchboardProgram } from '@switchboard-xyz/solana.js';
 import { PROGRAM_ID_CLI } from './generated/programId';
 import { FlipProgram } from './types';
 import { User } from './user';
 import Big from 'big.js';
+import { sleep } from '@switchboard-xyz/common';
 
+import { Wallet } from '@project-serum/anchor/dist/cjs/provider';
+import { useMemo } from 'react';
 const DEFAULT_COMMITMENT = 'confirmed';
 
 export const defaultRpcForCluster = (cluster: anchor.web3.Cluster | 'localnet') => {
@@ -28,19 +31,77 @@ export interface FlipUser {
   switchTokenWallet: anchor.web3.PublicKey;
   user: User;
 }
-
-export async function getFlipProgram(rpcEndpoint: string): Promise<FlipProgram> {
-  const programId = new anchor.web3.PublicKey(PROGRAM_ID_CLI);
+export class StubWallet implements Wallet {
+  async signTransaction(tx: Transaction): Promise<Transaction> {
+    return tx;
+  }
+  async signAllTransactions(txs: Transaction[]): Promise<Transaction[]> {
+    return txs;
+  }
+  // Total hack to allow missing wallet when not connected
+  publicKey = undefined as unknown as PublicKey;
+}
+export const customProviderFactory = (
+  connection: Connection,
+  anchorWallet: AnchorWallet | undefined
+): anchor.AnchorProvider => {
   const provider = new anchor.AnchorProvider(
-    new anchor.web3.Connection(rpcEndpoint, { commitment: DEFAULT_COMMITMENT }),
-    new AnchorWallet(anchor.web3.Keypair.generate()),
-    { commitment: DEFAULT_COMMITMENT }
+    connection,
+    anchorWallet || new StubWallet(),
+    {}
   );
 
-  const idl = await anchor.Program.fetchIdl(programId, provider);
+  // No websocket sender with tx confirmation awaiting
+  provider.sendAndConfirm = async (
+    tx: Transaction,
+    signers?: Array<Signer | undefined>,
+    opts?: ConfirmOptions
+  ): Promise<TransactionSignature> => {
+    if (signers === undefined) {
+      signers = [];
+    }
+
+    tx.feePayer = anchorWallet?.publicKey;
+    tx.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
+    await anchorWallet?.signAllTransactions([tx]);
+    signers
+      .filter((s): s is Signer => s !== undefined)
+      .forEach((kp) => {
+        console.log(kp.publicKey.toBase58(), 'signer')
+        tx.partialSign(kp);
+      });
+    
+
+    const rawTx = tx.serialize();
+    const signature = await connection.sendRawTransaction(rawTx);
+    console.log(signature, 'signature')
+
+    // Await for 30 seconds
+    for (let i = 0; i < 30; i++) {
+      const signatureStatus = (await connection.getSignatureStatus(signature))
+        .value;
+      if (signatureStatus?.confirmationStatus === 'confirmed') {
+        break;
+      }
+      await sleep(1000);
+    }
+    return signature;
+  };
+
+  return provider;
+};
+export async function getFlipProgram(rpcEndpoint: string, wallet: AnchorWallet): Promise<FlipProgram> {
+  const programId = new anchor.web3.PublicKey(PROGRAM_ID_CLI);
+  const connection = new anchor.web3.Connection(rpcEndpoint, { commitment: DEFAULT_COMMITMENT });
+  // const anchorWallet = new AnchorWallet(anchor.web3.Keypair.generate());
+  // const anchorWallet = new AnchorWallet(anchor.web3.Keypair.generate());
+  // TODO: Customize type to allow access of publicKey
+  const customProvider = customProviderFactory(connection, wallet);
+
+  const idl = await anchor.Program.fetchIdl(programId, customProvider);
   if (!idl) throw new Error(`Failed to find IDL for program [ ${programId.toBase58()} ]`);
 
-  return new anchor.Program(idl, programId, provider, new anchor.BorshCoder(idl));
+  return new anchor.Program(idl, programId, customProvider, new anchor.BorshCoder(idl));
 }
 
 export async function createFlipUser(
