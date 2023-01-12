@@ -24,6 +24,8 @@ export interface GameState {
   user: any;
   result: any;
   vaultBalance: number;
+  userVaultBalance: number;
+  tokenmint: string;
 }
 
 /**
@@ -32,10 +34,12 @@ export interface GameState {
 const initialState: GameState = {
   loading: false,
   gameMode: GameTypeValue.TWENTY_SIDED_DICE_ROLL,
+  tokenmint: "So11111111111111111111111111111111111111112",
   userBalances: {},
   user: {},
   result: {},
   vaultBalance: 0,
+  userVaultBalance: 0,
 };
 
 /**
@@ -74,8 +78,16 @@ const gameStateSlice = createSlice({
       console.log('setting vault balance = ', action.payload)
       state.vaultBalance = action.payload
     },
+    setUserVaultBalance: (state: GameState, action: PayloadAction<any>) => {
+      console.log('setting user vault balance = ', action.payload)
+      state.userVaultBalance = action.payload
+    },
+    setTokenmint: (state: GameState, action: PayloadAction<any>) => {
+      console.log('setting tokenmint = ', action.payload)
+      state.tokenmint = action.payload
+    },
   },
 });
 
-export const { setUserBalance, setLoading, setUser, setResult, setVaultBalance } = gameStateSlice.actions;
+export const { setUserBalance, setLoading, setUser, setResult, setVaultBalance, setUserVaultBalance, setTokenmint } = gameStateSlice.actions;
 export default gameStateSlice.reducer;

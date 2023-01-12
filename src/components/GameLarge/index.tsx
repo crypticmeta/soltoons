@@ -181,6 +181,26 @@ useEffect(() => {
   }
 }, [reward, step]);
   
+      function handleKeyDown(e: any) {
+        if (e.code === 'Enter') {
+          api.handleCommand(`user play 1 ${amount}`);
+        }
+        if (e.code === 'ArrowRight') {
+          setRightHold(true);
+        }
+        if (e.code === 'ArrowLeft') {
+          setLeftHold(true);
+        }
+      }
+      function handleKeyUp(e: any) {
+        setLeftHold(false);
+        setRightHold(false);
+      }
+
+      useEffect(() => {
+        document.addEventListener('keydown', handleKeyDown);
+        document.addEventListener('keyup', handleKeyUp);
+      }, []);
 
       return (
         <div className="w-full lg:w-9/12 bg-red-00 justify-center items-center py-16 lg:py-0 hidden 2xl:flex">

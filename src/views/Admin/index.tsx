@@ -1,15 +1,9 @@
-import React, { useEffect, useState } from 'react';
-import * as sbv2 from '@switchboard-xyz/switchboard-v2';
-import * as spl from '@solana/spl-token-v2';
+import React, { useEffect} from 'react';
 import { hooks, Store, thunks } from '../../data';
-import { useConnectedWallet, useWalletKit, useSolana } from '@gokiprotocol/walletkit';
+import { useConnectedWallet, useWalletKit } from '@gokiprotocol/walletkit';
 import { useSelector } from 'react-redux';
-import CircularProgress from '@mui/material/CircularProgress';
 import Snackbar from '@mui/material/Snackbar';
 import MuiAlert, { AlertProps } from '@mui/material/Alert';
-import { Severity } from '../../util/const';
-import * as anchor from 'anchor-24-2';
-import store from '../../data/store';
 const Alert = React.forwardRef<HTMLDivElement, AlertProps>(function Alert(props, ref) {
   return <MuiAlert elevation={6} ref={ref} variant="filled" {...props} />;
 });
@@ -80,7 +74,6 @@ function Admin() {
     const api = hooks.useApi();    
   const logs = useSelector(({ HUDLogger }: Store) => HUDLogger.logs);
     const vault_balance = useSelector((store: Store) => store.gameState.vaultBalance);
-    const balances = useSelector((store: Store) => store.gameState.userBalances);
     const wallet = useConnectedWallet();
       useEffect(() => {
         handleClick();

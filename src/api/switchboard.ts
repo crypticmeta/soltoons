@@ -1,35 +1,34 @@
 import * as anchor from "@project-serum/anchor";
-import * as anchor24 from "anchor-24-2";
 import { PublicKey } from "@solana/web3.js";
 import {
   AnchorWallet,
-  loadSwitchboardProgram,
-  OracleQueueAccount,
+  QueueAccount,
   PermissionAccount,
   ProgramStateAccount,
   VrfAccount,
-} from "@switchboard-xyz/switchboard-v2";
+  SwitchboardProgram
+} from "@switchboard-xyz/solana.js";
 
 export async function loadSwitchboard(
   provider: anchor.AnchorProvider
-): Promise<anchor24.Program> {
-  const switchboardProgram = await loadSwitchboardProgram(
-    process.env.REACT_APP_NETWORK == 'devnet' ? 'devnet' : "mainnet-beta",
+): Promise<SwitchboardProgram> {
+  const switchboardProgram = await SwitchboardProgram.load(
+    process.env.REACT_APP_NETWORK === 'devnet' ? 'devnet' : "mainnet-beta",
     provider.connection,
     ((provider as anchor.AnchorProvider).wallet as AnchorWallet).payer
   );
 
-  return switchboardProgram as any;
+  return switchboardProgram;
 }
 
 export async function loadVrfContext(
-  program: anchor24.Program,
+  program: SwitchboardProgram,
   vrfPubkey: PublicKey
 ): Promise<{
   accounts: {
     vrfAccount: VrfAccount;
     programStateAccount: ProgramStateAccount;
-    queueAccount: OracleQueueAccount;
+    queueAccount: QueueAccount;
     permissionAccount: PermissionAccount;
   };
   bumps: {
@@ -47,24 +46,12 @@ export async function loadVrfContext(
     permission: PublicKey;
   };
 }> {
-  const vrfAccount = new VrfAccount({
-    program: program as any,
-    publicKey: vrfPubkey,
-  });
-  const vrf = await vrfAccount.loadData();
-
-  const [programStateAccount, stateBump] = ProgramStateAccount.fromSeed(
-    program as any
-  );
-
-  const queueAccount = new OracleQueueAccount({
-    program: program as any,
-    publicKey: vrf.oracleQueue,
-  });
-  const queue = await queueAccount.loadData();
+  const [vrfAccount, vrf] = await VrfAccount.load(program, vrfPubkey);
+  const [queueAccount, queue] = await QueueAccount.load(program, vrf.oracleQueue);
+  const programStateAccount = new ProgramStateAccount(program, program.programState.publicKey)
 
   const [permissionAccount, permissionBump] = PermissionAccount.fromSeed(
-    program as any,
+    program,
     queue.authority,
     queueAccount.publicKey,
     vrfPubkey
@@ -77,7 +64,7 @@ export async function loadVrfContext(
       queueAccount,
       permissionAccount,
     },
-    bumps: { stateBump, permissionBump },
+    bumps: { stateBump:program.programState.bump, permissionBump },
     publicKeys: {
       vrf: vrfAccount.publicKey,
       vrfEscrow: vrf.escrow,

@@ -1,16 +1,15 @@
 import React, { useEffect, useState } from 'react';
-import * as sbv2 from '@switchboard-xyz/switchboard-v2';
-import * as spl from '@solana/spl-token-v2';
 import { hooks, Store, thunks } from '../../data';
-import { useConnectedWallet, useWalletKit, useSolana } from '@gokiprotocol/walletkit';
+import { useConnectedWallet, useWalletKit } from '@gokiprotocol/walletkit';
 import { useSelector } from 'react-redux';
 import CircularProgress from '@mui/material/CircularProgress';
 import Snackbar from '@mui/material/Snackbar';
 import MuiAlert, { AlertProps } from '@mui/material/Alert';
 import { Severity } from '../../util/const';
-import * as anchor from 'anchor-24-2';
 import Modal from '@mui/material/Modal';
 import { LAMPORTS_PER_SOL } from '@solana/web3.js';
+import LinearProgress from '@mui/material/LinearProgress';
+import useSound from 'use-sound';
 const Alert = React.forwardRef<HTMLDivElement, AlertProps>(function Alert(props, ref) {
   return <MuiAlert elevation={6} ref={ref} variant="filled" {...props} />;
 });
@@ -61,6 +60,15 @@ const WalletButton: React.FC = () => {
 };
 //@ts-ignore
 function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal }) {
+    const [playLoading, stopLoading] = useSound('/assets/audio/loading.m4a', {
+      volume: 0.7,
+    });
+    const [playWin, stopWin] = useSound('/assets/audio/win.m4a', {
+      volume: 1,
+    });
+  const [playLose, stopLose] = useSound('/assets/audio/lose.m4a', {
+    volume: 1,
+  });
   const [open, setOpen] = React.useState(false);
 
 
@@ -76,8 +84,6 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
     setOpen(false);
   };
 
-  const { providerMut } = useSolana();
-  const wallet = useConnectedWallet();
   const api = hooks.useApi();
   const dispatch = hooks.useThunkDispatch();
   const logs = useSelector(({ HUDLogger }: Store) => HUDLogger.logs);
@@ -85,7 +91,10 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
   const balances = useSelector((store: Store) => store.gameState.userBalances);
   const user = useSelector((store: Store) => store.gameState.user);
   const result = useSelector((store: Store) => store.gameState.result);
+    const userVaultBal = useSelector((store: Store) => store.gameState.userVaultBalance);
   const [userAccountExists, setUserAccountExists] = useState(true);
+  const [lastGameStatus, setLastGameStatus] = useState("");
+  const [wait, setWait] = useState(0)
   useEffect(() => {
     // console.log(logs, 'LOGS');
     if (logs && logs[0]?.severity === 'error') {
@@ -100,6 +109,7 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
     // console.log(user, 'user in redux')
     if (user && user.authority) {
       setUserAccountExists(true);
+      setLastGameStatus(user.currentRound.status.kind);
     }
   }, [user]);
 
@@ -107,84 +117,58 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
     let timer: any;
     if (result && result.status === 'waiting') {
       // console.log('starting timer');
+      setWait(1)
       timer = setTimeout(() => {
         dispatch(thunks.setLoading(false));
         dispatch(thunks.log({ message: 'Failed to get result. Your funds are safe.', severity: Severity.Error }));
         dispatch(thunks.setResult({ status: 'error' }));
-      }, 80000);
+      }, 100000);
     } else if (result && result.status === 'success') {
       // console.log('clearing timeout')
+      
       clearTimeout(timer);
+    } else if (result && result.status === 'claimed') {
+      handleModalClose()
     }
     return () => clearTimeout(timer);
-  }, [dispatch, result]);
+  }, [dispatch, handleModalClose, result]);
 
-  // console.log(providerMut, 'pm')
-  const getReward = async () => {
-    if (wallet && balances.ribs && providerMut) {
-      try { 
-        let ixns = [];
-        dispatch(thunks.setLoading(true));
-        // console.log(user.rewardAddress, 'user');
-        ixns.push(
-          spl.createCloseAccountInstruction(
-            new anchor.web3.PublicKey(user.rewardAddress),
-            wallet.publicKey,
-            wallet.publicKey
-          )
-        );
-        // ixns.push(createSyncNativeInstruction(wallet.publicKey, TOKEN_PROGRAM_ID));
-        // console.log(ixns, 'instructions');
-        const tx = new anchor.web3.Transaction().add(...ixns);
-        const packed = await sbv2.packTransactions(
-          providerMut.connection,
-          [tx],
-          [] as anchor.web3.Keypair[],
-          wallet.publicKey
-        );
+  useEffect(() => {
+    let interval:any;
+    if (result.status === "waiting" && wait < 100) {
+     interval = setInterval(() => {
+        console.log(wait, 'second')
+        setWait(wait+1)
+     },1000)
+    }
+    else {
+      clearInterval(interval);    
+    }
+    return () => {
+      clearInterval(interval)
+    };
+  }, [result, wait])
 
-        const signedTxs = await wallet.signAllTransactions(packed);
-        // console.log('signedtxs');
-
-        for (let k = 0; k < packed.length; k += 1) {
-          const sig = await providerMut.connection
-            .sendRawTransaction(
-              signedTxs[k].serialize(),
-              // req.signers,
-              {
-                skipPreflight: false,
-                maxRetries: 10,
-              }
-            )
-            .catch((e) => {
-              dispatch(thunks.setLoading(false));
-              dispatch(thunks.log({ message: 'Error converting wsol to sol. ', severity: Severity.Error }));
-              console.log(e, 'error signing instruction');
-            });
-          console.log(sig, 'signed tx ', k);
-          if (sig)
-            await providerMut.connection.confirmTransaction(sig).catch((e) => {
-              console.log(e, 'error confirming transaction');
-              dispatch(thunks.setLoading(false));
-              dispatch(thunks.log({ message: 'Error converting wsol to sol. ', severity: Severity.Error }));
-              // dispatch(thunks.setResult({ status: 'claimed' }));
-            });
-          if (sig) console.log(sig, ' tx signature');
-          if (sig) {
-            handleModalClose()
-            dispatch(thunks.setLoading(false));
-            dispatch(thunks.log({ message: 'Successfully claimed funds. ', severity: Severity.Success }));
-            dispatch(thunks.setResult({ status: 'claimed' }));
-          }
-        }
-      }
-      catch (e) {
-        dispatch(thunks.setLoading(false));
-        dispatch(thunks.log({ message: 'Error converting wsol to sol. ', severity: Severity.Error }));
-        console.log(e, 'error')
+  useEffect(() => {
+    if (result && result?.status === "waiting") {
+      
+      playLoading();
+    }
+    else if (result?.status === "success") {
+      stopLoading.stop();
+      if (result.userWon) {
+        playWin();
+        
+      } else {
+        playLose();
       }
     }
-  };
+    else {
+      stopLoading.stop();
+    }
+  }, [result])
+  
+  
 
 
   return (
@@ -256,14 +240,29 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
       <div className="part3 h-[35%] 2xl:h-[35%] bg-brand_yellow rounded-3xl border-4 border-black text-sm p-6 flex flex-col justify-between">
         {userAccountExists ? (
           <>
-            <Play
-              amount={amount}
-              setAmount={setAmount}
-              loading={loading}
-              api={api}
-              balances={balances}
-              result={result}
-            />
+            {/* {console.log(step === 0, userVaultBal > 0.0362616, !result?.status, lastGameStatus.includes('Settled'))} */}
+            {step === 0 && userVaultBal > 0.0362616 && !result?.status && lastGameStatus.includes('Settled') ? (
+              <>
+                <button
+                  onClick={() => {
+                    api.handleCommand('collect reward');
+                  }}
+                  className="center h-full text-lg"
+                >
+                  Collect Reward
+                </button>
+              </>
+            ) : (
+              <Play
+                amount={amount}
+                setAmount={setAmount}
+                loading={loading}
+                api={api}
+                balances={balances}
+                result={result}
+                wait={wait}
+              />
+            )}
           </>
         ) : (
           <>
@@ -304,7 +303,7 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
                 <div className="center space-x-4 flex-wrap text-sm md:text-xl">
                   <button
                     className="bg-[#a23acd] border-2 rounded-3xl border-black uppercase font-extrabold px-4 py-2 cursor-pointer"
-                    onClick={() => getReward()}
+                    onClick={() => api.handleCommand('collect reward')}
                   >
                     Collect Reward
                   </button>
@@ -315,8 +314,6 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
                     Close
                   </button> */}
                 </div>
-
-                <p className="text-xs text-center pt-3">*This converts all your wsol to sol</p>
               </div>
             )}
           </div>
@@ -337,12 +334,16 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
 }
 
 //@ts-ignore
-const Play = ({amount, setAmount, api, balances, loading, result}) => {
+const Play = ({amount, setAmount, api, balances, loading, result, wait}) => {
   return (
     <>
       {loading && result?.status === 'waiting' ? (
-        <div className="center h-full text-white border-white">
-          <CircularProgress color="inherit" />
+        <div className="center h-full text-white border-white p-6">
+          {/* <CircularProgress color="inherit" /> */}
+          <img src="/assets/images/coin-transparent.gif" alt="loading" />
+          {/* <div className="bg-red-00 w-full">
+            <LinearProgress sx={{ height: 10, borderRadius: '30px' }} variant="determinate" value={wait} />
+          </div> */}
         </div>
       ) : (
         <>
@@ -369,11 +370,13 @@ const Play = ({amount, setAmount, api, balances, loading, result}) => {
             </button>
             <p className="text-xs text-gray-700 text-center">
               {Number(balances.sol || 0).toFixed(4)} sol{' '}
-              <span className="pl-4">
+              {/* <span className="pl-4">
                 {Number(result && result.status === 'claimed' ? 0 : balances.ribs || 0).toFixed(4)} wsol
-              </span>
-              </p>
-              {Number(amount)>2 && (<p className='text-red-800 text-xs pt-2 text-center'>Amount should be less than 2 SOL</p>)}
+              </span> */}
+            </p>
+            {Number(amount) > 2 && (
+              <p className="text-red-800 text-xs pt-2 text-center">Amount should be less than 2 SOL</p>
+            )}
           </div>
         </>
       )}
