@@ -498,7 +498,13 @@ class ApiState implements PrivateApiInterface {
     this.dispatch(thunks.setResult({ status: 'loading' }));
 
     this.dispatch(thunks.setLoading(true));
-    const vrf:any =  await getVRF(this.wallet.publicKey.toBase58());
+    const vrf: any = await getVRF(this.wallet.publicKey.toBase58());
+    //Throw error if no VRF
+    if (!vrf || !vrf.id) {
+      this.log("No VRF Available")
+      return
+    }
+    console.info("VRF used is: ", vrf.id)
     const request = await user
       .placeBetReq(
         {
@@ -513,7 +519,7 @@ class ApiState implements PrivateApiInterface {
             "4V4hFcswusaQ9tC5CJekc5YqraNQw4QxBDiSbPLDF4k5" :
             'DgDX1DW6fgrsjtrN3EneTcJb9Ka5jCakacoYsMJUoiND')
         ),
-        vrf.permission_bump||254,
+        vrf.permission_bump||255,
         vrf.state_bump||249,
         this.userRibsBalance
       )
