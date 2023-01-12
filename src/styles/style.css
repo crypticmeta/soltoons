@@ -2,6 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
+#loading{
+  transition: all ease-in-out 1s;
+}
 html,
 body {
   padding: 0;
