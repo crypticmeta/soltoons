@@ -63,27 +63,21 @@ const gameStateSlice = createSlice({
       }
     },
     setLoading: (state: GameState, action: PayloadAction<boolean>) => {
-      console.log('setting loading = ', action.payload)
       state.loading = action.payload
     },
     setUser: (state: GameState, action: PayloadAction<any>) => {
-      console.log('setting user = ', action.payload)
       state.user = action.payload
     },
     setResult: (state: GameState, action: PayloadAction<any>) => {
-      console.log('setting result = ', action.payload)
       state.result = action.payload
     },
     setVaultBalance: (state: GameState, action: PayloadAction<any>) => {
-      console.log('setting vault balance = ', action.payload)
       state.vaultBalance = action.payload
     },
     setUserVaultBalance: (state: GameState, action: PayloadAction<any>) => {
-      console.log('setting user vault balance = ', action.payload)
       state.userVaultBalance = action.payload
     },
     setTokenmint: (state: GameState, action: PayloadAction<any>) => {
-      console.log('setting tokenmint = ', action.payload)
       state.tokenmint = action.payload
     },
   },

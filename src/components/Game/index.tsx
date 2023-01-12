@@ -30,7 +30,6 @@ function Game({ amount, setAmount, step, setStep, handleModalOpen }) {
     stateMachines: STATE_MACHINE_NAME,
   };
   const { RiveComponent, rive } = useRive(params);
-  // console.log(rive, 'rive')
   const fireInput = useStateMachineInput(rive, STATE_MACHINE_NAME, INPUT_NAME);
   //api
   const api = hooks.useApi();
@@ -51,7 +50,7 @@ function Game({ amount, setAmount, step, setStep, handleModalOpen }) {
 
   useEffect(() => {
     if (x <= -4 && result?.status === 'success') {
-      console.log('setting leftHold false and moving to step 2')
+      // ('setting leftHold false and moving to step 2')
       setLeftHold(false);
       setStep(3)
     }
@@ -98,9 +97,7 @@ function Game({ amount, setAmount, step, setStep, handleModalOpen }) {
     let newX = x + 2;
     if (rightHold && !step)
       interval = setInterval(() => {
-        // console.log(newX, 'new x value');
         if (newX >= -5 && newX <= 85) {
-          // console.log('new x is valid');
           setX(newX);
           newX = newX - 2;
         }
@@ -112,10 +109,8 @@ function Game({ amount, setAmount, step, setStep, handleModalOpen }) {
   //rive movement after loading user
   useEffect(() => {
     if (fireInput) {
-      // console.log('fire');
       fireInput?.fire();
       setTimeout(() => {
-        // console.log('fire 2');
         fireInput?.fire();
       }, 600);
    }
@@ -185,13 +180,6 @@ function Game({ amount, setAmount, step, setStep, handleModalOpen }) {
   }, [reward, step])
   
 
-  // console.log(step, 'step');
-  // console.log(styleReward, 'reward style animation check');
-  // console.log(styleRewardItem, 'reward style item animation check');
-  // console.log(styleX, 'claw X style');
-  
-  // console.log(reward, step, 'reward, step');
-  // console.log(x, styleX)
   function handleKeyDown(e: any) {
     if (e.code==="Enter") {
       api.handleCommand(`user play 1 ${amount}`);

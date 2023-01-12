@@ -37,7 +37,6 @@ export interface UserBetAccounts {
 export const layout = borsh.struct([types.UserBetParams.layout("params")])
 
 export function userBet(args: UserBetArgs, accounts: UserBetAccounts) {
-  // console.log(accounts.mint.toBase58(), 'account.mint')
   const keys: Array<AccountMeta> = [
     { pubkey: accounts.user, isSigner: false, isWritable: true },
     { pubkey: accounts.house, isSigner: false, isWritable: false },

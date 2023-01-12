@@ -26,7 +26,6 @@ import {
   GameTypeEnum,
   GameTypeValue,
 } from "./types";
-import { verifyPayerBalance } from "./utils";
 import { programWallet } from "../util/wallet";
 
 export interface UserBetPlaced {
@@ -240,69 +239,31 @@ export class User {
     program: FlipProgram,
     switchboardProgram: SwitchboardProgram,
     TOKENMINT: PublicKey,
-    payerPubkey = programWallet(program as any).publicKey,
+    payerPubkey:PublicKey,
     rewardAddressInitialized: boolean
-  ): Promise<[PublicKey, Array<TransactionObject>]> {
+  ): Promise<[PublicKey, TransactionObject]> {
 
 
     const house = await House.load(program, TOKENMINT);
     const flipMint = await house.loadMint();
 
-    const switchboardQueue = house.getQueueAccount(switchboardProgram);
-
     const escrowKeypair = anchor.web3.Keypair.generate();
-    const vrfSecret = anchor.web3.Keypair.generate();
-    const vrf = process.env.REACT_APP_NETWORK === "devnet" ? new PublicKey("3r9hCdNhQPqh1ZcWTjgNkTRhHHBmgUScKKaWZt1zjzKn") : new PublicKey("BbhoscM2Za4zNNLohLvSMkdNTDkfQwPgiWN8MAsbr36o")
-    console.log("using static vrf = ",vrf.toBase58())
+    const vrf = process.env.REACT_APP_NETWORK === "devnet" ? new PublicKey("4V4hFcswusaQ9tC5CJekc5YqraNQw4QxBDiSbPLDF4k5") : new PublicKey("5vRWPynsjjfVKwfEsnAG1bxqqBaxqTLfUGMgNBfCWEfN")
 
     const [userKey, userBump] = User.fromSeeds(
       program,
       house.publicKey,
       payerPubkey
     );
-    // console.log(userKey.toBase58(), 'userKey', payerPubkey.toBase58(), 'payer')
     const rewardAddress = await spl.getAssociatedTokenAddress(
       flipMint.address,
       payerPubkey,
       true
     );
-    
-    // console.log(rewardAddress.toBase58(), 'reward address')
-
-
-    // used to create new callback
-    // const callback = await User.getCallback(      
-    //   program,
-    //   house,
-    //   userKey,
-    //   escrowKeypair.publicKey,
-    //   testing!=="true" ? vrfSecret.publicKey:vrf,
-    //   rewardAddress,
-    //   TOKENMINT,
-    // );
-
-    const queue = await switchboardQueue.loadData();
-
-    //used to create new vrf
-    // const [vrfAccount, vrfInitTxn] = await switchboardQueue.createVrfInstructions(payerPubkey, {
-    //   vrfKeypair: vrfSecret,
-    //   callback: callback,
-    //   authority: userKey,
-    // });
-
-    const [permissionAccount, permissionBump] = PermissionAccount.fromSeed(
-      switchboardProgram,
-      queue.authority,
-      switchboardQueue.publicKey,
-      vrf
-    );
-
-
-    
     const userInitIxn = await program.methods
       .userInit({
-        switchboardStateBump: switchboardProgram.programState.bump,
-        vrfPermissionBump: permissionBump,
+        switchboardStateBump: 249,
+        vrfPermissionBump: 255,
       })
       .accounts({
         user: userKey,
@@ -319,17 +280,15 @@ export class User {
         rent: anchor.web3.SYSVAR_RENT_PUBKEY,
       })
       .instruction()
-   
 
     const userInitTxn = new TransactionObject(
       payerPubkey,
       !rewardAddressInitialized
         ? [spl.createAssociatedTokenAccountInstruction(payerPubkey, rewardAddress, payerPubkey, TOKENMINT), userInitIxn]
         : [userInitIxn],
-      []
+      [escrowKeypair]
     );
-
-    return [userKey, TransactionObject.pack([userInitTxn])];
+    return [userKey, userInitTxn];
   }
 
   async placeBet(params: PlaceBetParams,vrf:PublicKey, bump:number, state_bump:number, payerPubkey = programWallet(this.program as any).publicKey): Promise<string> {
@@ -347,11 +306,6 @@ export class User {
     state_bump: number,
     balance = 0
   ): Promise<TransactionObject> {
-    try {
-      await verifyPayerBalance(this.program.provider.connection, payerPubkey);
-    } catch { }
-    
-
     const house = await House.load(this.program, params.TOKENMINT);
 
     const switchboard = await loadSwitchboard(
@@ -419,31 +373,22 @@ export class User {
   //   let accountWs: number;
   //   const awaitUpdatePromise = new Promise(
   //     (resolve: (value: UserState) => void) => {
-  //       // console.log('resolving...')
-  //       console.log('monitoring... ', this?.publicKey.toBase58())
   //       accountWs = this.program.provider.connection.onAccountChange(
   //         this?.publicKey ?? PublicKey.default,
   //         async (accountInfo) => {
-  //           // console.log(accountInfo, 'accountInfo')
   //           const user = UserState.decode(accountInfo.data);
-  //           // console.log(user.escrow.toBase58(), 'user')
-  //           // console.log(user.currentRound.result, 'result')
   //           if (!expectedCounter.eq(user.currentRound.roundId)) {
-  //             // console.log('returning null')
   //             return;
   //           }
   //           if (user.currentRound.result === 0) {
-  //             // console.log('returning null 2')
   //             return;
   //           }
   //           resolve(user);
   //         }
   //       );
-  //       // console.log(accountWs, 'accountWs')
   //     }
   //   );
 
-  //   console.log('getting result...')
 
   //   const result = await promiseWithTimeout(
   //     timeout * 1000,
@@ -473,7 +418,6 @@ export class User {
   // ): Promise<UserState> {
   //   await this.reload();
   //   const currentCounter = this.state.currentRound.roundId;
-  //   // console.log(currentCounter, 'current Counter')
 
   //   try {
   //     const placeBetTxn = await this.placeBet(
@@ -484,7 +428,6 @@ export class User {
   //       betAmount,
   //       switchboardTokenAccount
   //     );
-  //     console.log(placeBetTxn, 'tx')
   //   } catch (error) {
   //     console.error(error);
   //     throw error;
@@ -495,7 +438,6 @@ export class User {
   //       currentCounter.add(new anchor.BN(1)),
   //       timeout
   //     );
-  //     // console.log(userState, 'userState')
   //     return userState;
   //   } catch (error) {
   //     console.error(error);
@@ -537,7 +479,7 @@ export class User {
           if (!this.publicKey.equals(event.user)) {
             return;
           }
-          console.log(signature, ' bet settled tx')
+          console.info(signature, ' bet settled tx')
           await betSettled({
             ...event,
             gameType: convertGameType(event.gameType),

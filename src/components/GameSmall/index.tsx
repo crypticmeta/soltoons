@@ -30,7 +30,6 @@ const TOKENMINT = new PublicKey('So11111111111111111111111111111111111111112');
         stateMachines: STATE_MACHINE_NAME,
       };
       const { RiveComponent, rive } = useRive(params);
-      // console.log(rive, 'rive')
       const fireInput = useStateMachineInput(rive, STATE_MACHINE_NAME, INPUT_NAME);
       //api
 
@@ -49,7 +48,7 @@ const TOKENMINT = new PublicKey('So11111111111111111111111111111111111111112');
 
       useEffect(() => {
         if (x <= -9 && result?.status === 'success') {
-           console.log('setting leftHold false and moving to step 2 for small screen');
+          //('setting leftHold false and moving to step 2 for small screen');
           setLeftHold(false);
           setStep(3);
         }
@@ -88,9 +87,7 @@ const TOKENMINT = new PublicKey('So11111111111111111111111111111111111111112');
         let newX = x - 2;
         if (leftHold && step < 3)
           interval = setInterval(() => {
-            // console.log(newX, 'new x value');
             if (newX >= -10 && newX <= 85) {
-              // console.log('new x is valid');
               setX(newX);
               newX = newX - 2;
             }
@@ -113,14 +110,10 @@ const TOKENMINT = new PublicKey('So11111111111111111111111111111111111111112');
         return () => clearInterval(interval);
       }, [rightHold, x]);
 
-      // console.log(result, 'result');
-
        useEffect(() => {
          if (fireInput) {
-          //  console.log('fire');
            fireInput?.fire();
            setTimeout(() => {
-            //  console.log('fire 2');
              fireInput?.fire();
            }, 600);
          }
@@ -144,7 +137,6 @@ const TOKENMINT = new PublicKey('So11111111111111111111111111111111111111112');
       //claw movement after getting results
 
       useEffect(() => {
-        // console.log(result, 'result');
         if (result && result?.status === 'success' && result?.userWon) {
           setStep(1);
         }
@@ -185,11 +177,6 @@ const TOKENMINT = new PublicKey('So11111111111111111111111111111111111111112');
         }
       }, [reward, step]);
   
-
-      // console.log(step, 'step');
-      // console.log(styleReward, 'reward style animation check');
-      // console.log(styleRewardItem, 'reward style item animation check');
-      // console.log(styleX, 'claw X style');
       return (
         <div className="w-full lg:w-9/12 bg-red justify-center items-center py-16 lg:py-0 flex md:hidden bg-red-00">
           <div id="game" className="relative">

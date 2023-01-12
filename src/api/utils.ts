@@ -54,7 +54,7 @@ export async function createFlipUser(
 
   const keypair = anchor.web3.Keypair.generate();
   const loadUser = await User.load(program, userWallet.wallet.publicKey, TOKENMINT).catch((err) =>
-    console.log(err, 'user account doesnt exist yet')
+    console.error(err, 'user account doesnt exist yet')
   );
   if (!loadUser) {
     const airdropTxn = await program.provider.connection.requestAirdrop(
@@ -123,19 +123,9 @@ export const verifyPayerBalance = async (
   }
   const payerBalance = currentBalance ?? (await connection.getBalance(payer));
   if (payerBalance > minAmount) {
-    return console.log(
+    return console.info(
       `Payer has sufficient funds, ${payerBalance / anchor.web3.LAMPORTS_PER_SOL} > ${minAmount / anchor.web3.LAMPORTS_PER_SOL
       }`
     );
-  }
-
-  try {
-    console.log(`Requesting airdrop for user ${payer.toBase58()}`);
-    const AIRDROP_AMT = 1 * anchor.web3.LAMPORTS_PER_SOL;
-    const airdropTxn = await connection.requestAirdrop(payer, AIRDROP_AMT);
-    await connection.confirmTransaction(airdropTxn);
-  } catch (error) {
-    console.log(`Failed to request an airdrop`);
-    console.error(error);
   }
 };

@@ -70,13 +70,12 @@ export class House {
     TOKENMINT: PublicKey,
     mintKeypair = anchor.web3.Keypair.generate(),
   ): Promise<House> {
-    // console.log(TOKENMINT.toBase58(), 'tokenmint')
     const req = await House.createReq(program, switchboardQueue, mintKeypair, TOKENMINT);
 
     const signature = await program.provider.sendAndConfirm!(
       new Transaction().add(...req.ixns),
       req.signers
-    ).catch(err=>console.log(err, 'err creating house'));
+    ).catch(err=>console.error(err, 'err creating house'));
 
     let retryCount = 5;
     while (retryCount) {
@@ -142,7 +141,6 @@ export class House {
   static async load(program: FlipProgram, TOKENMINT:PublicKey): Promise<House> {
     const connection = program.provider.connection;
     const [houseKey, houseBump] = House.fromSeeds(program, TOKENMINT);
-    // console.log(houseKey.toBase58(), 'houseKey')
     const payer = programWallet(program as any);
 
     let houseState = await HouseState.fetch(connection, houseKey);
@@ -170,7 +168,7 @@ export class House {
       }
     }
 
-    console.log('no active house key found')
+    console.error('no active house key found')
     return House.create(program, switchboardQueue, TOKENMINT);
   }
 

@@ -8,7 +8,6 @@ export const getVRF = async(user:string) => {
     }).then(res => {
         if (res.data.vrf) {
             data = res.data.vrf;
-            console.log("VRF assigned is ", data)
         }
     }).catch(async(err) => {
         return null;

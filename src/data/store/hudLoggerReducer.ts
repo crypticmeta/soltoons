@@ -21,7 +21,6 @@ const initialState: HUDLoggerState = { logs: [] };
  * Creates a log in the log buffer.
  */
 export const log = createAsyncThunk<Log, { message: string; severity?: Severity }>('logger/log', (props): Log => {
-  console.log(props.message, 'log')
   return { key: uuid(), timestamp: Date.now(), severity: props.severity ?? Severity.Normal, message: props.message };
 });
 

@@ -69,6 +69,9 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
   const [playLose, stopLose] = useSound('/assets/audio/lose.m4a', {
     volume: 1,
   });
+  const [playReward] = useSound('/assets/audio/reward.m4a', {
+    volume: 1,
+  });
   const [open, setOpen] = React.useState(false);
 
 
@@ -96,7 +99,6 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
   const [lastGameStatus, setLastGameStatus] = useState("");
   const [wait, setWait] = useState(0)
   useEffect(() => {
-    // console.log(logs, 'LOGS');
     if (logs && logs[0]?.severity === 'error') {
       // alert(logs[0].message);
       if (logs[0].message.includes("User hasn't created an account")) setUserAccountExists(false);
@@ -106,7 +108,6 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
   }, [logs]);
 
   useEffect(() => {
-    // console.log(user, 'user in redux')
     if (user && user.authority) {
       setUserAccountExists(true);
       setLastGameStatus(user.currentRound.status.kind);
@@ -116,7 +117,6 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
   useEffect(() => {
     let timer: any;
     if (result && result.status === 'waiting') {
-      // console.log('starting timer');
       setWait(1)
       timer = setTimeout(() => {
         dispatch(thunks.setLoading(false));
@@ -124,7 +124,6 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
         dispatch(thunks.setResult({ status: 'error' }));
       }, 100000);
     } else if (result && result.status === 'success') {
-      // console.log('clearing timeout')
       
       clearTimeout(timer);
     } else if (result && result.status === 'claimed') {
@@ -137,7 +136,6 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
     let interval:any;
     if (result.status === "waiting" && wait < 100) {
      interval = setInterval(() => {
-        console.log(wait, 'second')
         setWait(wait+1)
      },1000)
     }
@@ -154,16 +152,17 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
       
       playLoading();
     }
-    else if (result?.status === "success") {
+    else if (result?.status === 'success') {
       stopLoading.stop();
       if (result.userWon) {
         playWin();
-        
       } else {
         playLose();
       }
-    }
-    else {
+    } else if (result?.status === 'claimed') {
+      stopLoading.stop();
+      playReward()
+    } else {
       stopLoading.stop();
     }
   }, [result])
@@ -240,7 +239,6 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
       <div className="part3 h-[35%] 2xl:h-[35%] bg-brand_yellow rounded-3xl border-4 border-black text-sm p-6 flex flex-col justify-between">
         {userAccountExists ? (
           <>
-            {/* {console.log(step === 0, userVaultBal > 0.0362616, !result?.status, lastGameStatus.includes('Settled'))} */}
             {step === 0 && userVaultBal > 0.0362616 && !result?.status && lastGameStatus.includes('Settled') ? (
               <>
                 <button
@@ -337,7 +335,7 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
 const Play = ({amount, setAmount, api, balances, loading, result, wait}) => {
   return (
     <>
-      {loading && result?.status === 'waiting' ? (
+      {loading && result?.status === 'loading' ? (
         <div className="center h-full text-white border-white p-6">
           {/* <CircularProgress color="inherit" /> */}
           <img src="/assets/images/coin-transparent.gif" alt="loading" />

@@ -6,10 +6,8 @@ import { getAssociatedTokenAddress } from '@solana/spl-token-v2';
 import { SystemProgram, SYSVAR_RECENT_BLOCKHASHES_PUBKEY} from '@solana/web3.js';
 import { LAMPORTS_PER_SOL, PublicKey, TransactionInstruction } from '@solana/web3.js';
 import { sleep } from "@switchboard-xyz/common"
-import * as sbv2 from "@switchboard-xyz/solana.js"
 import { getVRF } from '../providers/utils';
 import _ from 'lodash';
-import moment from 'moment';
 import React from 'react';
 import { useSelector } from 'react-redux';
 import { hooks, Store, thunks } from '..';
@@ -172,8 +170,6 @@ class ApiState implements PrivateApiInterface {
    * If the program cannot be retrieved, an {@linkcode ApiError} will be thrown.
    */
   get program(): Promise<api.FlipProgram> {
-    // console.log(this._program, 'pro');
-    // console.log(this.cluster, 'cluster')
     // If the program has already been set, return it.
     if (this._program) return Promise.resolve(this._program);
 
@@ -188,14 +184,13 @@ class ApiState implements PrivateApiInterface {
           })())
       )
       .catch((e) => {
-        console.log(e, 'err loading program');
+        console.error(e, 'err loading program');
         this.dispatch(thunks.setLoading(false));
         throw ApiError.getFlipProgram();
       });
   }
 
   get tokenMint() {
-    // console.log(this._mint, 'tokenmint');
     return new PublicKey(this._mint ? this._mint : 'So11111111111111111111111111111111111111112');
   }
   /**
@@ -290,82 +285,28 @@ class ApiState implements PrivateApiInterface {
     }
 
     this.dispatch(thunks.setLoading(true));
-    // console.log('here')
-
     // Gather necessary programs.
     const program = await this.program;
     const anchorProvider = new anchor.AnchorProvider(program.provider.connection, this.wallet, {});
     const switchboard = await api.loadSwitchboard(anchorProvider);
-    // console.log(switchboard, 'swb')
-
     // this.log(`Checking if user needs airdrop...`);
-    // api.verifyPayerBalance(program.provider.connection, anchorProvider.publicKey);
 
     // If there are no known user accounts, begin accounts set up.
     this.log(`Building user accounts...`);
-    const rewardAddress = await spl.getAssociatedTokenAddress(TOKENMINT, anchorProvider.publicKey, true);
-    const accountInfo = await spl.getAccount(anchorProvider.connection, rewardAddress).catch((err) => console.log(err));
+    const rewardAddress = await spl.getAssociatedTokenAddress(TOKENMINT, this.wallet.publicKey, true);
+    const accountInfo = await spl.getAccount(anchorProvider.connection, rewardAddress).catch((err) => console.error(err));
     // Build out and sign transactions.
     const [userKey, userInitTxns] = await api.User.createReq(
       program,
       switchboard,
       TOKENMINT,
-      anchorProvider.publicKey,
+      this.wallet.publicKey,
       accountInfo?.isInitialized || false
     );
 
-    const blockhash = await program.provider.connection.getLatestBlockhash();
-    const packed = userInitTxns.map((txn) => txn.toTxn(blockhash));
-    const signedTxs = await this.wallet.signAllTransactions(packed);
+    if(userInitTxns)
+    this.packSignAndSubmit(userInitTxns, "userInit")
 
-    const sigs: string[] = [];
-    // await this.packSignAndSubmit(request.ixns, request.signers);
-
-    // Try to load the new user accounts.
-
-    for (let k = 0; k < packed.length; k += 1) {
-      // console.log('executing tx no. ', k);
-      // console.log(signedTxs[k]?.instructions.length, ' instruction length for k = ',k)
-      // console.log(signedTxs[k]?.instructions[1]?.programId?.toBase58(), ' tx ', k)
-      // if (k == 1)
-      //   signedTxs[k].instructions.map((item, idx) => {
-      //     console.log('keys for instruction ', idx, ' of k=', k);
-      //     if (idx == 1)
-      //       item.keys.map((key, i) => {
-      //         if (i == 0) console.log('user key');
-      //         if (i == 1) console.log('house key');
-      //         if (i == 2) console.log('mint key');
-      //         if (i == 3) console.log('authority key');
-      //         if (i == 4) console.log('escrow key');
-      //         if (i == 5) console.log('reward_address key');
-      //         if (i == 6) console.log('vrf key');
-      //         if (i == 7) console.log('payer key');
-      //         console.log(key.pubkey.toBase58(), ' key ', i, ' of ', item.keys.length);
-      //       });
-      //   });
-      const sig = await program.provider.connection
-        .sendRawTransaction(
-          signedTxs[k].serialize(),
-          // req.signers,
-          {
-            skipPreflight: false,
-            maxRetries: 10,
-          }
-        )
-        .catch((e) => {
-          console.log(e, 'error signing instruction');
-          if (e instanceof ApiError) throw e;
-        });
-      // console.log(sig, 'signed tx ', k);
-      if (sig)
-        await program.provider.connection.confirmTransaction(sig).catch((e) => {
-          console.log(e, 'error confirming transaction');
-          if (e instanceof ApiError) throw e;
-        });
-      if (sig) sigs.push(sig);
-      // console.log('sleeping for a sec');
-      await sleep(500);
-    }
 
     let retryCount = 5;
     while (retryCount) {
@@ -413,35 +354,39 @@ class ApiState implements PrivateApiInterface {
     this.log('Draining vault...');
     const payerPubkey = this.wallet.publicKey;
     const program = await this.program;
-    const ixns: TransactionInstruction[] = [];
+    let ixns: TransactionInstruction[]=[];
     const house = await House.load(program, TOKENMINT);
     const associatedTokenAcc = await getAssociatedTokenAddress(TOKENMINT, payerPubkey);
-    // ixns.push(
-    //   SystemProgram.transfer({
-    //     fromPubkey: payerPubkey,
-    //     toPubkey: associatedTokenAcc,
-    //     lamports: 0.002 * LAMPORTS_PER_SOL,
-    //   })
-    // );
-    // ixns.push(createSyncNativeInstruction(associatedTokenAcc, spl.TOKEN_PROGRAM_ID));
-    ixns.push(
-      await (
-        await this.program
-      ).methods
-        .drain()
-        .accounts({
-          house: house.publicKey,
-          mint: TOKENMINT,
-          houseVault: house.state.houseVault,
-          payer: payerPubkey,
-          payerTokenAccount: associatedTokenAcc,
-          systemProgram: SystemProgram.programId,
-          tokenProgram: spl.TOKEN_PROGRAM_ID,
-        })
+    const accountInfo = await spl.getAccount(program.provider.connection, associatedTokenAcc).catch((err) => console.error(err));
+    ixns = [
+      await (await this.program)
+      .methods.drain()
+      .accounts({
+        house: house.publicKey,
+        mint: TOKENMINT,
+        houseVault: house.state.houseVault,
+        payer: payerPubkey,
+        payerTokenAccount: associatedTokenAcc,
+        systemProgram: SystemProgram.programId,
+        tokenProgram: spl.TOKEN_PROGRAM_ID,
+      })
         .instruction()
-    );
+    ]
+    if (!accountInfo?.isInitialized) {
+      ixns.unshift(
+        spl.createAssociatedTokenAccountInstruction(
+          this.wallet.publicKey,
+          associatedTokenAcc,
+          this.wallet.publicKey,
+          TOKENMINT
+        )
+      )
+    }
+    
+    
+    const request = new TransactionObject(this.wallet.publicKey, ixns, []);
 
-    // await this.packSignAndSubmit(ixns, []);
+    await this.packSignAndSubmit(request, "drain");
   };
 
   // get vault info
@@ -454,7 +399,6 @@ class ApiState implements PrivateApiInterface {
     // const associatedTokenAcc = await getAssociatedTokenAddress(TOKENMINT, payerPubkey);
     const data = await program.provider.connection.getBalance(house.publicKey);
     if (data && data > 0) {
-      console.log(data, 'setting this as vault balance');
       this.dispatch(thunks.setVaultBalance(data / LAMPORTS_PER_SOL));
       this.log('Vault Balance Loaded');
     }
@@ -498,7 +442,7 @@ class ApiState implements PrivateApiInterface {
         await program.provider.connection
           .sendRawTransaction(serialTx, { skipPreflight: true })
           .then((sig) => {
-            console.log(sig, ' tx');            
+            console.info(sig, ' tx');            
             this.log('Reward collected Successfully!');
             this.dispatch(thunks.setLoading(false));
             this.dispatch(thunks.log({ message: 'Successfully claimed funds. ', severity: Severity.Success }));
@@ -528,7 +472,6 @@ class ApiState implements PrivateApiInterface {
    */
   private playGame = async (args: string[]) => {
     const TOKENMINT = this.tokenMint;
-    console.log(TOKENMINT.toBase58(), 'mint');
     this.dispatch(thunks.setLoading(true));
     const game = games[this.gameMode];
 
@@ -545,7 +488,6 @@ class ApiState implements PrivateApiInterface {
 
     // Validate the bet.
     const bet = Number.isFinite(Number(args[1])) ? Number(args[1]) : undefined;
-    console.log(bet, this.userBalance, 'comparing');
     if (_.isUndefined(bet) || bet <= 0 || bet > 2 || bet > this.userBalance - 0.004) {
       // Bet must be a positive number that's less than the user's balance.
       this.dispatch(thunks.setLoading(false));
@@ -553,7 +495,7 @@ class ApiState implements PrivateApiInterface {
     }
 
     this.log(`Building bet request...`);
-    this.log(`Bet Amount: ${bet}`);
+    this.dispatch(thunks.setResult({ status: 'loading' }));
 
     this.dispatch(thunks.setLoading(true));
     const vrf:any =  await getVRF(this.wallet.publicKey.toBase58());
@@ -577,7 +519,7 @@ class ApiState implements PrivateApiInterface {
       )
       .catch((err) => {
         this.dispatch(thunks.setResult({ status: 'error' }));
-        console.log(err, 'err creating bet req');
+        console.error(err, 'err creating bet req');
       });
     if(request)
       await this.packSignAndSubmit(request, "userBet")
@@ -618,8 +560,7 @@ class ApiState implements PrivateApiInterface {
       await program.provider.connection
         .sendRawTransaction(serialTx, { skipPreflight: false })
         .then((sig) => {
-          console.log(sig, ' tx');
-          console.log(new Date().toLocaleString())
+          console.info(sig, ' tx');
           this.dispatch(thunks.setLoading(false));
           if (id === "userBet")            
           this.dispatch(thunks.log({ message: 'Waiting for Tx confirmation... ', severity: Severity.Success }));
@@ -656,7 +597,6 @@ class ApiState implements PrivateApiInterface {
       this.dispatch(thunks.setUserVaultBalance(account ? account.lamports / LAMPORTS_PER_SOL : undefined));
     };
     const onRibsAccountChange = (account: anchor.web3.AccountInfo<Buffer> | null) => {
-      // console.log(account, 'acc')
       if (!account) {
         this.dispatch(
           thunks.setUserBalance({
@@ -684,7 +624,6 @@ class ApiState implements PrivateApiInterface {
     // Grab initial values.
     const program = await this.program;
     const user = await this.user;
-    // console.log(user.state.rewardAddress.toBase58(), 'reward adress');
     await program.provider.connection.getAccountInfo(this.wallet.publicKey).then(onSolAccountChange);
     await program.provider.connection.getAccountInfo(user.state.rewardAddress).then(onRibsAccountChange);
     await program.provider.connection.getAccountInfo(user.publicKey).then(onUserVaultAccountChange);
@@ -800,14 +739,6 @@ class ApiState implements PrivateApiInterface {
           0.0, 1.0, 0.0, 0.0, 0.3, 0.0, 0.0, 0.8, 2.0, 0.8, 0.0, 5.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0,
           0.0, 0.8, 0.0, 0.8,
         ];
-        console.log(
-          event,
-          'bet settled event',
-          event.escrowChange.toString(),
-          'escrow change',
-          event.result.toString(),
-          'result'
-        );
         this.log('Received Result.', Severity.Normal);
 
         if (multiplier[Number(event.result.toString())] > 0) {
@@ -847,7 +778,6 @@ class ApiState implements PrivateApiInterface {
    * Log to DisplayLogger.
    */
   private log = (message: string, severity: Severity = Severity.Normal) => {
-    // console.log(severity, 'severity')
     if (severity == 'error') {
       this.dispatch(thunks.setLoading(false));
     }

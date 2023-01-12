@@ -48,8 +48,7 @@ const TOKENMINT = new PublicKey('So11111111111111111111111111111111111111112');
 
       useEffect(() => {
         if (x <= -4 && result?.status === 'success') {
-          console.log(x, 'x value for large screen')
-           console.log('setting leftHold false and moving to step 2 forr large screen');
+          //('setting leftHold false and moving to step 2 forr large screen');
           setLeftHold(false);
           setStep(3);
         }
@@ -113,10 +112,8 @@ const TOKENMINT = new PublicKey('So11111111111111111111111111111111111111112');
 
        useEffect(() => {
          if (fireInput) {
-          //  console.log('fire');
            fireInput?.fire();
            setTimeout(() => {
-            //  console.log('fire 2');
              fireInput?.fire();
            }, 600);
          }
