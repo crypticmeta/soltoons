@@ -60,16 +60,16 @@ const WalletButton: React.FC = () => {
 };
 //@ts-ignore
 function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal }) {
-    const [playLoading, stopLoading] = useSound('/assets/audio/loading.m4a', {
+    const [playLoading, stopLoading] = useSound('/assets/audio/loading.mp3', {
       volume: 0.7,
     });
-    const [playWin, stopWin] = useSound('/assets/audio/win.m4a', {
+    const [playWin, stopWin] = useSound('/assets/audio/win.mp3', {
       volume: 1,
     });
-  const [playLose, stopLose] = useSound('/assets/audio/lose.m4a', {
+  const [playLose, stopLose] = useSound('/assets/audio/error.mp3', {
     volume: 1,
   });
-  const [playReward] = useSound('/assets/audio/reward.m4a', {
+  const [playReward] = useSound('/assets/audio/reward.mp3', {
     volume: 1,
   });
   const [open, setOpen] = React.useState(false);
@@ -161,7 +161,10 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
       }
     } else if (result?.status === 'claimed') {
       stopLoading.stop();
-      playReward()
+      playReward();
+    } else if (result?.status === 'error' && !loading) {
+      stopLoading.stop();
+      playLose();
     } else {
       stopLoading.stop();
     }
@@ -281,6 +284,9 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
           </>
         )}
       </div>
+      <div className="bg-red-00 w-full py-2">
+            <LinearProgress sx={{ height: 5, borderRadius: '30px' }} variant="determinate" value={wait} />
+          </div>
       <Modal open={openModal} onClose={handleModalClose}>
         <div className="bg-black w-full h-screen center bg-opacity-75">
           <div className="bg-brand_yellow rounded-xl md:w-6/12 2xl:w-4/12 p-6 text-xl">
