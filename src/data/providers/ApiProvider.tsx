@@ -575,14 +575,17 @@ class ApiState implements PrivateApiInterface {
       for (const tx of signedTxs) {
       const serialTx = tx.serialize();
       await program.provider.connection
-        .sendRawTransaction(serialTx, { skipPreflight: false })
+        .sendRawTransaction(serialTx, { skipPreflight: true })
         .then((sig) => {
           console.info(sig, ' tx');
-          this.dispatch(thunks.setLoading(false));
           if (id === "userBet")            
           this.dispatch(thunks.log({ message: 'Waiting for Tx confirmation... ', severity: Severity.Success }));
             else
-          this.dispatch(thunks.log({ message: 'Tx sent successfully. ', severity: Severity.Success }));
+          {
+            this.dispatch(thunks.log({ message: 'Tx sent successfully. ', severity: Severity.Success }));
+            
+            this.dispatch(thunks.setLoading(false));
+          }
         })
         .catch((e) => {
           this.dispatch(thunks.setResult({ status: 'error' }));
