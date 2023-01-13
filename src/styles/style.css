@@ -30,13 +30,12 @@
 background-color: rgba(255, 163, 62, 1) !important; 
 }
 /* wallet modal list items */
-.makeStyles-root-3 .MuiDialogContent-root .MuiListItem-root .MuiButton-root{
+.makeStyles-root-3 .MuiDialogContent-root .MuiListItem-root .MuiButton-root> .MuiButton-label{
   color: rgb(235, 136, 31) !important; 
-  border-bottom: 1px solid;
 }
 .makeStyles-root-3 .MuiDialogContent-root .MuiListItem-root .MuiButton-root:hover{
   background-color: rgb(59, 59, 59) !important; 
-  border-bottom: 1px solid;
+  border-bottom: 1px solid rgb(235, 136, 31);
 }
 html,
 body {
