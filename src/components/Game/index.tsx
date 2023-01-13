@@ -17,7 +17,9 @@ import useSound from 'use-sound';
       '25.0': { img: '/assets/images/cap.png' },
       '50.0': { img: '/assets/images/toobs.png' },
       '100.0': { img: '/assets/images/snake.png' },
-    };
+};
+    
+
 //@ts-ignore
 function Game({ amount, setAmount, step, setStep, handleModalOpen }) {
   //sound
@@ -193,7 +195,7 @@ function Game({ amount, setAmount, step, setStep, handleModalOpen }) {
        setStyleReward({ animationName: 'freefall' });
        setStyleRewardItem({ animationName: 'freefallItem' });
       setTimeout(() => {
-          playWin();
+        if (result?.userWon) playWin();
          setStep(4);
        }, 2000);
     } else if (step === 4 && !result?.userWon) {

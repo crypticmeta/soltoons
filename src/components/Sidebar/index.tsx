@@ -323,7 +323,7 @@ const Play = ({amount, setAmount, api, balances, loading, result, wait, userVaul
               <button 
                 className="center h-full text-lg"
               >
-                Congrats! You WON
+                Received Result!
               </button>
             </>
           ) : (
