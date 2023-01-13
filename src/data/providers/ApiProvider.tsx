@@ -2,7 +2,7 @@ import * as anchor from '@project-serum/anchor';
 import * as spl from '@solana/spl-token-v2';
 import { useWallet} from '@solana/wallet-adapter-react';
 import { getAssociatedTokenAddress } from '@solana/spl-token-v2';
-import { SystemProgram, SYSVAR_RECENT_BLOCKHASHES_PUBKEY, Transaction} from '@solana/web3.js';
+import { SystemProgram, SYSVAR_RECENT_BLOCKHASHES_PUBKEY} from '@solana/web3.js';
 import { LAMPORTS_PER_SOL, PublicKey, TransactionInstruction } from '@solana/web3.js';
 import { sleep } from "@switchboard-xyz/common"
 import { getVRF } from '../providers/utils';
@@ -306,7 +306,7 @@ class ApiState implements PrivateApiInterface {
     );
 
     if(userInitTxns)
-    this.packSignAndSubmit(userInitTxns, "userInit")
+    await this.packSignAndSubmit(userInitTxns, "userInit")
 
 
     let retryCount = 5;
