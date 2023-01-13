@@ -28,11 +28,11 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
   const [playLose, stopLose] = useSound('/assets/audio/error.mp3', {
     volume: 1,
   });
-  const [playReward] = useSound('/assets/audio/reward.mp3', {
+  const [playReward, stopReward] = useSound('/assets/audio/reward.mp3', {
     volume: 1,
   });
-  const [open, setOpen] = React.useState(false);
 
+  const [open, setOpen] = React.useState(false);
 
   const handleClick = () => {
     setOpen(true);
@@ -53,10 +53,16 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
   const balances = useSelector((store: Store) => store.gameState.userBalances);
   const user = useSelector((store: Store) => store.gameState.user);
   const result = useSelector((store: Store) => store.gameState.result);
-    const userVaultBal = useSelector((store: Store) => store.gameState.userVaultBalance);
+  const userVaultBal = useSelector((store: Store) => store.gameState.userVaultBalance);
   const [userAccountExists, setUserAccountExists] = useState(true);
-  const [lastGameStatus, setLastGameStatus] = useState("");
-  const [wait, setWait] = useState(0)
+  const [lastGameStatus, setLastGameStatus] = useState('');
+  const [wait, setWait] = useState(0);
+  useEffect(() => {
+    if (step === 3) {
+      stopLoading.stop();
+    }
+  }, [step])
+  
   useEffect(() => {
     if (logs && logs[0]?.severity === 'error') {
       // alert(logs[0].message);
@@ -76,71 +82,65 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
   useEffect(() => {
     let timer: any;
     if (result && result.status === 'waiting') {
-      setWait(1)
+      setWait(1);
       timer = setTimeout(() => {
         dispatch(thunks.setLoading(false));
         dispatch(thunks.log({ message: 'Failed to get result. Your funds are safe.', severity: Severity.Error }));
         dispatch(thunks.setResult({ status: 'error' }));
       }, 100000);
     } else if (result && result.status === 'success') {
-      
       clearTimeout(timer);
     } else if (result && result.status === 'claimed') {
-      handleModalClose()
+      handleModalClose();
     }
     return () => clearTimeout(timer);
   }, [dispatch, handleModalClose, result]);
 
   useEffect(() => {
-    let interval:any;
-    if (result.status === "waiting" && wait < 100) {
-     interval = setInterval(() => {
-        setWait(wait+1)
-     },1000)
-    }
-    else {
-      setWait(0)
-      clearInterval(interval);    
+    let interval: any;
+    if (result.status === 'waiting' && wait < 100) {
+      interval = setInterval(() => {
+        setWait(wait + 1);
+      }, 1000);
+    } else {
+      setWait(0);
+      clearInterval(interval);
     }
     return () => {
-      clearInterval(interval)
+      clearInterval(interval);
     };
-  }, [result, wait])
+  }, [result, wait]);
 
   useEffect(() => {
-    if (result && result?.status === "waiting") {
-      
+    if (result && result?.status === 'waiting') {
       playLoading();
-    }
-    else if (result?.status === 'success') {
-      stopLoading.stop();
+    } else if (result?.status === 'success') {
       if (result.userWon) {
-        playWin();
+       
       } else {
+        stopLoading.stop();
         playLose();
       }
     } else if (result?.status === 'claimed') {
       stopLoading.stop();
       playReward();
+      setTimeout(() => {
+        stopReward.stop();
+      }, 1500);
     } else if (result?.status === 'error' && !loading) {
       stopLoading.stop();
       playLose();
     } else {
       stopLoading.stop();
     }
-  }, [result])
-  
-  
-
+  }, [result]);
 
   return (
     <div className="flex h-full flex-col max-h-[800px] justify-start md:justify-center w-full lg:w-3/12 p-6 font-bold">
       <div className="part1 h-[20%] center w-full">
-        <WalletMultiButton
-          variant="outlined"
-          color="secondary"
-          className={"walletMultiButton"}
-        />
+        <div className="bg-brand_yellow walletMultiButton">
+          <WalletMultiButton color="inherit" className={'walletButton'} />
+        </div>
       </div>
       {/* <div className="part2 h-[50%] 2xl:h-[60%] bg-brand_yellow  border-4 border-black rounded-3xl p-2 text-sm overflow-hidden">
         <div className="flex justify-between font-extrabold h-[10%]">
@@ -219,13 +219,14 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
               </>
             ) : (
               <Play
-                amount={amount}
-                setAmount={setAmount}
-                loading={loading}
-                api={api}
-                balances={balances}
-                result={result}
-                wait={wait}
+                  amount={amount}
+                  setAmount={setAmount}
+                  loading={loading}
+                  api={api}
+                  balances={balances}
+                  result={result}
+                  wait={wait}
+                  userVaultBal={ userVaultBal}
               />
             )}
           </>
@@ -304,10 +305,10 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
 }
 
 //@ts-ignore
-const Play = ({amount, setAmount, api, balances, loading, result, wait}) => {
+const Play = ({amount, setAmount, api, balances, loading, result, wait, userVaultBal}) => {
   return (
     <>
-      {loading && (result?.status === 'loading' || result?.status === 'waiting' ) ? (
+      {loading && (result?.status === 'loading' || result?.status === 'waiting') ? (
         <div className="center h-full text-white border-white p-6">
           {/* <CircularProgress color="inherit" /> */}
           <img src="/assets/images/coin-transparent.gif" alt="loading" />
@@ -317,37 +318,49 @@ const Play = ({amount, setAmount, api, balances, loading, result, wait}) => {
         </div>
       ) : (
         <>
-          <div>
-            <p className="font-extrabold text-center">INSERT BET AMOUNT</p>
-            <hr className="my-2 border-black" />
-          </div>
-          <div className="flex text-3xl italic  ">
-            <input
-              className=" bg-brand_yellow text-black font-extrabold w-6/12 text-right italic focus:outline-none"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-            />
-            <p className=" ml-2 w-6/12">SOL</p>
-          </div>
-          <div>
-            <button
-              onClick={() => {
-                api.handleCommand(`user play 1 ${amount}`);
-              }}
-              className="border-black  border-4 p-1 rounded-3xl w-full font-extrabold"
-            >
-              PLAY
-            </button>
-            <p className="text-xs text-gray-700 text-center">
-              {Number(balances.sol || 0).toFixed(4)} sol{' '}
-              {/* <span className="pl-4">
+          {result?.status === 'success' && result?.userWon && userVaultBal > 0.0362616 ? (
+            <>
+              <button 
+                className="center h-full text-lg"
+              >
+                Congrats! You WON
+              </button>
+            </>
+          ) : (
+            <>
+              <div>
+                <p className="font-extrabold text-center">INSERT BET AMOUNT</p>
+                <hr className="my-2 border-black" />
+              </div>
+              <div className="flex text-3xl italic  ">
+                <input
+                  className=" bg-brand_yellow text-black font-extrabold w-6/12 text-right italic focus:outline-none"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                />
+                <p className=" ml-2 w-6/12">SOL</p>
+              </div>
+              <div>
+                <button
+                  onClick={() => {
+                    api.handleCommand(`user play 1 ${amount}`);
+                  }}
+                  className="border-black  border-4 p-1 rounded-3xl w-full font-extrabold"
+                >
+                  PLAY
+                </button>
+                <p className="text-xs text-gray-700 text-center">
+                  {Number(balances.sol || 0).toFixed(4)} sol{' '}
+                  {/* <span className="pl-4">
                 {Number(result && result.status === 'claimed' ? 0 : balances.ribs || 0).toFixed(4)} wsol
               </span> */}
-            </p>
-            {Number(amount) > 2 && (
-              <p className="text-red-800 text-xs pt-2 text-center">Amount should be less than 2 SOL</p>
-            )}
-          </div>
+                </p>
+                {Number(amount) > 2 && (
+                  <p className="text-red-800 text-xs pt-2 text-center">Amount should be less than 2 SOL</p>
+                )}
+              </div>
+            </>
+          )}
         </>
       )}
     </>

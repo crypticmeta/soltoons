@@ -532,16 +532,16 @@ class ApiState implements PrivateApiInterface {
         this.dispatch(thunks.setResult({ status: 'error' }));
         console.error(err, 'err creating bet req');
       });
-    const program = await this.program
-    if (request?.ixns.length && program?.provider?.sendAndConfirm) {
-      const status = await program.provider.sendAndConfirm(new Transaction().add(...request.ixns), [...request.signers]);
-      console.log(status, 'STATUS')
-    }
-    // if(request)
-    //   await this.packSignAndSubmit(request, "userBet")
-    // else {
-    //   this.dispatch(thunks.setResult({ status: 'error' }));
+    // const program = await this.program
+    // if (request?.ixns.length && program?.provider?.sendAndConfirm) {
+    //   const status = await program.provider.sendAndConfirm(new Transaction().add(...request.ixns), [...request.signers]);
+    //   console.log(status, 'STATUS')
     // }
+    if(request)
+      await this.packSignAndSubmit(request, "userBet")
+    else {
+      this.dispatch(thunks.setResult({ status: 'error' }));
+    }
   };
 
   private packSignAndSubmit = async (

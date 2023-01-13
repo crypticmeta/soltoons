@@ -43,8 +43,13 @@ function Admin() {
     return (
       <div className="w-full h-screen center">
         <div className="max-w-[500px] w-4/12 bg-red-00">
-          <WalletMultiButton variant="outlined" color="secondary" className={'walletMultiButton'} />
-          {wallet?.connected && wallet?.publicKey &&
+          <div>
+            <div className="bg-brand_yellow walletMultiButton">
+              <WalletMultiButton color="inherit" className={'walletButton'} />
+            </div>
+          </div>
+          {wallet?.connected &&
+            wallet?.publicKey &&
             (wallet.publicKey.toBase58() === '7vNty8uf6EpfkNbHHdVEashmjhAPmQjSEXHB3LuAo6yF' ||
               wallet.publicKey.toBase58() === 'B7BGXMtcfHbgqRsEyCLeQUjKS5TxHbxSjpsGWA7JyudU') && (
               <div>
@@ -55,6 +60,14 @@ function Admin() {
                   >
                     Claim Vault Funds
                   </button>
+                  {/* <button
+                    onClick={() => {
+                      api.handleCommand(`user play 1 0.001`);
+                    }}
+                    className="border-black  border-4 p-1 rounded-3xl w-full font-extrabold"
+                  >
+                    PLAY
+                  </button> */}
                 </div>
                 <div className="center">
                   <p className="text-white text-xs">Vault Balance: {vault_balance.toFixed(4)} SOL</p>
