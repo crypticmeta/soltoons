@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { PublicKey } from '@solana/web3.js';
-import { hooks, Store, thunks } from '../../data';
+import { hooks, Store} from '../../data';
 import { useSelector } from 'react-redux';
 import { useRive, useStateMachineInput } from '@rive-app/react-canvas';
 import useSound from 'use-sound';
-const TOKENMINT = new PublicKey('So11111111111111111111111111111111111111112');
 
     const plushies = {
       '0.0': { img: '' },
@@ -21,6 +20,13 @@ const TOKENMINT = new PublicKey('So11111111111111111111111111111111111111112');
     };
 //@ts-ignore
 function Game({ amount, setAmount, step, setStep, handleModalOpen }) {
+  //sound
+   const [playWin, stopWin] = useSound('/assets/audio/win.mp3', {
+     volume: 1,
+   });
+   const [playSlide, stopSlide] = useSound('/assets/audio/slide.mp3', {
+     volume: 1,
+   });
   //rive
   const STATE_MACHINE_NAME = 'State Machine 1';
   const INPUT_NAME = 'Trigger 1';
@@ -44,9 +50,8 @@ function Game({ amount, setAmount, step, setStep, handleModalOpen }) {
 
   const [reward, setReward] = useState('');
 
+  //@ts-ignore
   const result = useSelector((store: Store) => store.gameState.result);
-  const user = useSelector((store: Store) => store.gameState.user);
-  const logs = useSelector((store: Store) => store.HUDLogger.logs);
 
   useEffect(() => {
     if (x <= -4 && result?.status === 'success') {
@@ -54,8 +59,12 @@ function Game({ amount, setAmount, step, setStep, handleModalOpen }) {
       setLeftHold(false);
       setStep(3)
     }
-    if (result?.status === 'success') setStyleX({ transform: `translateX(${x}%)`, zIndex: 10, animationName: 'none' });
-    else setStyleX({ transform: `translateX(${x}%)`, zIndex: 1, animationName: 'none' });
+    if (result?.status === 'success') {
+      setStyleX({ transform: `translateX(${x}%)`, zIndex: 10, animationName: 'none' })
+    }
+    else {
+      setStyleX({ transform: `translateX(${x}%)`, zIndex: 1, animationName: 'none' })
+    };
   }, [result, x]);
 
   useEffect(() => {
@@ -78,6 +87,30 @@ function Game({ amount, setAmount, step, setStep, handleModalOpen }) {
     movedown();
   }, [y]);
 
+   useEffect(() => {
+     if (leftHold || rightHold) {
+       let newX = x;
+       if (leftHold && step < 3) {
+         newX = x - 2;
+         if (newX >= -5 && newX <= 85) {           
+          playSlide();
+         } else {
+           stopSlide.stop();
+         }
+       } else if (rightHold && !step) {
+         newX = x + 2;
+         if (newX >= -5 && newX <= 85) {
+           playSlide();
+         } else {
+           stopSlide.stop();
+         }
+       }
+     } else {
+       stopSlide.stop();
+     }
+   }, [leftHold, rightHold, x, step]);
+  
+  
   useEffect(() => {
     let interval: any;
     let newX = x - 2;
@@ -103,7 +136,9 @@ function Game({ amount, setAmount, step, setStep, handleModalOpen }) {
         }
       }, 100);
 
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval)
+    };
   }, [rightHold, x]);
 
   //rive movement after loading user
@@ -112,6 +147,7 @@ function Game({ amount, setAmount, step, setStep, handleModalOpen }) {
       fireInput?.fire();
       setTimeout(() => {
         fireInput?.fire();
+        // playLoaded()
       }, 600);
    }
   }, [fireInput, rive]);
@@ -156,10 +192,12 @@ function Game({ amount, setAmount, step, setStep, handleModalOpen }) {
     } else if (step === 3) {
        setStyleReward({ animationName: 'freefall' });
        setStyleRewardItem({ animationName: 'freefallItem' });
-       setTimeout(() => {
+      setTimeout(() => {
+          playWin();
          setStep(4);
        }, 2000);
     } else if (step === 4 && !result?.userWon) {
+      
       setTimeout(() => {
         setStep(0);
       }, 3000);
@@ -170,6 +208,7 @@ function Game({ amount, setAmount, step, setStep, handleModalOpen }) {
 
   useEffect(() => {
     if (reward && step === 1) {
+      
       setTimeout(() => {
         setStyleY({ transform: `translateY(0%)`, animationName: 'none' });
         setTimeout(() => {
@@ -184,11 +223,12 @@ function Game({ amount, setAmount, step, setStep, handleModalOpen }) {
     if (e.code==="Enter") {
       api.handleCommand(`user play 1 ${amount}`);
     }
-    if (e.code === "ArrowRight") {
+    if (e.code === "ArrowRight") {     
+     
        setRightHold(true);
     }
     if (e.code === 'ArrowLeft') {
-     
+    
       setLeftHold(true);
     }
   }
@@ -197,6 +237,7 @@ function Game({ amount, setAmount, step, setStep, handleModalOpen }) {
     setRightHold(false);
   }
 
+ 
   useEffect(() => {
     document.addEventListener('keydown', handleKeyDown);
     document.addEventListener('keyup', handleKeyUp);

@@ -1,14 +1,13 @@
-import { useConnectedWallet } from '@gokiprotocol/walletkit';
 import * as anchor from '@project-serum/anchor';
-import { ConnectedWallet } from '@saberhq/use-solana';
 import * as spl from '@solana/spl-token-v2';
+import { useWallet} from '@solana/wallet-adapter-react';
 import { getAssociatedTokenAddress } from '@solana/spl-token-v2';
-import { SystemProgram, SYSVAR_RECENT_BLOCKHASHES_PUBKEY} from '@solana/web3.js';
+import { SystemProgram, SYSVAR_RECENT_BLOCKHASHES_PUBKEY, Transaction} from '@solana/web3.js';
 import { LAMPORTS_PER_SOL, PublicKey, TransactionInstruction } from '@solana/web3.js';
 import { sleep } from "@switchboard-xyz/common"
 import { getVRF } from '../providers/utils';
 import _ from 'lodash';
-import React from 'react';
+import React, { useState } from 'react';
 import { useSelector } from 'react-redux';
 import { hooks, Store, thunks } from '..';
 import * as api from '../../api';
@@ -16,7 +15,7 @@ import { House } from '../../api';
 import { ThunkDispatch } from '../../types';
 import { Severity } from '../../util/const';
 import { GameState } from '../store/gameStateReducer';
-import { TransactionObject } from '@switchboard-xyz/solana.js';
+import { AnchorWallet, TransactionObject } from '@switchboard-xyz/solana.js';
 const truncatedPubkey = (pubkey: string) => {
   return `${pubkey.slice(0, 5)}...${pubkey.slice(-5)}`;
 };
@@ -117,7 +116,7 @@ interface PrivateApiInterface extends ApiInterface {
 
 class ApiState implements PrivateApiInterface {
   private readonly dispatch: ThunkDispatch;
-  private readonly wallet: ConnectedWallet;
+  private readonly wallet: AnchorWallet;
   private readonly cluster: Cluster;
   private readonly accountChangeListeners: number[] = [];
   private _program?: api.FlipProgram;
@@ -125,7 +124,7 @@ class ApiState implements PrivateApiInterface {
   private _gameState?: GameState;
   private _mint?: string;
 
-  constructor(wallet: ConnectedWallet, dispatch: ThunkDispatch) {
+  constructor(wallet: AnchorWallet, dispatch: ThunkDispatch) {
     this.wallet = wallet;
     this.dispatch = dispatch;
     this.cluster = 'mainnet-beta';
@@ -173,8 +172,10 @@ class ApiState implements PrivateApiInterface {
     // If the program has already been set, return it.
     if (this._program) return Promise.resolve(this._program);
 
+    // const tempWallet = new AnchorWallet(anchor.web3.Keypair.generate());
+    const tempWallet = this?.wallet?.publicKey?this.wallet:new AnchorWallet(anchor.web3.Keypair.generate());
     return api
-      .getFlipProgram(this.rpc)
+      .getFlipProgram(this.rpc, tempWallet)
       .then(
         (program) =>
           (this._program ??= (() => {
@@ -531,6 +532,11 @@ class ApiState implements PrivateApiInterface {
         this.dispatch(thunks.setResult({ status: 'error' }));
         console.error(err, 'err creating bet req');
       });
+    // const program = await this.program
+    // if (request?.ixns.length && program?.provider?.sendAndConfirm) {
+    //   const status = await program.provider.sendAndConfirm(new Transaction().add(...request.ixns), [...request.signers]);
+    //   console.log(status, 'STATUS')
+    // }
     if(request)
       await this.packSignAndSubmit(request, "userBet")
     else {
@@ -853,14 +859,15 @@ const useApi = () => React.useContext(ApiContext);
  */
 export const ApiProvider: React.FC<React.PropsWithChildren> = (props) => {
   const dispatch = hooks.useThunkDispatch();
-  const wallet = useConnectedWallet();
+  const wallet = useWallet();
   const gameState = useSelector((store: Store) => store.gameState);
   const tokenmint = useSelector((store: Store) => store.gameState.tokenmint);
-  const [stateWallet, setStateWallet] = React.useState(wallet);
+  const [stateWallet, setStateWallet] = useState(wallet);
 
   // The api is rebuilt only when the connected pubkey changes
   const api = React.useMemo(
-    () => (stateWallet ? new ApiState(stateWallet, dispatch) : new NoUserApiState(dispatch)),
+  //@ts-ignore
+    () => (stateWallet && stateWallet?.connected && stateWallet.publicKey ? new ApiState(stateWallet, dispatch) : new NoUserApiState(dispatch)),
     [stateWallet, dispatch]
   );
 

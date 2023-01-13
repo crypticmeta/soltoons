@@ -5,6 +5,38 @@
 #loading{
   transition: all ease-in-out 1s;
 }
+/* wallet button */
+.walletButton{
+  background-color: inherit !important;
+  border: none !important;
+  width: inherit !important;
+  color: inherit !important;
+
+
+}
+/* wallet button parent div */
+.walletMultiButton{
+  background-color: rgba(255, 163, 62, 1) !important; 
+  border: 4px solid black !important;
+  width: 100% !important;
+  border-radius: 1.5rem !important;
+  overflow: hidden !important;
+  color: black !important;
+  font-weight: 900 !important;
+}
+/* wallet modal */
+.MuiDialogTitle-root{
+background-color: rgba(255, 163, 62, 1) !important; 
+}
+/* wallet modal list items */
+.makeStyles-root-3 .MuiDialogContent-root .MuiListItem-root .MuiButton-root{
+  background-color: rgb(235, 136, 31) !important; 
+  border-bottom: 1px solid;
+}
+.makeStyles-root-3 .MuiDialogContent-root .MuiListItem-root .MuiButton-root:hover{
+  background-color: rgb(196, 113, 25) !important; 
+  border-bottom: 1px solid;
+}
 html,
 body {
   padding: 0;

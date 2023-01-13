@@ -1,11 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { PublicKey } from '@solana/web3.js';
-import { hooks, Store, thunks } from '../../data';
+import { hooks, Store} from '../../data';
 import { useSelector } from 'react-redux';
 import { useRive, useStateMachineInput } from '@rive-app/react-canvas';
 import useSound from 'use-sound';
-const TOKENMINT = new PublicKey('So11111111111111111111111111111111111111112');
-
     const plushies = {
       '0.0': { img: '' },
       '0.3': { img: '/assets/images/bwbanana.png' },
@@ -21,6 +19,13 @@ const TOKENMINT = new PublicKey('So11111111111111111111111111111111111111112');
     };
     //@ts-ignore
     function Game({ amount, setAmount, step, setStep , handleModalOpen }) {
+      //sound
+      const [playWin, stopWin] = useSound('/assets/audio/win.mp3', {
+        volume: 1,
+      });
+      const [playSlide, stopSlide] = useSound('/assets/audio/slide.mp3', {
+        volume: 1,
+      });
       //rive
       const STATE_MACHINE_NAME = 'State Machine 1';
       const INPUT_NAME = 'Trigger 1';
@@ -44,8 +49,7 @@ const TOKENMINT = new PublicKey('So11111111111111111111111111111111111111112');
       const [rightHold, setRightHold] = useState(false);
       const [reward, setReward] = useState('');
       const result = useSelector((store: Store) => store.gameState.result);
-      const user = useSelector((store: Store) => store.gameState.user);
-
+      
       useEffect(() => {
         if (x <= -4 && result?.status === 'success') {
           //('setting leftHold false and moving to step 2 forr large screen');
@@ -56,7 +60,31 @@ const TOKENMINT = new PublicKey('So11111111111111111111111111111111111111112');
           setStyleX({ transform: `translateX(${x}%)`, zIndex: 10, animationName: 'none' });
         else setStyleX({ transform: `translateX(${x}%)`, zIndex: 1, animationName: 'none' });
       }, [result, x]);
-
+useEffect(() => {
+  if (leftHold || rightHold) {
+    let newX = x;
+    if (leftHold && step < 3) {
+      newX = x - 2;
+      if (newX >= -5 && newX <= 85) {
+        playSlide();
+        console.log('playing sound');
+      } else {
+        stopSlide.stop();
+      }
+    } else if (rightHold && !step) {
+      newX = x + 2;
+      if (newX >= -5 && newX <= 85) {
+        playSlide();
+        console.log('playing sound');
+      } else {
+        stopSlide.stop();
+      }
+    }
+  } else {
+    stopSlide.stop();
+  }
+}, [leftHold, rightHold, x, step]);
+  
       useEffect(() => {
         if (result.status === 'waiting') {
           if (x < 0) {
@@ -110,14 +138,14 @@ const TOKENMINT = new PublicKey('So11111111111111111111111111111111111111112');
         return () => clearInterval(interval);
       }, [rightHold, x]);
 
-       useEffect(() => {
-         if (fireInput) {
-           fireInput?.fire();
-           setTimeout(() => {
-             fireInput?.fire();
-           }, 600);
-         }
-       }, [fireInput, rive]);
+      useEffect(() => {
+        if (fireInput) {
+          fireInput?.fire();
+          setTimeout(() => {
+            fireInput?.fire();
+          }, 600);
+        }
+      }, [fireInput, rive]);
 
       useEffect(() => {
         if (result.status === 'claimed') {
@@ -125,7 +153,7 @@ const TOKENMINT = new PublicKey('So11111111111111111111111111111111111111112');
           setStyleReward({ animationName: 'none' });
           setStyleRewardItem({ animationName: 'none' });
           setStep(0);
-          setReward("")
+          setReward('');
           setTimeout(() => {
             fireInput?.fire();
             setTimeout(() => {
@@ -143,41 +171,42 @@ const TOKENMINT = new PublicKey('So11111111111111111111111111111111111111112');
         }
       }, [result]);
 
-useEffect(() => {
-  if (step === 1) {
-    setStyleY({ transform: `translateY(25%)`, animationName: 'none' });
-    setTimeout(() => {
-      //@ts-ignore
-      setReward(plushies[result?.multiplier || '0.0'].img);
-    }, 600);
-  } else if (step === 2) {
-    setLeftHold(true);
-  } else if (step === 3) {
-    setStyleReward({ animationName: 'freefall' });
-    setStyleRewardItem({ animationName: 'freefallItem' });
-    setTimeout(() => {
-      setStep(4);
-    }, 2000);
-  } else if (step === 4 && !result?.userWon) {
-    setTimeout(() => {
-      setStep(0);
-    }, 3000);
-  }
+      useEffect(() => {
+        if (step === 1) {
+          setStyleY({ transform: `translateY(25%)`, animationName: 'none' });
+          setTimeout(() => {
+            //@ts-ignore
+            setReward(plushies[result?.multiplier || '0.0'].img);
+          }, 600);
+        } else if (step === 2) {
+          setLeftHold(true);
+        } else if (step === 3) {
+          setStyleReward({ animationName: 'freefall' });
+          setStyleRewardItem({ animationName: 'freefallItem' });
+          setTimeout(() => {
+             playWin();
+            setStep(4);
+          }, 2000);
+        } else if (step === 4 && !result?.userWon) {
+          setTimeout(() => {
+            setStep(0);
+          }, 3000);
+        }
 
-  return () => {};
-}, [step, result, y, setStep]);
+        return () => {};
+      }, [step, result, y, setStep]);
 
-useEffect(() => {
-  if (reward && step === 1) {
-   setTimeout(() => {
-     setStyleY({ transform: `translateY(0%)`, animationName: 'none' });
-     setTimeout(() => {
-       setStep(2);
-     }, 600);
-   }, 600);
-  }
-}, [reward, step]);
-  
+      useEffect(() => {
+        if (reward && step === 1) {
+          setTimeout(() => {
+            setStyleY({ transform: `translateY(0%)`, animationName: 'none' });
+            setTimeout(() => {
+              setStep(2);
+            }, 600);
+          }, 600);
+        }
+      }, [reward, step]);
+
       function handleKeyDown(e: any) {
         if (e.code === 'Enter') {
           api.handleCommand(`user play 1 ${amount}`);

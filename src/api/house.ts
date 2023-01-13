@@ -7,6 +7,8 @@ import { HouseState, HouseStateJSON } from './generated/accounts';
 import { FlipProgram } from './types';
 import { programWallet } from '../util/wallet';
 
+import { Buffer } from 'buffer';
+
 export class HouseAccountDoesNotExist extends Error {
   readonly name = 'HouseAccountDoesNotExist';
   readonly msg = 'Failed to fetch the HouseState account.';
