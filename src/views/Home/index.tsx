@@ -37,7 +37,7 @@ function Index() {
         splash ? (<LoadingScreen style={style} />):(<></>)
       }
       <div className="max-w-[1536px] max-h-[1920px] w-full flex flex-wrap justify-between items-center h-full">
-        {getWindowDimension().width > DeviceWidthObject.md.min &&
+        {getWindowDimension().width >= DeviceWidthObject.md.min &&
           getWindowDimension().width < DeviceWidthObject._2xl.min && (
             <Game
               amount={amount}
@@ -57,7 +57,7 @@ function Index() {
               handleModalOpen={handleModalOpen}
             />
           )}
-        {getWindowDimension().width > DeviceWidthObject._2xl.min && (
+        {getWindowDimension().width >= DeviceWidthObject._2xl.min && (
           <GameLarge
             amount={amount}
             setAmount={setAmount}
