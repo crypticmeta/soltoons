@@ -5,6 +5,7 @@
 #loading{
   transition: all ease-in-out 1s;
 }
+
 /* wallet button */
 .walletButton{
   background-color: inherit !important;
@@ -30,11 +31,11 @@ background-color: rgba(255, 163, 62, 1) !important;
 }
 /* wallet modal list items */
 .makeStyles-root-3 .MuiDialogContent-root .MuiListItem-root .MuiButton-root{
-  background-color: rgb(235, 136, 31) !important; 
+  color: rgb(235, 136, 31) !important; 
   border-bottom: 1px solid;
 }
 .makeStyles-root-3 .MuiDialogContent-root .MuiListItem-root .MuiButton-root:hover{
-  background-color: rgb(196, 113, 25) !important; 
+  background-color: rgb(59, 59, 59) !important; 
   border-bottom: 1px solid;
 }
 html,
