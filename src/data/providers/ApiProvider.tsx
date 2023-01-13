@@ -809,8 +809,8 @@ class ApiState implements PrivateApiInterface {
    */
   private playPrompt = async () => {
     try {
-      if (this.userBalance < 0.01) {
-        // If user balance is under 1 - request that they airdrop.
+      if (this.userBalance < 0.1) {
+        // If user balance is under 0.1
         return this.log('Looks like your SOL balance is low');
       }
 
