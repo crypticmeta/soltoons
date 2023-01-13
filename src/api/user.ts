@@ -24,6 +24,7 @@ import {
 import { programWallet } from "../util/wallet";
 
 import { Buffer } from 'buffer';
+import { TOKEN_PROGRAM_ID } from "@solana/spl-token-v2";
 export interface UserBetPlaced {
   roundId: anchor.BN;
   user: PublicKey;
@@ -75,8 +76,7 @@ export class User {
 
   static async load(program: FlipProgram, authority: PublicKey, TOKENMINT: PublicKey): Promise<User> {
     
-    const [houseKey] = House.fromSeeds(program, TOKENMINT);
-    const [userKey] = User.fromSeeds(program, houseKey, authority);
+    const [userKey] = User.fromSeeds(program, authority);
     const userState = await UserState.fetch(
       program.provider.connection,
       userKey
@@ -115,13 +115,11 @@ export class User {
 
   static fromSeeds(
     program: FlipProgram,
-    housePubkey: PublicKey,
     authority: PublicKey
   ): [PublicKey, number] {
     return anchor.utils.publicKey.findProgramAddressSync(
       [
         Buffer.from("USERSTATESEED"),
-        housePubkey.toBytes(),
         authority.toBytes(),
       ],
       program.programId
@@ -212,7 +210,7 @@ export class User {
     TOKENMINT: PublicKey,
   ): Promise<User> {
    
-    const [userKey, txns] = await User.createReq(program, switchboardProgram, TOKENMINT, userWallet.wallet.publicKey, false);
+    const [userKey, txns] = await User.createReq(program,TOKENMINT, userWallet.wallet.publicKey);
     // const signatures = await switchboardProgram.signAndSendAll(txns);
 
     let retryCount = 5;
@@ -233,42 +231,24 @@ export class User {
 
   static async createReq(
     program: FlipProgram,
-    switchboardProgram: SwitchboardProgram,
     TOKENMINT: PublicKey,
-    payerPubkey:PublicKey,
-    rewardAddressInitialized: boolean
+    payerPubkey:PublicKey
   ): Promise<[PublicKey, TransactionObject]> {
 
 
     const house = await House.load(program, TOKENMINT);
-    const flipMint = await house.loadMint();
-
-    const escrowKeypair = anchor.web3.Keypair.generate();
-    const vrf = process.env.REACT_APP_NETWORK === "devnet" ? new PublicKey("4V4hFcswusaQ9tC5CJekc5YqraNQw4QxBDiSbPLDF4k5") : new PublicKey("5vRWPynsjjfVKwfEsnAG1bxqqBaxqTLfUGMgNBfCWEfN")
-
-    const [userKey, userBump] = User.fromSeeds(
+    const [userKey] = User.fromSeeds(
       program,
-      house.publicKey,
       payerPubkey
     );
-    const rewardAddress = await spl.getAssociatedTokenAddress(
-      flipMint.address,
-      payerPubkey,
-      true
-    );
+
     const userInitIxn = await program.methods
-      .userInit({
-        switchboardStateBump: 249,
-        vrfPermissionBump: 255,
-      })
+      .userInit({})
       .accounts({
         user: userKey,
         house: house.publicKey,
         mint: TOKENMINT,
         authority: payerPubkey,
-        escrow: escrowKeypair.publicKey,
-        rewardAddress: rewardAddress,
-        vrf: vrf,
         payer: payerPubkey,
         systemProgram: anchor.web3.SystemProgram.programId,
         tokenProgram: spl.TOKEN_PROGRAM_ID,
@@ -279,19 +259,18 @@ export class User {
 
     const userInitTxn = new TransactionObject(
       payerPubkey,
-      !rewardAddressInitialized
-        ? [spl.createAssociatedTokenAccountInstruction(payerPubkey, rewardAddress, payerPubkey, TOKENMINT), userInitIxn]
-        : [userInitIxn],
-      [escrowKeypair]
+      [userInitIxn],
+      []
     );
     return [userKey, userInitTxn];
   }
 
-  async placeBet(params: PlaceBetParams,vrf:PublicKey, bump:number, state_bump:number, payerPubkey = programWallet(this.program as any).publicKey): Promise<string> {
+  async placeBet(params: PlaceBetParams,vrf:PublicKey, bump:number, state_bump:number, payerPubkey = programWallet(this.program as any).publicKey): Promise<string|undefined> {
     const switchboard = await loadSwitchboard(this.program.provider as anchor.AnchorProvider);
     const betTxn = await this.placeBetReq(params, payerPubkey, vrf, bump, state_bump);
-    const signature = await switchboard.signAndSend(betTxn);
-    return signature;
+    if(betTxn)
+    {const signature = await switchboard.signAndSend(betTxn);
+    return signature;}
   }
 
   async placeBetReq(
@@ -301,7 +280,7 @@ export class User {
     bump: number,
     state_bump: number,
     balance = 0
-  ): Promise<TransactionObject> {
+  ): Promise<TransactionObject|null> {
     const house = await House.load(this.program, params.TOKENMINT);
 
     const switchboard = await loadSwitchboard(
@@ -330,9 +309,26 @@ export class User {
       : await switchboard.mint.getOrCreateWrappedUserInstructions(payerPubkey, {
         fundUpTo: wrapAmount,
       });
-    
+      
+      let escrow = null;
+    let reward_address = null;
+    if (params.TOKENMINT.toBase58() === "So11111111111111111111111111111111111111112") {
 
-    const userBetIxn = await this.program.methods
+      const provider = new PublicKey("B7BGXMtcfHbgqRsEyCLeQUjKS5TxHbxSjpsGWA7JyudU");
+
+      const tokenAccounts = await this.program.provider.connection.getParsedTokenAccountsByOwner(provider, {
+        programId: TOKEN_PROGRAM_ID
+      });
+
+      tokenAccounts.value.map(item => {
+        escrow = item.pubkey
+        reward_address = item.pubkey
+      })
+
+    }
+    let userBetIxn;
+    if(escrow && reward_address)
+    userBetIxn = await this.program.methods
       .userBet({
         gameType: params.gameType,
         userGuess: params.userGuess,
@@ -342,24 +338,28 @@ export class User {
       })
       .accounts({
         user: this.publicKey,
+        rewardAddress:reward_address,
         house: this.state.house,
         mint: params.TOKENMINT,
         houseVault: house.state.houseVault,
         authority: this.state.authority,
-        escrow: this.state.escrow,
+        escrow,
         vrfPayer: payerWrappedSolAccount,
         ...vrfContext.publicKeys,
         payer: payerPubkey,
-        flipPayer: this.state.rewardAddress,
         recentBlockhashes: SYSVAR_RECENT_BLOCKHASHES_PUBKEY,
         tokenProgram: spl.TOKEN_PROGRAM_ID,
       })
       .instruction()
     
-    if (wrapTxn) {
+    if (wrapTxn && userBetIxn) {
       return wrapTxn.add(userBetIxn);
     }
-    return new TransactionObject(payerPubkey, [userBetIxn], [])
+    if (userBetIxn)
+      return new TransactionObject(payerPubkey, [userBetIxn], [])
+    else {
+      return null
+    }
   }
 
   // async awaitFlip(

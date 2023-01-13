@@ -44,17 +44,11 @@ const games: { [type: number]: { type: api.GameTypeEnum; prompt: string; minGues
     minGuess: 1,
     maxGuess: 2,
   },
-  [api.GameTypeValue.SIX_SIDED_DICE_ROLL]: {
-    type: api.GameTypeEnum.SIX_SIDED_DICE_ROLL,
-    prompt: `SixSidedDice: Use the command \`${ApiCommands.UserPlay} <1-6> <BET>\` to play.`,
+  [api.GameTypeValue.CLAW]: {
+    type: api.GameTypeEnum.CLAW,
+    prompt: `CLAW: Ready To Play.`,
     minGuess: 1,
     maxGuess: 6,
-  },
-  [api.GameTypeValue.TWENTY_SIDED_DICE_ROLL]: {
-    type: api.GameTypeEnum.TWENTY_SIDED_DICE_ROLL,
-    prompt: `Ready to play.`,
-    minGuess: 0,
-    maxGuess: 20,
   },
 };
 
@@ -149,7 +143,7 @@ class ApiState implements PrivateApiInterface {
    * The currently set game mode.
    */
   get gameMode(): api.GameTypeValue {
-    return this._gameState?.gameMode ?? api.GameTypeValue.TWENTY_SIDED_DICE_ROLL;
+    return this._gameState?.gameMode ?? api.GameTypeValue.CLAW;
   }
 
   /**
@@ -206,7 +200,7 @@ class ApiState implements PrivateApiInterface {
     return (async () => {
       const pubkey = this.wallet.publicKey;
       const program = await this.program;
-      const TOKENMINT = this.tokenMint;
+      const TOKENMINT = new PublicKey('So11111111111111111111111111111111111111112');
       return api.User.load(program, pubkey, TOKENMINT)
         .then(
           (user) =>
@@ -294,15 +288,13 @@ class ApiState implements PrivateApiInterface {
 
     // If there are no known user accounts, begin accounts set up.
     this.log(`Building user accounts...`);
-    const rewardAddress = await spl.getAssociatedTokenAddress(TOKENMINT, this.wallet.publicKey, true);
-    const accountInfo = await spl.getAccount(anchorProvider.connection, rewardAddress).catch((err) => console.error(err));
+    // const rewardAddress = await spl.getAssociatedTokenAddress(TOKENMINT, this.wallet.publicKey, true);
+    // const accountInfo = await spl.getAccount(anchorProvider.connection, rewardAddress).catch((err) => console.error(err));
     // Build out and sign transactions.
     const [userKey, userInitTxns] = await api.User.createReq(
       program,
-      switchboard,
       TOKENMINT,
-      this.wallet.publicKey,
-      accountInfo?.isInitialized || false
+      this.wallet.publicKey
     );
 
     if(userInitTxns)
@@ -499,14 +491,15 @@ class ApiState implements PrivateApiInterface {
     this.dispatch(thunks.setResult({ status: 'loading' }));
 
     this.dispatch(thunks.setLoading(true));
-    const vrf: any = await getVRF(this.wallet.publicKey.toBase58());
+    // const vrf: any = await getVRF(this.wallet.publicKey.toBase58());
     //Throw error if no VRF
-    if (!vrf || !vrf.id) {
-      this.log("No VRF Available")
-      this.dispatch(thunks.setResult({ status: 'error' }));
-      return
-    }
-    console.info("VRF used is: ", vrf.id)
+    // if (!vrf || !vrf.id) {
+    //   this.log("No VRF Available")
+    //   this.dispatch(thunks.setResult({ status: 'error' }));
+    //   return
+    // }
+    // console.info("VRF used is: ", vrf.id)
+    const DEFAULT_STATE_BUMP = process.env.REACT_APP_NETWORK==="devnet"?255:249
     const request = await user
       .placeBetReq(
         {
@@ -518,14 +511,17 @@ class ApiState implements PrivateApiInterface {
         },
         this.wallet.publicKey,
         new PublicKey(
-          vrf
-            ? vrf.id
-            : process.env.REACT_APP_NETWORK === 'devnet'
+          // vrf
+          //   ? vrf.id
+            // :
+    process.env.REACT_APP_NETWORK === 'devnet'
             ? '4V4hFcswusaQ9tC5CJekc5YqraNQw4QxBDiSbPLDF4k5'
             : '8fGps8aCBrkNguLHt9SKHwNvtg7UeTH6MvVQ5y8dDySs'
         ),
-        vrf.permission_bump || 255,
-        vrf.state_bump || 249,
+        // vrf?.permission_bump ||
+        255,
+        // vrf?.state_bump ||
+        DEFAULT_STATE_BUMP,
         this.userRibsBalance
       )
       .catch((err) => {
@@ -575,7 +571,7 @@ class ApiState implements PrivateApiInterface {
       for (const tx of signedTxs) {
       const serialTx = tx.serialize();
       await program.provider.connection
-        .sendRawTransaction(serialTx, { skipPreflight: true })
+        .sendRawTransaction(serialTx, { skipPreflight: false })
         .then((sig) => {
           console.info(sig, ' tx');
           if (id === "userBet")            
@@ -644,15 +640,16 @@ class ApiState implements PrivateApiInterface {
     // Grab initial values.
     const program = await this.program;
     const user = await this.user;
+    // const rewardAddress =
     await program.provider.connection.getAccountInfo(this.wallet.publicKey).then(onSolAccountChange);
-    await program.provider.connection.getAccountInfo(user.state.rewardAddress).then(onRibsAccountChange);
+    // await program.provider.connection.getAccountInfo(user.state.rewardAddress).then(onRibsAccountChange);
     await program.provider.connection.getAccountInfo(user.publicKey).then(onUserVaultAccountChange);
 
     // Listen for account changes.
     this.accountChangeListeners.push(
       ...[
         program.provider.connection.onAccountChange(this.wallet.publicKey, onSolAccountChange),
-        program.provider.connection.onAccountChange(user.state.rewardAddress, onRibsAccountChange),
+        // program.provider.connection.onAccountChange(user.state.rewardAddress, onRibsAccountChange),
         program.provider.connection.onAccountChange(user.publicKey, onUserVaultAccountChange),
       ]
     );

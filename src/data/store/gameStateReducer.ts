@@ -33,7 +33,7 @@ export interface GameState {
  */
 const initialState: GameState = {
   loading: false,
-  gameMode: GameTypeValue.TWENTY_SIDED_DICE_ROLL,
+  gameMode: GameTypeValue.CLAW,
   tokenmint: "So11111111111111111111111111111111111111112",
   userBalances: {},
   user: {},

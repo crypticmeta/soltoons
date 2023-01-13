@@ -13,9 +13,6 @@ export interface UserInitAccounts {
   house: PublicKey
   mint: PublicKey
   authority: PublicKey
-  escrow: PublicKey
-  rewardAddress: PublicKey
-  vrf: PublicKey
   payer: PublicKey
   systemProgram: PublicKey
   tokenProgram: PublicKey
@@ -29,11 +26,8 @@ export function userInit(args: UserInitArgs, accounts: UserInitAccounts) {
   const keys: Array<AccountMeta> = [
     { pubkey: accounts.user, isSigner: false, isWritable: true },
     { pubkey: accounts.house, isSigner: false, isWritable: false },
-    { pubkey: accounts.mint, isSigner: false, isWritable: true },
+    { pubkey: accounts.mint, isSigner: false, isWritable: false },
     { pubkey: accounts.authority, isSigner: true, isWritable: true },
-    { pubkey: accounts.escrow, isSigner: true, isWritable: true },
-    { pubkey: accounts.rewardAddress, isSigner: false, isWritable: true },
-    { pubkey: accounts.vrf, isSigner: false, isWritable: true },
     { pubkey: accounts.payer, isSigner: true, isWritable: true },
     { pubkey: accounts.systemProgram, isSigner: false, isWritable: false },
     { pubkey: accounts.tokenProgram, isSigner: false, isWritable: false },

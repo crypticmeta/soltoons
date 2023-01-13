@@ -3,12 +3,12 @@ import BN from "bn.js" // eslint-disable-line @typescript-eslint/no-unused-vars
 import * as types from "../types" // eslint-disable-line @typescript-eslint/no-unused-vars
 import * as borsh from "@project-serum/borsh"
 
-export interface UserInitParamsFields {}
+export interface CreateEscrowParamsFields {}
 
-export interface UserInitParamsJSON {}
+export interface CreateEscrowParamsJSON {}
 
-export class UserInitParams {
-  constructor(fields: UserInitParamsFields) {}
+export class CreateEscrowParams {
+  constructor(fields: CreateEscrowParamsFields) {}
 
   static layout(property?: string) {
     return borsh.struct([], property)
@@ -16,22 +16,22 @@ export class UserInitParams {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   static fromDecoded(obj: any) {
-    return new UserInitParams({})
+    return new CreateEscrowParams({})
   }
 
-  static toEncodable(fields: UserInitParamsFields) {
+  static toEncodable(fields: CreateEscrowParamsFields) {
     return {}
   }
 
-  toJSON(): UserInitParamsJSON {
+  toJSON(): CreateEscrowParamsJSON {
     return {}
   }
 
-  static fromJSON(obj: UserInitParamsJSON): UserInitParams {
-    return new UserInitParams({})
+  static fromJSON(obj: CreateEscrowParamsJSON): CreateEscrowParams {
+    return new CreateEscrowParams({})
   }
 
   toEncodable() {
-    return UserInitParams.toEncodable(this)
+    return CreateEscrowParams.toEncodable(this)
   }
 }

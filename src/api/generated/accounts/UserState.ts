@@ -1,38 +1,24 @@
 import { PublicKey, Connection } from "@solana/web3.js"
-import BN from "bn.js" 
-import * as borsh from "@project-serum/borsh" 
-import * as types from "../types" 
+import BN from "bn.js" // eslint-disable-line @typescript-eslint/no-unused-vars
+import * as borsh from "@project-serum/borsh" // eslint-disable-line @typescript-eslint/no-unused-vars
+import * as types from "../types" // eslint-disable-line @typescript-eslint/no-unused-vars
 import { PROGRAM_ID } from "../programId"
-
-import { Buffer } from 'buffer';
 
 export interface UserStateFields {
   bump: number
   authority: PublicKey
   house: PublicKey
-  escrow: PublicKey
-  rewardAddress: PublicKey
-  vrf: PublicKey
-  switchboardStateBump: number
-  vrfPermissionBump: number
   currentRound: types.RoundFields
-  lastAirdropRequestSlot: BN
   ebuf: Array<number>
   history: types.HistoryFields
 }
 
 export interface UserStateJSON {
-  publicKey?: string
+  publicKey: string
   bump: number
   authority: string
   house: string
-  escrow: string
-  rewardAddress: string
-  vrf: string
-  switchboardStateBump: number
-  vrfPermissionBump: number
   currentRound: types.RoundJSON
-  lastAirdropRequestSlot: string
   ebuf: Array<number>
   history: types.HistoryJSON
 }
@@ -41,13 +27,7 @@ export class UserState {
   readonly bump: number
   readonly authority: PublicKey
   readonly house: PublicKey
-  readonly escrow: PublicKey
-  readonly rewardAddress: PublicKey
-  readonly vrf: PublicKey
-  readonly switchboardStateBump: number
-  readonly vrfPermissionBump: number
   readonly currentRound: types.Round
-  readonly lastAirdropRequestSlot: BN
   readonly ebuf: Array<number>
   readonly history: types.History
 
@@ -59,13 +39,7 @@ export class UserState {
     borsh.u8("bump"),
     borsh.publicKey("authority"),
     borsh.publicKey("house"),
-    borsh.publicKey("escrow"),
-    borsh.publicKey("rewardAddress"),
-    borsh.publicKey("vrf"),
-    borsh.u8("switchboardStateBump"),
-    borsh.u8("vrfPermissionBump"),
     types.Round.layout("currentRound"),
-    borsh.u64("lastAirdropRequestSlot"),
     borsh.array(borsh.u8(), 1024, "ebuf"),
     types.History.layout("history"),
   ])
@@ -74,13 +48,7 @@ export class UserState {
     this.bump = fields.bump
     this.authority = fields.authority
     this.house = fields.house
-    this.escrow = fields.escrow
-    this.rewardAddress = fields.rewardAddress
-    this.vrf = fields.vrf
-    this.switchboardStateBump = fields.switchboardStateBump
-    this.vrfPermissionBump = fields.vrfPermissionBump
     this.currentRound = new types.Round({ ...fields.currentRound })
-    this.lastAirdropRequestSlot = fields.lastAirdropRequestSlot
     this.ebuf = fields.ebuf
     this.history = new types.History({ ...fields.history })
   }
@@ -130,13 +98,7 @@ export class UserState {
       bump: dec.bump,
       authority: dec.authority,
       house: dec.house,
-      escrow: dec.escrow,
-      rewardAddress: dec.rewardAddress,
-      vrf: dec.vrf,
-      switchboardStateBump: dec.switchboardStateBump,
-      vrfPermissionBump: dec.vrfPermissionBump,
       currentRound: types.Round.fromDecoded(dec.currentRound),
-      lastAirdropRequestSlot: dec.lastAirdropRequestSlot,
       ebuf: dec.ebuf,
       history: types.History.fromDecoded(dec.history),
     })
@@ -147,13 +109,7 @@ export class UserState {
       bump: this.bump,
       authority: this.authority.toString(),
       house: this.house.toString(),
-      escrow: this.escrow.toString(),
-      rewardAddress: this.rewardAddress.toString(),
-      vrf: this.vrf.toString(),
-      switchboardStateBump: this.switchboardStateBump,
-      vrfPermissionBump: this.vrfPermissionBump,
       currentRound: this.currentRound.toJSON(),
-      lastAirdropRequestSlot: this.lastAirdropRequestSlot.toString(),
       ebuf: this.ebuf,
       history: this.history.toJSON(),
     }
@@ -164,13 +120,7 @@ export class UserState {
       bump: obj.bump,
       authority: new PublicKey(obj.authority),
       house: new PublicKey(obj.house),
-      escrow: new PublicKey(obj.escrow),
-      rewardAddress: new PublicKey(obj.rewardAddress),
-      vrf: new PublicKey(obj.vrf),
-      switchboardStateBump: obj.switchboardStateBump,
-      vrfPermissionBump: obj.vrfPermissionBump,
       currentRound: types.Round.fromJSON(obj.currentRound),
-      lastAirdropRequestSlot: new BN(obj.lastAirdropRequestSlot),
       ebuf: obj.ebuf,
       history: types.History.fromJSON(obj.history),
     })
