@@ -50,6 +50,7 @@ function Game({ amount, setAmount, step, setStep, handleModalOpen }) {
 
   const [reward, setReward] = useState('');
 
+  //@ts-ignore
   const result = useSelector((store: Store) => store.gameState.result);
 
   useEffect(() => {
@@ -93,7 +94,6 @@ function Game({ amount, setAmount, step, setStep, handleModalOpen }) {
          newX = x - 2;
          if (newX >= -5 && newX <= 85) {           
           playSlide();
-          console.log('playing sound');
          } else {
            stopSlide.stop();
          }
@@ -101,7 +101,6 @@ function Game({ amount, setAmount, step, setStep, handleModalOpen }) {
          newX = x + 2;
          if (newX >= -5 && newX <= 85) {
            playSlide();
-           console.log('playing sound');
          } else {
            stopSlide.stop();
          }
@@ -194,9 +193,7 @@ function Game({ amount, setAmount, step, setStep, handleModalOpen }) {
        setStyleReward({ animationName: 'freefall' });
        setStyleRewardItem({ animationName: 'freefallItem' });
       setTimeout(() => {
-         
           playWin();
-          console.log('playing win');
          setStep(4);
        }, 2000);
     } else if (step === 4 && !result?.userWon) {
