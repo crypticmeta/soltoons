@@ -150,6 +150,7 @@ export class House {
       return new House(program, houseKey, houseState);
     }
 
+    
     throw new Error(`House account has not been created yet`);
   }
 

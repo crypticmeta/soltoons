@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { hooks, Store, thunks } from '../../data';
-import { useWallet } from '@solana/wallet-adapter-react';
+import { tokenInfoMap} from "../../data/providers/tokenProvider";
 import { WalletMultiButton } from '@solana/wallet-adapter-material-ui';
 // import { useConnectedWallet, useWalletKit } from '@gokiprotocol/walletkit';
 import { useSelector } from 'react-redux';
@@ -12,6 +12,9 @@ import Modal from '@mui/material/Modal';
 import { LAMPORTS_PER_SOL } from '@solana/web3.js';
 import LinearProgress from '@mui/material/LinearProgress';
 import useSound from 'use-sound';
+import Select, { SelectChangeEvent } from '@mui/material/Select';
+import { FormControl, MenuItem } from '@mui/material';
+const wsol = 'So11111111111111111111111111111111111111112';
 const Alert = React.forwardRef<HTMLDivElement, AlertProps>(function Alert(props, ref) {
   return <MuiAlert elevation={6} ref={ref} variant="filled" {...props} />;
 });
@@ -22,10 +25,7 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
     const [playLoading, stopLoading] = useSound('/assets/audio/loading.mp3', {
       volume: 0.7,
     });
-    const [playWin, stopWin] = useSound('/assets/audio/win.mp3', {
-      volume: 1,
-    });
-  const [playLose, stopLose] = useSound('/assets/audio/error.mp3', {
+  const [playLose] = useSound('/assets/audio/error.mp3', {
     volume: 1,
   });
   const [playReward, stopReward] = useSound('/assets/audio/reward.mp3', {
@@ -51,30 +51,55 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
   const logs = useSelector(({ HUDLogger }: Store) => HUDLogger.logs);
   const loading = useSelector((store: Store) => store.gameState.loading);
   const balances = useSelector((store: Store) => store.gameState.userBalances);
+  const tokenEscrow = useSelector((store: Store) => store.gameState.tokenEscrow);
+  const tokenmint = useSelector((store: Store) => store.gameState.tokenmint);
   const user = useSelector((store: Store) => store.gameState.user);
   const result = useSelector((store: Store) => store.gameState.result);
   const userVaultBal = useSelector((store: Store) => store.gameState.userVaultBalance);
   const [userAccountExists, setUserAccountExists] = useState(true);
   const [lastGameStatus, setLastGameStatus] = useState('');
   const [wait, setWait] = useState(0);
+
+  //tokenmint
+    const [token, setToken] = React.useState(tokenmint);
+
+  const handleChange = (event: SelectChangeEvent) => {
+      setToken(event.target.value as string);
+    };
   useEffect(() => {
     if (step === 3) {
       stopLoading.stop();
     }
   }, [step])
+
+  useEffect(() => {
+    if (logs && tokenmint !== wsol) {
+      if (!tokenEscrow?.publicKey) {
+        setUserAccountExists(false)
+      }
+      else {
+      setUserAccountExists(true);
+      }
+    }
+  }, [tokenmint, tokenEscrow, logs])
+  
   
   useEffect(() => {
     if (logs && logs[0]?.severity === 'error') {
       // alert(logs[0].message);
       if (logs[0].message.includes("User hasn't created an account")) setUserAccountExists(false);
-      else setUserAccountExists(true);
+      else {
+        if (tokenmint === wsol) {
+          setUserAccountExists(true);
+        }
+      }
     }
     handleClick();
   }, [logs]);
 
   useEffect(() => {
     if (user && user.authority) {
-      setUserAccountExists(true);
+      if (tokenmint === wsol) setUserAccountExists(true);
       setLastGameStatus(user.currentRound.status.kind);
     }
   }, [user]);
@@ -135,11 +160,39 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
     }
   }, [result]);
 
+  useEffect(() => {
+    if (token !==tokenmint) {
+      dispatch(thunks.setTokenmint(token));
+    }
+  }, [token])
+  
   return (
     <div className="flex h-full flex-col max-h-[800px] justify-start md:justify-center w-full lg:w-3/12 p-6 font-bold">
       <div className="part1 h-[20%] center w-full">
-        <div className="bg-brand_yellow walletMultiButton">
-          <WalletMultiButton color="inherit" className={'walletButton'} />
+        <div className="w-full">
+          <div className="tokenSelector mb-1">
+            <FormControl fullWidth variant='filled'>
+              <Select
+                labelId="select-token"
+                id="select-token"
+                sx={{ width: '100%', height:"40px", outline: "none", border:"none" }}
+                value={token}
+                label="Token"
+                onChange={handleChange}
+              >
+                  {Array.from(tokenInfoMap.values())
+                    .filter((t) => t.symbol)
+                    .map((item: any) => (
+                      <MenuItem value={item.address} key={item.symbol + Math.random()}>
+                        {item.symbol}
+                      </MenuItem>
+                    ))}
+              </Select>
+            </FormControl>
+          </div>
+          <div className="bg-brand_yellow walletMultiButton">
+            <WalletMultiButton color="inherit" className={'walletButton'} />
+          </div>
         </div>
       </div>
       {/* <div className="part2 h-[50%] 2xl:h-[60%] bg-brand_yellow  border-4 border-black rounded-3xl p-2 text-sm overflow-hidden">
@@ -206,7 +259,10 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
       <div className="part3 h-[35%] 2xl:h-[35%] bg-brand_yellow rounded-3xl border-4 border-black text-sm p-6 flex flex-col justify-between">
         {userAccountExists ? (
           <>
-            {step === 0 && userVaultBal > 0.0362616 && !result?.status && lastGameStatus.includes('Settled') ? (
+            {step === 0 &&
+            (tokenmint === wsol ? userVaultBal > 0.0362616 : tokenEscrow.balance > 0) &&
+            !result?.status &&
+            lastGameStatus.includes('Settled') ? (
               <>
                 <button
                   onClick={() => {
@@ -219,14 +275,16 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
               </>
             ) : (
               <Play
-                  amount={amount}
-                  setAmount={setAmount}
-                  loading={loading}
-                  api={api}
-                  balances={balances}
-                  result={result}
-                  wait={wait}
-                  userVaultBal={ userVaultBal}
+                amount={amount}
+                setAmount={setAmount}
+                loading={loading}
+                api={api}
+                balances={balances}
+                result={result}
+                wait={wait}
+                userVaultBal={userVaultBal}
+                tokenMint={tokenmint}
+                escrow={tokenEscrow}
               />
             )}
           </>
@@ -239,11 +297,11 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
             ) : (
               <button
                 onClick={() => {
-                  api.handleCommand('user create');
+                  tokenmint !== wsol ? api.handleCommand('create escrow') : api.handleCommand('user create');
                 }}
                 className="center h-full text-lg"
               >
-                Create User Account
+                {tokenmint !== wsol ? 'Create Vault Account' : 'Create User Account'}
               </button>
             )}
           </>
@@ -305,7 +363,9 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
 }
 
 //@ts-ignore
-const Play = ({amount, setAmount, api, balances, loading, result, wait, userVaultBal}) => {
+const Play = ({ amount, setAmount, api, balances, loading, result, wait, userVaultBal, tokenMint, escrow }) => {
+  const isWsol = tokenMint === wsol;
+  const token = tokenInfoMap.get(tokenMint);
   return (
     <>
       {loading && (result?.status === 'loading' || result?.status === 'waiting') ? (
@@ -318,13 +378,11 @@ const Play = ({amount, setAmount, api, balances, loading, result, wait, userVaul
         </div>
       ) : (
         <>
-          {result?.status === 'success' && result?.userWon && userVaultBal > 0.0362616 ? (
+          {result?.status === 'success' &&
+          result?.userWon &&
+          (isWsol ? userVaultBal > 0.0362616 : escrow.balance > 0) ? (
             <>
-              <button 
-                className="center h-full text-lg"
-              >
-                Received Result!
-              </button>
+              <button className="center h-full text-lg">Received Result!</button>
             </>
           ) : (
             <>
@@ -332,30 +390,37 @@ const Play = ({amount, setAmount, api, balances, loading, result, wait, userVaul
                 <p className="font-extrabold text-center">INSERT BET AMOUNT</p>
                 <hr className="my-2 border-black" />
               </div>
-              <div className="flex text-3xl italic  ">
+              <div className="flex text-3xl italic justify-between bg-red-00 w-full">
                 <input
-                  className=" bg-brand_yellow text-black font-extrabold w-6/12 text-right italic focus:outline-none"
+                  className=" bg-transparent text-black font-extrabold text-center w-6/12 italic focus:outline-none"
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
                 />
-                <p className=" ml-2 w-6/12">SOL</p>
+                <p className=" ml-2 w-6/12 text-left">{token?.symbol || 'SOL'}</p>
               </div>
               <div>
                 <button
+                  disabled={tokenMint !== wsol && balances.token === 0}
                   onClick={() => {
                     api.handleCommand(`user play 1 ${amount}`);
                   }}
-                  className="border-black  border-4 p-1 rounded-3xl w-full font-extrabold"
+                  className={`border-black  border-4 p-1 rounded-3xl w-full font-extrabold ${
+                    tokenMint !== wsol && balances.token === 0 ? 'bg-gray-600 cursor-not-allowed' : ''
+                  }`}
                 >
-                  PLAY
+                  {tokenMint !== wsol && balances.token === 0 ? `Insufficient ${token?.symbol} Balance` : 'PLAY'}
                 </button>
                 <p className="text-xs text-gray-700 text-center">
                   {Number(balances.sol || 0).toFixed(4)} sol{' '}
-                  {/* <span className="pl-4">
-                {Number(result && result.status === 'claimed' ? 0 : balances.ribs || 0).toFixed(4)} wsol
-              </span> */}
+                  {balances.token && token && tokenMint !== wsol ? (
+                    <span className="pl-4">
+                      {Number(result && result.status === 'claimed' ? 0 : balances.token || 0).toFixed(2)} token
+                    </span>
+                  ) : (
+                    <></>
+                  )}
                 </p>
-                {Number(amount) > 2 && (
+                {(tokenMint === wsol &&  Number(amount) > 2) && (
                   <p className="text-red-800 text-xs pt-2 text-center">Amount should be less than 2 SOL</p>
                 )}
               </div>

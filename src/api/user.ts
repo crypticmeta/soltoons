@@ -280,8 +280,10 @@ export class User {
     bump: number,
     state_bump: number,
     balance = 0
-  ): Promise<TransactionObject|null> {
+  ): Promise<TransactionObject | null> {
     const house = await House.load(this.program, params.TOKENMINT);
+    const vrf_mint = new PublicKey("So11111111111111111111111111111111111111112");
+    const vrf_house = await House.load(this.program, vrf_mint);
 
     const switchboard = await loadSwitchboard(
       this.program.provider as anchor.AnchorProvider
@@ -311,7 +313,8 @@ export class User {
       });
       
       let escrow = null;
-    let reward_address = null;
+    let flip_payer = null;
+    let flip_payer_is_initialized = true;
     if (params.TOKENMINT.toBase58() === "So11111111111111111111111111111111111111112") {
 
       const provider = new PublicKey("B7BGXMtcfHbgqRsEyCLeQUjKS5TxHbxSjpsGWA7JyudU");
@@ -322,12 +325,32 @@ export class User {
 
       tokenAccounts.value.map(item => {
         escrow = item.pubkey
-        reward_address = item.pubkey
+        flip_payer = item.pubkey
       })
 
     }
+    else if(this.program.provider.publicKey){
+       flip_payer = await spl.getAssociatedTokenAddress(params.TOKENMINT, this.program.provider.publicKey, true);
+      const accountInfo = await spl.getAccount(this.program.provider.connection, flip_payer).catch((err) => console.error(err));
+      flip_payer_is_initialized = accountInfo?.isInitialized || false;
+      const [escrowKey] = anchor.utils.publicKey.findProgramAddressSync(
+        [Buffer.from('ESCROWSTATESEED'), this.program.provider.publicKey.toBytes(), params.TOKENMINT.toBytes()],
+        this.program.programId
+      );
+      escrow = escrowKey;
+
+    }
     let userBetIxn;
-    if(escrow && reward_address)
+    let ixns;
+    if (!flip_payer_is_initialized&&flip_payer) {
+      ixns = spl.createAssociatedTokenAccountInstruction(
+        payerPubkey,
+        flip_payer,
+        payerPubkey,
+        params.TOKENMINT
+      )
+    }
+    if(escrow && flip_payer)
     userBetIxn = await this.program.methods
       .userBet({
         gameType: params.gameType,
@@ -338,8 +361,10 @@ export class User {
       })
       .accounts({
         user: this.publicKey,
-        rewardAddress:reward_address,
-        house: this.state.house,
+        flipPayer:flip_payer,
+        house: house.publicKey,
+        vrfHouse: vrf_house.publicKey,
+        vrfHouseMint: vrf_mint,
         mint: params.TOKENMINT,
         houseVault: house.state.houseVault,
         authority: this.state.authority,
@@ -353,10 +378,10 @@ export class User {
       .instruction()
     
     if (wrapTxn && userBetIxn) {
-      return wrapTxn.add(userBetIxn);
+      return wrapTxn.add(ixns ? [ixns, userBetIxn] : [userBetIxn]);
     }
     if (userBetIxn)
-      return new TransactionObject(payerPubkey, [userBetIxn], [])
+      return new TransactionObject(payerPubkey,ixns?[ixns, userBetIxn]: [userBetIxn], [])
     else {
       return null
     }
