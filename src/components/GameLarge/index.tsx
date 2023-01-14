@@ -65,7 +65,6 @@ useEffect(() => {
       newX = x - 2;
       if (newX >= -5 && newX <= 85) {
         playSlide();
-        console.log('playing sound');
       } else {
         stopSlide.stop();
       }
@@ -73,7 +72,6 @@ useEffect(() => {
       newX = x + 2;
       if (newX >= -5 && newX <= 85) {
         playSlide();
-        console.log('playing sound');
       } else {
         stopSlide.stop();
       }

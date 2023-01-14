@@ -38,7 +38,7 @@ export interface GameState {
 const initialState: GameState = {
   loading: false,
   gameMode: GameTypeValue.CLAW,
-  tokenmint: "CFp7pM2TE1S8WGQo7Wb9qvLogYfTkEJruanSbkFFfEtn",
+  tokenmint: "So11111111111111111111111111111111111111112",
   tokenEscrow: {
     publicKey: "",
     balance: 0

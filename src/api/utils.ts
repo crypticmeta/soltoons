@@ -67,14 +67,12 @@ export const customProviderFactory = (
     signers
       .filter((s): s is Signer => s !== undefined)
       .forEach((kp) => {
-        console.log(kp.publicKey.toBase58(), 'signer')
         tx.partialSign(kp);
       });
     
 
     const rawTx = tx.serialize();
     const signature = await connection.sendRawTransaction(rawTx);
-    console.log(signature, 'signature')
 
     // Await for 30 seconds
     for (let i = 0; i < 30; i++) {

@@ -466,42 +466,6 @@ if (escrow && flip_payer)
     }
   }
 }
-
-    // const request = new TransactionObject(this.wallet.publicKey, [ixns], []);
-    // if (request) {
-    //   // const pack = TransactionObject.pack([request])
-    //   const program = await this.program;
-    //   const blockhash = await program.provider.connection.getLatestBlockhash();
-    //   const sign = request.sign(blockhash, request.signers);
-    //   const signedTxs = await this.wallet.signAllTransactions([sign]);
-    //   for (const tx of signedTxs) {
-    //     const serialTx = tx.serialize();
-    //     await program.provider.connection
-    //       .sendRawTransaction(serialTx, { skipPreflight: true })
-    //       .then((sig) => {
-    //         console.info(sig, ' tx');
-            // this.log('Reward collected Successfully!');
-            // this.dispatch(thunks.setLoading(false));
-            // this.dispatch(thunks.log({ message: 'Successfully claimed funds. ', severity: Severity.Success }));
-            // this.dispatch(thunks.setResult({ status: 'claimed' }));
-    //       })
-    //       .catch((e) => {
-    //         this.dispatch(thunks.setResult({ status: 'error' }));
-    //         this.dispatch(thunks.setLoading(false));
-    //         if (e instanceof anchor.web3.SendTransactionError) {
-    //           const anchorError = e.logs ? anchor.AnchorError.parse(e.logs) : null;
-    //           if (anchorError) {
-    //             console.error(anchorError);
-    //             throw ApiError.anchorError(anchorError);
-    //           } else {
-    //             console.error(e);
-    //             throw ApiError.sendTransactionError(e.message);
-    //           }
-    //         }
-    //       });
-    //   }
-    //   // await this.packSignAndSubmit(request.ixns, request.signers, false);
-    // }
   };
 
   /**
@@ -520,7 +484,6 @@ if (escrow && flip_payer)
       [Buffer.from('ESCROWSTATESEED'), payerPubkey.toBytes(), TOKENMINT.toBytes()],
       program.programId
     );
-    // console.log(escrow.toBase58(), 'escrow')
      const rewardAddress = await spl.getAssociatedTokenAddress(TOKENMINT, this.wallet.publicKey, true);
     const accountInfo = await spl.getAccount(program.provider.connection, rewardAddress).catch((err) => console.error(err));
 
@@ -619,14 +582,14 @@ if (escrow && flip_payer)
     this.dispatch(thunks.setResult({ status: 'loading' }));
 
     this.dispatch(thunks.setLoading(true));
-    // const vrf: any = await getVRF(this.wallet.publicKey.toBase58());
+    const vrf: any = await getVRF(this.wallet.publicKey.toBase58());
     //Throw error if no VRF
-    // if (!vrf || !vrf.id) {
-    //   this.log("No VRF Available")
-    //   this.dispatch(thunks.setResult({ status: 'error' }));
-    //   return
-    // }
-    // console.info("VRF used is: ", vrf.id)
+    if (!vrf || !vrf.id) {
+      this.log("No VRF Available")
+      this.dispatch(thunks.setResult({ status: 'error' }));
+      return
+    }
+    console.info("VRF used is: ", vrf.id)
     const DEFAULT_STATE_BUMP = process.env.REACT_APP_NETWORK === 'devnet' ? 255 : 249;
     const request = await user
       .placeBetReq(
@@ -639,16 +602,16 @@ if (escrow && flip_payer)
         },
         this.wallet.publicKey,
         new PublicKey(
-          // vrf
-          //   ? vrf.id
-          // :
+          vrf
+            ? vrf.id
+          :
           process.env.REACT_APP_NETWORK === 'devnet'
             ? '4V4hFcswusaQ9tC5CJekc5YqraNQw4QxBDiSbPLDF4k5'
             : '8fGps8aCBrkNguLHt9SKHwNvtg7UeTH6MvVQ5y8dDySs'
         ),
-        // vrf?.permission_bump ||
+        vrf?.permission_bump ||
         255,
-        // vrf?.state_bump ||
+        vrf?.state_bump ||
         DEFAULT_STATE_BUMP,
         this.userTokenBalance
       )
@@ -689,7 +652,7 @@ if (escrow && flip_payer)
       for (const tx of signedTxs) {
         const serialTx = tx.serialize();
         await program.provider.connection
-          .sendRawTransaction(serialTx, { skipPreflight: true })
+          .sendRawTransaction(serialTx, { skipPreflight: false })
           .then((sig) => {
             console.info(sig, ' tx');
             if (id === 'userBet')
@@ -768,9 +731,7 @@ if (escrow && flip_payer)
     const rewardAddress = this.tokenMint.toBase58() === "So11111111111111111111111111111111111111112" ?
       user?.publicKey:
       await spl.getAssociatedTokenAddress(this.tokenMint, this.wallet.publicKey, true);
-    console.log(rewardAddress.toBase58(), 'user reward address')
     // const accountInfo = await spl.getAccount(program.provider.connection, rewardAddress).catch((err) => console.error(err));
-    // console.log(accountInfo, 'AI')
 
     // const rewardAddress =
     await program.provider.connection.getAccountInfo(this.wallet.publicKey).then(onSolAccountChange);
@@ -816,6 +777,7 @@ if (escrow && flip_payer)
         await this.log(`Awaiting result from vrf...`);
       },
       /* betSettled= */ async (event) => {
+        console.log(event, ' bet settled')
         let multiplier = [
           1.0, 0.3, 1.0, 0.3, 0.3, 1.0, 0.3, 1.0, 0.5, 1.0, 1.0, 0.0, 0.8, 0.3, 2.0, 0.3, 1.0, 0.3, 0.5, 0.8, 2.0, 1.0,
           0.5, 2.0, 1.0, 1.0, 0.5, 0.3, 0.8, 0.3, 0.3, 0.0, 0.8, 0.3, 0.5, 0.0, 0.5, 1.0, 0.0, 0.5, 1.0, 0.3, 0.0, 0.3,

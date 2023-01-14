@@ -497,6 +497,7 @@ export class User {
       this.program.addEventListener(
         "UserBetSettled",
         async (event: UserBetSettled, slot: number, signature: string) => {
+          console.log(event, 'signature bet settled ', signature)
           if (!this.publicKey.equals(event.user)) {
             return;
           }

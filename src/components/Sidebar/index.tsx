@@ -61,7 +61,8 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
   const [wait, setWait] = useState(0);
 
   //tokenmint
-    const [token, setToken] = React.useState(tokenmint);
+  const [token, setToken] = React.useState(tokenmint);
+  const [tokenInfo, setTokenInfo] = useState(tokenInfoMap.get(tokenmint))
 
   const handleChange = (event: SelectChangeEvent) => {
       setToken(event.target.value as string);
@@ -73,6 +74,9 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
   }, [step])
 
   useEffect(() => {
+    if (tokenmint) {
+      setTokenInfo(tokenInfoMap.get(tokenmint))
+    }
     if (logs && tokenmint !== wsol) {
       if (!tokenEscrow?.publicKey) {
         setUserAccountExists(false)
@@ -256,7 +260,7 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
         </div>
       </div> */}
 
-      <div className="part3 h-[35%] 2xl:h-[35%] bg-brand_yellow rounded-3xl border-4 border-black text-sm p-6 flex flex-col justify-between">
+      <div className="part3 h-[35%] 2xl:h-[35%] bg-brand_yellow rounded-3xl border-4 border-black text-sm p-3 flex flex-col justify-between">
         {userAccountExists ? (
           <>
             {step === 0 &&
@@ -323,9 +327,9 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
               <div className="flex flex-col">
                 <p className="text-xl text-center font-extrabold pb-6 2xl:text-3xl">
                   {Number(result?.multiplier) >= 1
-                    ? `Congrats! You Won ${result?.change / LAMPORTS_PER_SOL} SOL`
+                    ? `Congrats! You Won ${result?.change / (tokenInfo?.decimals||9)} ${tokenInfo?.symbol}`
                     : Number(result?.multiplier) < 1 && Number(result?.multiplier) > 0
-                    ? `You won ${result?.change / LAMPORTS_PER_SOL} SOL`
+                    ? `You won ${result?.change / (tokenInfo?.decimals||9)} ${tokenInfo?.symbol}`
                     : 'You Lost'}
                 </p>
 
@@ -387,16 +391,23 @@ const Play = ({ amount, setAmount, api, balances, loading, result, wait, userVau
           ) : (
             <>
               <div>
-                <p className="font-extrabold text-center">INSERT BET AMOUNT</p>
+                <p className="font-extrabold text-center">PLAY</p>
                 <hr className="my-2 border-black" />
               </div>
-              <div className="flex text-3xl italic justify-between bg-red-00 w-full">
-                <input
-                  className=" bg-transparent text-black font-extrabold text-center w-6/12 italic focus:outline-none"
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                />
-                <p className=" ml-2 w-6/12 text-left">{token?.symbol || 'SOL'}</p>
+              <div className="flex flex-wrap text-3xl italic justify-between bg-red-00 w-full">
+                {token?.bets?.map((item) => (
+                  <div
+                    className={`w-${
+                      token?.bets?.length === 4 ? 5 : 3
+                    }/12 center m-1 py-1 ${amount===item?"bg-yellow-400":"bg-yellow-100"} hover:bg-yellow-600 cursor-pointer`}
+                    onClick={() => setAmount(Number(item))}
+                    key={item}
+                  >
+                    <p className="text-sm ">
+                      {item} {token.symbol}
+                    </p>
+                  </div>
+                ))}
               </div>
               <div>
                 <button
@@ -420,7 +431,7 @@ const Play = ({ amount, setAmount, api, balances, loading, result, wait, userVau
                     <></>
                   )}
                 </p>
-                {(tokenMint === wsol &&  Number(amount) > 2) && (
+                {tokenMint === wsol && Number(amount) > 2 && (
                   <p className="text-red-800 text-xs pt-2 text-center">Amount should be less than 2 SOL</p>
                 )}
               </div>

@@ -55,7 +55,6 @@ import useSound from 'use-sound';
            newX = x - 2;
            if (newX >= -5 && newX <= 85) {
              playSlide();
-             console.log('playing sound');
            } else {
              stopSlide.stop();
            }
@@ -63,7 +62,6 @@ import useSound from 'use-sound';
            newX = x + 2;
            if (newX >= -5 && newX <= 85) {
              playSlide();
-             console.log('playing sound');
            } else {
              stopSlide.stop();
            }
