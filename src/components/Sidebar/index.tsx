@@ -67,64 +67,69 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
   const result = useSelector((store: Store) => store.gameState.result);
   const userVaultBal = useSelector((store: Store) => store.gameState.userVaultBalance);
   const [userAccountExists, setUserAccountExists] = useState(true);
-  const [lastGameStatus, setLastGameStatus] = useState('');
+  const [userEscrowExists, setUserEscrowExists] = useState(true);
   const [wait, setWait] = useState(0);
 
   //tokenmint
   const [token, setToken] = React.useState(tokenmint);
   const [tokenInfo, setTokenInfo] = useState(tokenInfoMap.get(tokenmint));
-  const [oldTokenEscrow, setOldTokenEscrow] = useState(tokenEscrow.publicKey)
+
+
+  //status-control
+  const [control, setControl] = useState("loading")
 
   const handleChange = (event: SelectChangeEvent) => {
-    setUserAccountExists(false);
     dispatch(thunks.setLoading(true));
     setToken(event.target.value as string);
-    };
+  };
+  
+  //stores old token escrow info to check if the store has updated with escrow of new token mint
+  useEffect(() => {
+    if(tokenEscrow)
+    {
+      localStorage.setItem(tokenmint + "Escrow", tokenEscrow.publicKey);      
+      localStorage.setItem('oldTokenMint', tokenmint);
+      localStorage.setItem(localStorage.getItem('tokenMint') + 'EscrowIsInitialized', String(tokenEscrow.isInitialized));
+    }
+  }, [tokenEscrow])
+  
+  //stops loading music when step reaches the 3rd part (plushie is released from claw)
   useEffect(() => {
     if (step === 3) {
       stopLoading.stop();
     }
-  }, [step])
+  }, [step, stopLoading])
 
+  // part 1: if tokenmint exists, it loads the token info to tokenInfo useState and activates the first bet option
+  // part 2: if tokenmint isnt sol
+  //         
   useEffect(() => {
     if (tokenmint && tokenInfoMap.get(tokenmint)) {
       setTokenInfo(tokenInfoMap.get(tokenmint));
       if (tokenInfoMap.get(tokenmint)?.bets.length) setAmount(tokenInfoMap.get(tokenmint)?.bets[0] || 0);
     }
     if (logs && tokenmint !== wsol) {
-      if (!tokenEscrow?.isInitialized) {
+      if (!tokenEscrow?.isInitialized && userAccountExists) {
         //tokenescrow is not initialized then setUserAccountExists false and loading false
-        dispatch(thunks.setLoading(false));
-        setUserAccountExists(false)
+        // dispatch(thunks.setLoading(false));
+        setUserEscrowExists(false)
       }
-      else if (tokenEscrow.isInitialized && tokenEscrow.publicKey !== oldTokenEscrow) {
+      else if (
+        tokenEscrow.isInitialized &&
+        userAccountExists
+      ) {
         //tokenescrow is initialized and new tokenescrow account belongs to new tokenmint then setUserAccountExists true and loading false
-        dispatch(thunks.setLoading(false));
-        setUserAccountExists(true);
+        // dispatch(thunks.setLoading(false));
+        setUserEscrowExists(true);
       } else {
-        dispatch(thunks.setLoading(false));
+        // dispatch(thunks.setLoading(false));
       }
     }
-  }, [tokenmint, tokenEscrow, logs, setAmount, oldTokenEscrow, dispatch])
+  }, [tokenmint, tokenEscrow])
   
-  
-  useEffect(() => {
-    if (logs && logs[0]?.severity === 'error') {
-      // alert(logs[0].message);
-      if (logs[0].message.includes("User hasn't created an account")) setUserAccountExists(false);
-      else {
-        if (tokenmint === wsol) {
-          setUserAccountExists(true);
-        }
-      }
-    }
-    handleClick();
-  }, [logs]);
-
   useEffect(() => {
     if (user && user.authority) {
-      if (tokenmint === wsol) setUserAccountExists(true);
-      setLastGameStatus(user.currentRound.status.kind);
+      setUserAccountExists(true);
     }
   }, [user]);
 
@@ -159,7 +164,6 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
       clearInterval(interval);
     };
   }, [result, wait]);
-
   useEffect(() => {
     if (result && result?.status === 'waiting') {
       playLoading();
@@ -182,18 +186,51 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
     } else {
       stopLoading.stop();
     }
-  }, [result]);
+  }, [loading, result]);
 
   useEffect(() => {
     if (token !==tokenmint) {
-      setTimeout(() => {
-        dispatch(thunks.setTokenmint(token));
-      }, 5000);
+      dispatch(thunks.setTokenmint(token));
     }
-  }, [token])
+  }, [dispatch, token, tokenmint])
+
+  useEffect(() => {
+    const newRound = step === 0; //new round or page refresh
+    const tokenEscrowHasClaimableBalance = tokenmint === wsol ? userVaultBal > 0.03552384 : tokenEscrow.balance > 0; //should have claimable balance to claim reward
+  
+    const escrowUpdated = localStorage.getItem(localStorage.getItem('oldTokenMint') + 'Escrow') === tokenEscrow.publicKey;
+     const mintUpdated =
+       localStorage.getItem("oldTokenMint") === token;
+    // console.log(escrowUpdated, ' Escrow Updated?')
+    // console.log(mintUpdated, ' Mint Updated?');
+    if (userAccountExists && userEscrowExists && newRound && tokenEscrowHasClaimableBalance && !result.status) {
+      //ensures the button is only shown for old rewards not current round one
+      setControl('collectPreviousReward');
+    } if (tokenmint === wsol && !userAccountExists) {
+      setControl('createUserAccount');
+    } if (tokenmint !== wsol && !userAccountExists ) {
+      setControl('createUserAccount');
+    } if (tokenmint !== wsol && userAccountExists && !userEscrowExists && mintUpdated && escrowUpdated) {
+      setControl('createEscrowAccount');
+    } if (tokenmint === wsol && userAccountExists) {
+      setControl('play');
+      dispatch(thunks.setLoading(false))
+    } if (tokenmint !== wsol && userAccountExists && userEscrowExists) {
+      setControl('play');
+    }
+    return () => {
+      
+    }
+  }, [tokenmint, userAccountExists, userEscrowExists, token, step, userVaultBal, tokenEscrow, result.status])
+
+  useEffect(() => {
+    if (control) {
+      dispatch(thunks.setLoading(false))
+    }
+  },[control])
   
   return (
-    <div className="flex h-full flex-col max-h-[800px] justify-start md:justify-center w-full lg:w-3/12 p-6 font-bold">
+    <div className="flex h-full flex-col max-h-[800px] justify-between md:justify-center w-full lg:w-3/12 p-6 font-bold">
       <div className="part1 h-[20%] center w-full">
         <div className="w-full">
           <div className="tokenSelector mb-1">
@@ -221,129 +258,108 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
           </div>
         </div>
       </div>
-      {/* <div className="part2 h-[50%] 2xl:h-[60%] bg-brand_yellow  border-4 border-black rounded-3xl p-2 text-sm overflow-hidden">
-        <div className="flex justify-between font-extrabold h-[10%]">
-          <p className="w-6/12 text-center border-r border-black xl:text-lg">LIVE CHAT</p>
+      <div className="part2 h-[40%] 2xl:h-[60%] p-1">
+        <div className="bg-brand_yellow border-4 border-black rounded-3xl p-1 text-sm overflow-hidden h-full">
+          <div className="flex justify-between font-extrabold h-[10%]">
+            <p className="w-6/12 text-center border-r border-black xl:text-lg">LIVE CHAT</p>
 
-          <p className="w-6/12 text-center xl:text-lg">LIVE BETS</p>
+            <p className="w-6/12 text-center xl:text-lg">LIVE BETS</p>
+          </div>
+          <hr className="my-2 border-black" />
+          <div className="overflow-scroll h-[90%] no-scrollbar">
+            <div>
+              <p className="text-brand_pink capitalize">
+                Seb: <span className="text-black"> I Love soltoons!</span>
+              </p>
+            </div>
+            <hr className="my-2 border-black" />
+            <div>
+              <p className="text-brand_pink capitalize">
+                raj:{' '}
+                <span className="text-black">
+                  {' '}
+                  I Love soltoons! I love betting all of my money! It's time to win x2. Who else loves winning!?
+                </span>
+              </p>
+            </div>
+            <hr className="my-2 border-black" />
+            <div>
+              <p className="text-brand_pink capitalize">
+                Neon: <span className="text-black"> Man! I wish I had more liquidity!!</span>
+              </p>
+            </div>
+            <hr className="my-2 border-black" />
+            <div>
+              <p className="text-brand_pink capitalize">
+                Joey: <span className="text-black"> WTF! I just tripledddddddd</span>
+              </p>
+            </div>
+            <hr className="my-2 border-black" />
+            <div>
+              <p className="text-brand_pink capitalize">
+                0xBert: <span className="text-black"> BOZOS</span>
+              </p>
+            </div>
+            <hr className="my-2 border-black" />
+            <div>
+              <p className="text-brand_pink capitalize">
+                Martha:{' '}
+                <span className="text-black">
+                  {' '}
+                  I Love soltoons! I love betting all of my money! It's time to win x2. Who else loves winning!?
+                </span>
+              </p>
+            </div>
+            <hr className="my-2 border-black" />
+            <div>
+              <p className="text-brand_pink capitalize">
+                Solami: <span className="text-black"> I Love soltoons!</span>
+              </p>
+            </div>
+            <hr className="my-2 border-black" />
+          </div>
         </div>
-        <hr className="my-2 border-black" />
-        <div className="overflow-scroll h-[90%] no-scrollbar">
-          <div>
-            <p className="text-brand_pink capitalize">
-              Seb: <span className="text-black"> I Love soltoons!</span>
-            </p>
-          </div>
-          <hr className="my-2 border-black" />
-          <div>
-            <p className="text-brand_pink capitalize">
-              raj:{' '}
-              <span className="text-black">
-                {' '}
-                I Love soltoons! I love betting all of my money! It's time to win x2. Who else loves winning!?
-              </span>
-            </p>
-          </div>
-          <hr className="my-2 border-black" />
-          <div>
-            <p className="text-brand_pink capitalize">
-              Neon: <span className="text-black"> Man! I wish I had more liquidity!!</span>
-            </p>
-          </div>
-          <hr className="my-2 border-black" />
-          <div>
-            <p className="text-brand_pink capitalize">
-              Joey: <span className="text-black"> WTF! I just tripledddddddd</span>
-            </p>
-          </div>
-          <hr className="my-2 border-black" />
-          <div>
-            <p className="text-brand_pink capitalize">
-              0xBert: <span className="text-black"> BOZOS</span>
-            </p>
-          </div>
-          <hr className="my-2 border-black" />
-          <div>
-            <p className="text-brand_pink capitalize">
-              Martha:{' '}
-              <span className="text-black">
-                {' '}
-                I Love soltoons! I love betting all of my money! It's time to win x2. Who else loves winning!?
-              </span>
-            </p>
-          </div>
-          <hr className="my-2 border-black" />
-          <div>
-            <p className="text-brand_pink capitalize">
-              Solami: <span className="text-black"> I Love soltoons!</span>
-            </p>
-          </div>
-          <hr className="my-2 border-black" />
-        </div>
-      </div> */}
+      </div>
 
-      <div className="part3 h-[35%] 2xl:h-[35%] bg-brand_yellow rounded-3xl border-4 border-black text-sm p-3 flex flex-col justify-between">
-        {!loading && userAccountExists ? (
-          <>
-          
-            {!oldTokenEscrow ? (
-              <>
-                {step === 0 &&
-                (tokenmint === wsol ? userVaultBal > 0.03552384 : tokenEscrow.balance > 0) &&
-                !result?.status &&
-                lastGameStatus.includes('Settled') ? (
-                  <>
-                    <button
-                      onClick={() => {
-                        api.handleCommand('collect reward');
-                      }}
-                      className="center h-full text-lg"
-                    >
-                      Collect Reward
-                    </button>
-                  </>
-                ) : (
-                  <Play
-                    amount={amount}
-                    setAmount={setAmount}
-                    loading={loading}
-                    api={api}
-                    balances={balances}
-                    result={result}
-                    wait={wait}
-                    userVaultBal={userVaultBal}
-                    tokenInfo={tokenInfo}
-                    escrow={tokenEscrow}
-                  />
-                )}
-              </>
-            ) : (
-              <>
-                <div className="center h-full text-white border-white">
-                  <CircularProgress color="inherit" />
-                </div>
-              </>
-            )}
-          </>
-        ) : (
-          <>
-           
-            {loading ? (
-              <div className="center h-full text-white border-white">
-                <CircularProgress color="inherit" />
-              </div>
-            ) : (
-              <button
-                onClick={() => {
-                  tokenmint !== wsol ? api.handleCommand('create escrow') : api.handleCommand('user create');
-                }}
-                className="center h-full text-lg"
-              >
-                {tokenmint !== wsol ? 'Create Vault Account' : 'Create User Account'}
-              </button>
-            )}
-          </>
-        )}
+      <div className="part3 h-[35%] 2xl:h-[35%] p-1">
+        <div className="bg-brand_yellow rounded-3xl border-4 border-black text-sm p-1 text-center h-full flex flex-col overflow-hidden justify-between relative">
+          {(loading  || control === 'loading') && (
+            <div className="center h-full text-white border-white absolute top-0 bottom-0 z-100 bg-brand_yellow left-0 right-0">
+              <CircularProgress color="inherit" />
+            </div>
+          )}
+          {!loading && control === 'collectPreviousReward' && (
+            <div className="center h-full absolute top-0 bottom-0 z-10 bg-brand_yellow left-0 right-0">
+              <CollectPreviousReward api={api} />
+            </div>
+          )}
+          {!loading && control === 'createUserAccount' && (
+            <div className="center h-full absolute top-0 bottom-0 z-10 bg-brand_yellow left-0 right-0">
+              <CreateUserAccount api={api} />
+            </div>
+          )}
+          {!loading && control === 'createEscrowAccount' && (
+            <div className="center h-full absolute top-0 bottom-0 z-10 bg-brand_yellow left-0 right-0">
+              <CreateEscrowAccount api={api} tokenmint={tokenmint} token={ token} />
+            </div>
+          )}
+          {!loading && control === 'play' && (
+            <div className="h-full absolute top-0 bottom-0 z-10 bg-brand_yellow left-0 right-0">
+              <Play
+                amount={amount}
+                setAmount={setAmount}
+                loading={loading}
+                api={api}
+                balances={balances}
+                result={result}
+                wait={wait}
+                userVaultBal={userVaultBal}
+                tokenInfo={tokenInfo}
+                escrow={tokenEscrow}
+              />
+            </div>
+          )}
+        </div>
       </div>
       {wait > 0 && (
         <div className="bg-red-00 w-full py-2 text-white">
@@ -401,6 +417,42 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
     </div>
   );
 }
+const CreateEscrowAccount = ({ api, tokenmint, token }: any) => {
+  return (
+    <button
+      onClick={() => {
+        api.handleCommand('create escrow');
+      }}
+      className="center h-full text-lg"
+    >
+      "Create Vault Account"
+    </button>
+  );
+};
+const CreateUserAccount = ({ api }: any) => {
+  return (
+    <button
+      onClick={() => {
+        api.handleCommand('user create');
+      }}
+      className="center h-full text-lg"
+    >
+      Create Account
+    </button>
+  );
+};
+const CollectPreviousReward = ({api}:any) => {
+  return (
+    <button
+      onClick={() => {
+        api.handleCommand('collect reward');
+      }}
+      className="center h-full text-lg"
+    >
+      Collect Reward
+    </button>
+  );
+}
 
 //@ts-ignore
 const Play = ({ amount, setAmount, api, balances, loading, result, wait, userVaultBal, tokenInfo, escrow }) => {
@@ -410,11 +462,7 @@ const Play = ({ amount, setAmount, api, balances, loading, result, wait, userVau
     <>
       {loading && (result?.status === 'loading' || result?.status === 'waiting') ? (
         <div className="center h-full text-white border-white p-6">
-          {/* <CircularProgress color="inherit" /> */}
           <img src="/assets/images/coin-transparent.gif" alt="loading" />
-          {/* <div className="bg-red-00 w-full">
-            <LinearProgress sx={{ height: 10, borderRadius: '30px' }} variant="determinate" value={wait} />
-          </div> */}
         </div>
       ) : (
         <>
@@ -422,7 +470,7 @@ const Play = ({ amount, setAmount, api, balances, loading, result, wait, userVau
           result?.userWon &&
           (isWsol ? userVaultBal > 0.0362616 : escrow.balance > 0) ? (
             <>
-              <button className="center h-full text-lg">Received Result!</button>
+              <button className="center h-full w-full text-lg">Received Result!</button>
             </>
           ) : (
             <>
@@ -453,8 +501,8 @@ const Play = ({ amount, setAmount, api, balances, loading, result, wait, userVau
                   onClick={() => {
                     api.handleCommand(`user play 1 ${amount}`);
                   }}
-                  className={`border-black  border-4 p-1 rounded-3xl w-full font-extrabold ${
-                    tokenInfo.address !== wsol && balances.token === 0 ? 'bg-gray-600 cursor-not-allowed' : ''
+                  className={`border-black  border-4 p-1 rounded-3xl text-xs w-10/12 font-extrabold ${
+                    tokenInfo.address !== wsol && balances.token === 0 ? 'bg-gray-600 cursor-not-allowed' : ' hover:bg-yellow-500'
                   }`}
                 >
                   {loading?"Loading...":tokenInfo.address !== wsol && balances.token === 0 ? `Insufficient ${token?.symbol} Balance` : 'PLAY'}
