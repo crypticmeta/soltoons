@@ -634,13 +634,13 @@ class ApiState implements PrivateApiInterface {
             await connection
               .confirmTransaction(strategy)
               .then((res) => {
-                console.log(res.value, 'TX Status')
+                // console.log(res.value, 'TX Status')
                 if (!res.value.err) {
                   this.dispatch(thunks.log({ message, severity: Severity.Success }));
                   if (id === 'collectReward') {
                     this.dispatch(thunks.setResult({ status: 'claimed' }));
-                  }                  
-                  this.dispatch(thunks.setLoading(false));
+                  }
+                  if (id !== 'userBet') this.dispatch(thunks.setLoading(false));
                 }
               })
               .catch((e) => {
@@ -683,7 +683,7 @@ class ApiState implements PrivateApiInterface {
    */
   private watchUserAccounts = async () => {
     const onSolAccountChange = (account: anchor.web3.AccountInfo<Buffer> | null) => {
-      this.dispatch(thunks.setUserBalance({ sol: account ? account.lamports / LAMPORTS_PER_SOL : undefined }));
+      this.dispatch(thunks.setUserBalance({ sol: account ? account.lamports / LAMPORTS_PER_SOL : undefined, token: this.userTokenBalance }));
     };
     const onUserVaultAccountChange = (account: anchor.web3.AccountInfo<Buffer> | null) => {
       this.dispatch(thunks.setUserVaultBalance(account ? account.lamports / LAMPORTS_PER_SOL : undefined));
@@ -693,17 +693,14 @@ class ApiState implements PrivateApiInterface {
       if (!account) {
         this.dispatch(
           thunks.setUserBalance({
+            sol: this.userBalance,
             token: undefined,
           })
         );
         console.log("passing empty token amout")
         return;
       } else if (account?.data?.length === 0) {
-        this.dispatch(
-          thunks.setUserBalance({
-            token: undefined,
-          })
-        );
+        this.dispatch(thunks.setUserBalance({ sol: this.userBalance, token: undefined }));
         console.log('passing empty token amout 2');
         return;
       }
@@ -712,7 +709,8 @@ class ApiState implements PrivateApiInterface {
       {
         this.dispatch(
           thunks.setUserBalance({
-            token: rawAccount.amount ? Number(rawAccount.amount) / (Math.pow(10, tokenData?.decimals||9)) : undefined,
+            sol: this.userBalance,
+            token: rawAccount.amount ? Number(rawAccount.amount) / Math.pow(10, tokenData?.decimals || 9) : undefined,
           })
         );
       }

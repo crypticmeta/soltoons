@@ -203,19 +203,26 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
        localStorage.getItem("oldTokenMint") === token;
     // console.log(escrowUpdated, ' Escrow Updated?')
     // console.log(mintUpdated, ' Mint Updated?');
-    if (userAccountExists && userEscrowExists && newRound && tokenEscrowHasClaimableBalance && !result.status) {
+    if (
+      userAccountExists &&
+      userEscrowExists &&
+      newRound &&
+      tokenEscrowHasClaimableBalance &&
+      !result.status &&
+      (tokenmint===wsol ? userVaultBal > 0.03552384 : tokenEscrow.balance > 0)
+    ) {
       //ensures the button is only shown for old rewards not current round one
       setControl('collectPreviousReward');
-    } if (tokenmint === wsol && !userAccountExists) {
+    } else if (tokenmint === wsol && !userAccountExists) {
       setControl('createUserAccount');
-    } if (tokenmint !== wsol && !userAccountExists ) {
+    } else if (tokenmint !== wsol && !userAccountExists ) {
       setControl('createUserAccount');
-    } if (tokenmint !== wsol && userAccountExists && !userEscrowExists && mintUpdated && escrowUpdated) {
+    } else if (tokenmint !== wsol && userAccountExists && !userEscrowExists && mintUpdated && escrowUpdated) {
       setControl('createEscrowAccount');
-    } if (tokenmint === wsol && userAccountExists) {
+    } else if (tokenmint === wsol && userAccountExists) {
       setControl('play');
       dispatch(thunks.setLoading(false))
-    } if (tokenmint !== wsol && userAccountExists && userEscrowExists) {
+    } else if (tokenmint !== wsol && userAccountExists && userEscrowExists) {
       setControl('play');
     }
     return () => {
@@ -323,8 +330,13 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
 
       <div className="part3 h-[35%] 2xl:h-[35%] p-1">
         <div className="bg-brand_yellow rounded-3xl border-4 border-black text-sm p-1 text-center h-full flex flex-col overflow-hidden justify-between relative">
-          {(loading  || control === 'loading') && (
-            <div className="center h-full text-white border-white absolute top-0 bottom-0 z-100 bg-brand_yellow left-0 right-0">
+          {result?.status === 'waiting' && (
+            <div className="center h-full text-white border-white absolute top-0 bottom-0 z-[12] bg-brand_yellow left-0 right-0">
+              <img src="/assets/images/coin-transparent.gif" alt="loading" />
+            </div>
+          )}
+          {(loading || control === 'loading') && (
+            <div className="center h-full text-white border-white absolute top-0 bottom-0 z-[11] bg-brand_yellow left-0 right-0">
               <CircularProgress color="inherit" />
             </div>
           )}
@@ -340,7 +352,7 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
           )}
           {!loading && control === 'createEscrowAccount' && (
             <div className="center h-full absolute top-0 bottom-0 z-10 bg-brand_yellow left-0 right-0">
-              <CreateEscrowAccount api={api} tokenmint={tokenmint} token={ token} />
+              <CreateEscrowAccount api={api} tokenmint={tokenmint} token={token} />
             </div>
           )}
           {!loading && control === 'play' && (
@@ -468,18 +480,18 @@ const Play = ({ amount, setAmount, api, balances, loading, result, wait, userVau
         <>
           {result?.status === 'success' &&
           result?.userWon &&
-          (isWsol ? userVaultBal > 0.0362616 : escrow.balance > 0) ? (
+          (isWsol ? userVaultBal > 0.03552384 : escrow.balance > 0) ? (
             <>
               <button className="center h-full w-full text-lg">Received Result!</button>
             </>
           ) : (
             <>
               <div>
-                    <p className="font-extrabold text-center">PLAY with { token?.symbol}</p>
+                <p className="font-extrabold text-center">PLAY with {token?.symbol}</p>
                 <hr className="my-2 border-black" />
               </div>
               <div className="flex flex-wrap text-3xl italic justify-between bg-red-00 w-full">
-                {token?.bets?.map((item:number) => (
+                {token?.bets?.map((item: number) => (
                   <div
                     className={`w-${token?.bets?.length === 4 ? 5 : 4}/12 center bg-red-00 my-1 p-1`}
                     onClick={() => setAmount(Number(item))}
@@ -502,17 +514,22 @@ const Play = ({ amount, setAmount, api, balances, loading, result, wait, userVau
                     api.handleCommand(`user play 1 ${amount}`);
                   }}
                   className={`border-black  border-4 p-1 rounded-3xl text-xs w-10/12 font-extrabold ${
-                    tokenInfo.address !== wsol && balances.token === 0 ? 'bg-gray-600 cursor-not-allowed' : ' hover:bg-yellow-500'
+                    tokenInfo.address !== wsol && balances.token === 0
+                      ? 'bg-gray-600 cursor-not-allowed'
+                      : ' hover:bg-yellow-500'
                   }`}
                 >
-                  {loading?"Loading...":tokenInfo.address !== wsol && balances.token === 0 ? `Insufficient ${token?.symbol} Balance` : 'PLAY'}
+                  {loading
+                    ? 'Loading...'
+                    : tokenInfo.address !== wsol && balances.token === 0
+                    ? `Insufficient ${token?.symbol} Balance`
+                    : 'PLAY'}
                 </button>
                 <p className="text-xs text-gray-700 text-center">
-                      {Number(balances.sol || 0).toFixed(4)} SOL{' '}
-                      
+                  {Number(balances.sol || 0).toFixed(4)} SOL{' '}
                   {balances.token && token && tokenInfo.address !== wsol ? (
                     <span className="pl-4">
-                      {Number(result && result.status === 'claimed' ? 0 : balances.token || 0).toFixed(2)} {token.symbol}
+                      {Number(balances.token || 0).toFixed(2)} {token.symbol}
                     </span>
                   ) : (
                     <></>
