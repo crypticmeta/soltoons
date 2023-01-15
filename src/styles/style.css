@@ -37,6 +37,29 @@ background-color: rgba(255, 163, 62, 1) !important;
   background-color: rgb(59, 59, 59) !important; 
   border-bottom: 1px solid rgb(235, 136, 31);
 }
+
+/* token selector */
+.tokenSelector{  
+  background-color: rgba(255, 163, 62, 1) !important; 
+  border: 4px solid black !important;
+  width: 100% !important;
+  border-radius: 1.5rem !important;
+  overflow: hidden !important;
+  color: black !important;
+  font-weight: 900 !important;
+}
+.tokenSelector *:hover{
+ outline: none !important;
+ border: none !important;
+}
+/* token list */
+.MuiList-root{
+ display: flex;
+ flex-direction: column;
+}
+.MuiList-root li{
+  @apply py-2 border-b border-brand_yellow;
+}
 html,
 body {
   padding: 0;

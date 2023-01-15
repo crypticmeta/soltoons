@@ -10,6 +10,7 @@ export interface UserBetArgs {
 
 export interface UserBetAccounts {
   user: PublicKey
+  rewardAddress: PublicKey
   house: PublicKey
   mint: PublicKey
   houseVault: PublicKey
@@ -39,6 +40,7 @@ export const layout = borsh.struct([types.UserBetParams.layout("params")])
 export function userBet(args: UserBetArgs, accounts: UserBetAccounts) {
   const keys: Array<AccountMeta> = [
     { pubkey: accounts.user, isSigner: false, isWritable: true },
+    { pubkey: accounts.rewardAddress, isSigner: false, isWritable: false },
     { pubkey: accounts.house, isSigner: false, isWritable: false },
     { pubkey: accounts.mint, isSigner: false, isWritable: false },
     { pubkey: accounts.houseVault, isSigner: false, isWritable: false },

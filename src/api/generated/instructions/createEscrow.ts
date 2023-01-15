@@ -4,41 +4,44 @@ import * as borsh from "@project-serum/borsh" // eslint-disable-line @typescript
 import * as types from "../types" // eslint-disable-line @typescript-eslint/no-unused-vars
 import { PROGRAM_ID } from "../programId"
 
-export interface UserSettleArgs {
-  params: types.UserSettleParamsFields
+export interface CreateEscrowArgs {
+  params: types.CreateEscrowParamsFields
 }
 
-export interface UserSettleAccounts {
-  user: PublicKey
+export interface CreateEscrowAccounts {
   house: PublicKey
   mint: PublicKey
+  authority: PublicKey
   escrow: PublicKey
   rewardAddress: PublicKey
-  houseVault: PublicKey
-  vrf: PublicKey
+  payer: PublicKey
+  recentBlockhashes: PublicKey
   systemProgram: PublicKey
   tokenProgram: PublicKey
 }
 
-export const layout = borsh.struct([types.UserSettleParams.layout("params")])
+export const layout = borsh.struct([types.CreateEscrowParams.layout("params")])
 
-export function userSettle(args: UserSettleArgs, accounts: UserSettleAccounts) {
+export function createEscrow(
+  args: CreateEscrowArgs,
+  accounts: CreateEscrowAccounts
+) {
   const keys: Array<AccountMeta> = [
-    { pubkey: accounts.user, isSigner: false, isWritable: true },
-    { pubkey: accounts.house, isSigner: false, isWritable: true },
+    { pubkey: accounts.house, isSigner: false, isWritable: false },
     { pubkey: accounts.mint, isSigner: false, isWritable: false },
-    { pubkey: accounts.escrow, isSigner: false, isWritable: true },
-    { pubkey: accounts.rewardAddress, isSigner: false, isWritable: true },
-    { pubkey: accounts.houseVault, isSigner: false, isWritable: true },
-    { pubkey: accounts.vrf, isSigner: false, isWritable: false },
+    { pubkey: accounts.authority, isSigner: true, isWritable: true },
+    { pubkey: accounts.escrow, isSigner: true, isWritable: true },
+    { pubkey: accounts.rewardAddress, isSigner: false, isWritable: false },
+    { pubkey: accounts.payer, isSigner: true, isWritable: true },
+    { pubkey: accounts.recentBlockhashes, isSigner: false, isWritable: false },
     { pubkey: accounts.systemProgram, isSigner: false, isWritable: false },
     { pubkey: accounts.tokenProgram, isSigner: false, isWritable: false },
   ]
-  const identifier = Buffer.from([184, 56, 135, 64, 228, 26, 152, 183])
+  const identifier = Buffer.from([253, 215, 165, 116, 36, 108, 68, 80])
   const buffer = Buffer.alloc(1000)
   const len = layout.encode(
     {
-      params: types.UserSettleParams.toEncodable(args.params),
+      params: types.CreateEscrowParams.toEncodable(args.params),
     },
     buffer
   )

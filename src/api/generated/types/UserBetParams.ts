@@ -7,28 +7,42 @@ export interface UserBetParamsFields {
   gameType: number
   userGuess: number
   betAmount: BN
+  vrfPermissionBump: number
+  switchboardStateBump: number
 }
 
 export interface UserBetParamsJSON {
   gameType: number
   userGuess: number
   betAmount: string
+  vrfPermissionBump: number
+  switchboardStateBump: number
 }
 
 export class UserBetParams {
   readonly gameType: number
   readonly userGuess: number
   readonly betAmount: BN
+  readonly vrfPermissionBump: number
+  readonly switchboardStateBump: number
 
   constructor(fields: UserBetParamsFields) {
     this.gameType = fields.gameType
     this.userGuess = fields.userGuess
     this.betAmount = fields.betAmount
+    this.vrfPermissionBump = fields.vrfPermissionBump
+    this.switchboardStateBump = fields.switchboardStateBump
   }
 
   static layout(property?: string) {
     return borsh.struct(
-      [borsh.u32("gameType"), borsh.u32("userGuess"), borsh.u64("betAmount")],
+      [
+        borsh.u32("gameType"),
+        borsh.u32("userGuess"),
+        borsh.u64("betAmount"),
+        borsh.u8("vrfPermissionBump"),
+        borsh.u8("switchboardStateBump"),
+      ],
       property
     )
   }
@@ -39,6 +53,8 @@ export class UserBetParams {
       gameType: obj.gameType,
       userGuess: obj.userGuess,
       betAmount: obj.betAmount,
+      vrfPermissionBump: obj.vrfPermissionBump,
+      switchboardStateBump: obj.switchboardStateBump,
     })
   }
 
@@ -47,6 +63,8 @@ export class UserBetParams {
       gameType: fields.gameType,
       userGuess: fields.userGuess,
       betAmount: fields.betAmount,
+      vrfPermissionBump: fields.vrfPermissionBump,
+      switchboardStateBump: fields.switchboardStateBump,
     }
   }
 
@@ -55,6 +73,8 @@ export class UserBetParams {
       gameType: this.gameType,
       userGuess: this.userGuess,
       betAmount: this.betAmount.toString(),
+      vrfPermissionBump: this.vrfPermissionBump,
+      switchboardStateBump: this.switchboardStateBump,
     }
   }
 
@@ -63,6 +83,8 @@ export class UserBetParams {
       gameType: obj.gameType,
       userGuess: obj.userGuess,
       betAmount: new BN(obj.betAmount),
+      vrfPermissionBump: obj.vrfPermissionBump,
+      switchboardStateBump: obj.switchboardStateBump,
     })
   }
 

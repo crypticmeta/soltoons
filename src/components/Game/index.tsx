@@ -8,16 +8,14 @@ import useSound from 'use-sound';
     const plushies = {
       '0.0': { img: '' },
       '0.3': { img: '/assets/images/bwbanana.png' },
-      '0.8': { img: '/assets/images/bwskull.png' },
-      '1.0': { img: '/assets/images/bwcap.png' },
-      '2.0': { img: '/assets/images/bwtoobs.png' },
-      '5.0': { img: '/assets/images/bwsnake.png' },
-      '8.0': { img: '/assets/images/banana.png' },
-      '10.0': { img: '/assets/images/skull.png' },
-      '25.0': { img: '/assets/images/cap.png' },
-      '50.0': { img: '/assets/images/toobs.png' },
-      '100.0': { img: '/assets/images/snake.png' },
-};
+      '0.5': { img: '/assets/images/bwtoobs.png' },
+      '0.8': { img: '/assets/images/bwcap.png' },
+      '1.0': { img: '/assets/images/skull.png' },
+      '2.0': { img: '/assets/images/banana.png' },
+      '5.0': { img: '/assets/images/cap.png' },
+      '8.0': { img: '/assets/images/toobs.png' },
+      '10.0': { img: '/assets/images/snake.png' },
+    };
     
 
 //@ts-ignore

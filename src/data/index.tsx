@@ -3,7 +3,7 @@ import { Provider, useDispatch } from 'react-redux';
 import { ThunkDispatch } from '../types';
 import useApi, { ApiProvider } from './providers/ApiProvider';
 import store from './store';
-import { setUserBalance, setLoading, setUser, setResult, setVaultBalance, setUserVaultBalance, setTokenmint } from './store/gameStateReducer';
+import { setUserBalance, setLoading, setUser, setResult, setVaultBalance, setUserVaultBalance, setTokenmint, setTokenEscrow } from './store/gameStateReducer';
 import { log } from './store/hudLoggerReducer';
 
 const DataLayer: React.FC<React.PropsWithChildren> = (props) => (
@@ -28,7 +28,8 @@ export const thunks = {
   setUser,
   setResult,
   setVaultBalance,
-  setTokenmint
+  setTokenmint,
+  setTokenEscrow
 };
 
 export type Store = ReturnType<typeof store.getState>;

@@ -4,7 +4,7 @@ import { GameTypeValue } from '../../api';
 
 interface Balances {
   sol?: number;
-  ribs?: number;
+  token?: number;
 }
 
 // Define a type for the slice state
@@ -26,6 +26,11 @@ export interface GameState {
   vaultBalance: number;
   userVaultBalance: number;
   tokenmint: string;
+  tokenEscrow: {
+    publicKey: string;
+    isInitialized: boolean;
+    balance: number;
+  }
 }
 
 /**
@@ -33,11 +38,16 @@ export interface GameState {
  */
 const initialState: GameState = {
   loading: false,
-  gameMode: GameTypeValue.TWENTY_SIDED_DICE_ROLL,
+  gameMode: GameTypeValue.CLAW,
   tokenmint: "So11111111111111111111111111111111111111112",
+  tokenEscrow: {
+    publicKey: "",
+    isInitialized: false,
+    balance: 0
+  },
   userBalances: {},
   user: {},
-  result: {},
+  result: { },
   vaultBalance: 0,
   userVaultBalance: 0,
 };
@@ -52,18 +62,28 @@ const gameStateSlice = createSlice({
     setUserBalance: (state: GameState, action: PayloadAction<Balances | undefined>) => {
       if (action.payload) {
         // If ribs value changed, update.
-        if (!_.isUndefined(action.payload.ribs)) state.userBalances.ribs = action.payload.ribs;
-        else state.userBalances.ribs = 0;
+        if (!_.isUndefined(action.payload.token)) state.userBalances.token = action.payload.token;
+        else state.userBalances.token = 0;
         // If sol value changed, update.
         if (!_.isUndefined(action.payload.sol)) state.userBalances.sol = action.payload.sol;
       } else {
         // Clear user balances.
         state.userBalances.sol = undefined;
-        state.userBalances.ribs = undefined;
+        state.userBalances.token = undefined;
       }
     },
     setLoading: (state: GameState, action: PayloadAction<boolean>) => {
+      console.log("setting loading ", action.payload)
       state.loading = action.payload
+    },
+    setTokenEscrow: (state: GameState, action: PayloadAction<{
+      publicKey: string;
+      isInitialized: boolean;
+      balance: number;
+    }>) => {
+
+      console.log("setting tokenEscrow ", action.payload)
+      state.tokenEscrow = action.payload
     },
     setUser: (state: GameState, action: PayloadAction<any>) => {
       state.user = action.payload
@@ -77,11 +97,12 @@ const gameStateSlice = createSlice({
     setUserVaultBalance: (state: GameState, action: PayloadAction<any>) => {
       state.userVaultBalance = action.payload
     },
-    setTokenmint: (state: GameState, action: PayloadAction<any>) => {
+    setTokenmint: (state: GameState, action: PayloadAction<string>) => {
+      console.log("setting mint ", action.payload)
       state.tokenmint = action.payload
     },
   },
 });
 
-export const { setUserBalance, setLoading, setUser, setResult, setVaultBalance, setUserVaultBalance, setTokenmint } = gameStateSlice.actions;
+export const { setUserBalance, setLoading, setUser, setResult, setVaultBalance, setUserVaultBalance, setTokenmint, setTokenEscrow } = gameStateSlice.actions;
 export default gameStateSlice.reducer;

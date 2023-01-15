@@ -3,12 +3,12 @@ import BN from "bn.js" // eslint-disable-line @typescript-eslint/no-unused-vars
 import * as types from "../types" // eslint-disable-line @typescript-eslint/no-unused-vars
 import * as borsh from "@project-serum/borsh"
 
-export interface UserInitParamsFields {}
+export interface CollectRewardParamsFields {}
 
-export interface UserInitParamsJSON {}
+export interface CollectRewardParamsJSON {}
 
-export class UserInitParams {
-  constructor(fields: UserInitParamsFields) {}
+export class CollectRewardParams {
+  constructor(fields: CollectRewardParamsFields) {}
 
   static layout(property?: string) {
     return borsh.struct([], property)
@@ -16,22 +16,22 @@ export class UserInitParams {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   static fromDecoded(obj: any) {
-    return new UserInitParams({})
+    return new CollectRewardParams({})
   }
 
-  static toEncodable(fields: UserInitParamsFields) {
+  static toEncodable(fields: CollectRewardParamsFields) {
     return {}
   }
 
-  toJSON(): UserInitParamsJSON {
+  toJSON(): CollectRewardParamsJSON {
     return {}
   }
 
-  static fromJSON(obj: UserInitParamsJSON): UserInitParams {
-    return new UserInitParams({})
+  static fromJSON(obj: CollectRewardParamsJSON): CollectRewardParams {
+    return new CollectRewardParams({})
   }
 
   toEncodable() {
-    return UserInitParams.toEncodable(this)
+    return CollectRewardParams.toEncodable(this)
   }
 }
