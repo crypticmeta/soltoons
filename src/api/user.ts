@@ -351,7 +351,9 @@ export class User {
       )
     }
     if(escrow && flip_payer)
-    userBetIxn = await this.program.methods
+    {
+      console.log(escrow.toBase58(), 'escrow')
+      userBetIxn = await this.program.methods
       .userBet({
         gameType: params.gameType,
         userGuess: params.userGuess,
@@ -375,7 +377,8 @@ export class User {
         recentBlockhashes: SYSVAR_RECENT_BLOCKHASHES_PUBKEY,
         tokenProgram: spl.TOKEN_PROGRAM_ID,
       })
-      .instruction()
+        .instruction()
+    }
     
     if (wrapTxn && userBetIxn) {
       return wrapTxn.add(ixns ? [ixns, userBetIxn] : [userBetIxn]);

@@ -28,6 +28,7 @@ export interface GameState {
   tokenmint: string;
   tokenEscrow: {
     publicKey: string;
+    isInitialized: boolean;
     balance: number;
   }
 }
@@ -41,6 +42,7 @@ const initialState: GameState = {
   tokenmint: "So11111111111111111111111111111111111111112",
   tokenEscrow: {
     publicKey: "",
+    isInitialized: false,
     balance: 0
   },
   userBalances: {},
@@ -71,12 +73,16 @@ const gameStateSlice = createSlice({
       }
     },
     setLoading: (state: GameState, action: PayloadAction<boolean>) => {
+      console.log("setting loading ", action.payload)
       state.loading = action.payload
     },
     setTokenEscrow: (state: GameState, action: PayloadAction<{
       publicKey: string;
+      isInitialized: boolean;
       balance: number;
     }>) => {
+
+      console.log("setting tokenEscrow ", action.payload)
       state.tokenEscrow = action.payload
     },
     setUser: (state: GameState, action: PayloadAction<any>) => {
@@ -92,6 +98,7 @@ const gameStateSlice = createSlice({
       state.userVaultBalance = action.payload
     },
     setTokenmint: (state: GameState, action: PayloadAction<string>) => {
+      console.log("setting mint ", action.payload)
       state.tokenmint = action.payload
     },
   },

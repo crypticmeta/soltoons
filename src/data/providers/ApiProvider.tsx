@@ -14,7 +14,7 @@ import * as api from '../../api';
 import { House } from '../../api';
 import { ThunkDispatch } from '../../types';
 import { Severity } from '../../util/const';
-import { GameState } from '../store/gameStateReducer';
+import { GameState, setLoading } from '../store/gameStateReducer';
 import { AnchorWallet, TransactionObject } from '@switchboard-xyz/solana.js';
 import {tokenInfoMap } from "../providers/tokenProvider"
 const truncatedPubkey = (pubkey: string) => {
@@ -535,10 +535,18 @@ class ApiState implements PrivateApiInterface {
 
     // Validate the bet.
     const bet = Number.isFinite(Number(args[1])) ? Number(args[1]) : undefined;
-    if (_.isUndefined(bet) || bet <= 0 || bet > this.userBalance - 0.004) {
-      // Bet must be a positive number that's less than the user's balance.
-      this.dispatch(thunks.setLoading(false));
-      throw ApiError.badBet();
+    if (tokenData?.symbol.includes('sol') || tokenData?.symbol.includes('SOL'))
+      if (_.isUndefined(bet) || bet <= 0 || bet > this.userBalance - 0.004) {
+        // Bet must be a positive number that's less than the user's balance.
+        this.dispatch(thunks.setLoading(false));
+        throw ApiError.badBet();
+      }
+      else {
+        if (_.isUndefined(bet) || bet <= 0 || bet > this.userTokenBalance) {
+          // Bet must be a positive number that's less than the user's balance.
+          this.dispatch(thunks.setLoading(false));
+          throw ApiError.badBet();
+        }
     }
 
     this.log(`Building bet request...`);
@@ -730,10 +738,13 @@ class ApiState implements PrivateApiInterface {
         .getParsedAccountInfo(escrow)
         .catch((err) => console.error(err));
       //@ts-ignore
-      const bal = Number(accountInfo?.value?.data?.parsed?.info?.tokenAmount.amount||0);
+      const bal = Number(accountInfo?.value?.data?.parsed?.info?.tokenAmount.amount || 0);   
+      
       this.dispatch(
         thunks.setTokenEscrow({
           publicKey: escrow?.toBase58(),
+          //@ts-ignore
+          isInitialized: accountInfo?.value?.data?.parsed?.info?.state==="initialized"? true : false,
           balance: bal,
         })
       );

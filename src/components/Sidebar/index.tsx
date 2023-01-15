@@ -58,8 +58,8 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
 
   const api = hooks.useApi();
   const dispatch = hooks.useThunkDispatch();
-  const logs = useSelector(({ HUDLogger }: Store) => HUDLogger.logs);
-  const loading = useSelector((store: Store) => store.gameState.loading);
+  const logs:any = useSelector(({ HUDLogger }: Store) => HUDLogger.logs);
+  const loading:boolean = useSelector((store: Store) => store.gameState.loading);
   const balances = useSelector((store: Store) => store.gameState.userBalances);
   const tokenEscrow = useSelector((store: Store) => store.gameState.tokenEscrow);
   const tokenmint = useSelector((store: Store) => store.gameState.tokenmint);
@@ -72,10 +72,13 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
 
   //tokenmint
   const [token, setToken] = React.useState(tokenmint);
-  const [tokenInfo, setTokenInfo] = useState(tokenInfoMap.get(tokenmint))
+  const [tokenInfo, setTokenInfo] = useState(tokenInfoMap.get(tokenmint));
+  const [oldTokenEscrow, setOldTokenEscrow] = useState(tokenEscrow.publicKey)
 
   const handleChange = (event: SelectChangeEvent) => {
-      setToken(event.target.value as string);
+    setUserAccountExists(false);
+    dispatch(thunks.setLoading(true));
+    setToken(event.target.value as string);
     };
   useEffect(() => {
     if (step === 3) {
@@ -89,14 +92,20 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
       if (tokenInfoMap.get(tokenmint)?.bets.length) setAmount(tokenInfoMap.get(tokenmint)?.bets[0] || 0);
     }
     if (logs && tokenmint !== wsol) {
-      if (!tokenEscrow?.publicKey) {
+      if (!tokenEscrow?.isInitialized) {
+        //tokenescrow is not initialized then setUserAccountExists false and loading false
+        dispatch(thunks.setLoading(false));
         setUserAccountExists(false)
       }
-      else {
-      setUserAccountExists(true);
+      else if (tokenEscrow.isInitialized && tokenEscrow.publicKey !== oldTokenEscrow) {
+        //tokenescrow is initialized and new tokenescrow account belongs to new tokenmint then setUserAccountExists true and loading false
+        dispatch(thunks.setLoading(false));
+        setUserAccountExists(true);
+      } else {
+        dispatch(thunks.setLoading(false));
       }
     }
-  }, [tokenmint, tokenEscrow, logs])
+  }, [tokenmint, tokenEscrow, logs, setAmount, oldTokenEscrow, dispatch])
   
   
   useEffect(() => {
@@ -177,7 +186,9 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
 
   useEffect(() => {
     if (token !==tokenmint) {
-      dispatch(thunks.setTokenmint(token));
+      setTimeout(() => {
+        dispatch(thunks.setTokenmint(token));
+      }, 5000);
     }
   }, [token])
   
@@ -272,39 +283,51 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
       </div> */}
 
       <div className="part3 h-[35%] 2xl:h-[35%] bg-brand_yellow rounded-3xl border-4 border-black text-sm p-3 flex flex-col justify-between">
-        {userAccountExists ? (
+        {!loading && userAccountExists ? (
           <>
-            {step === 0 &&
-            (tokenmint === wsol ? userVaultBal > 0.03552384 : tokenEscrow.balance > 0) &&
-            !result?.status &&
-            lastGameStatus.includes('Settled') ? (
+            {console.log('loading user exists part')}
+            {!oldTokenEscrow ? (
               <>
-                <button
-                  onClick={() => {
-                    api.handleCommand('collect reward');
-                  }}
-                  className="center h-full text-lg"
-                >
-                  Collect Reward
-                </button>
+                {step === 0 &&
+                (tokenmint === wsol ? userVaultBal > 0.03552384 : tokenEscrow.balance > 0) &&
+                !result?.status &&
+                lastGameStatus.includes('Settled') ? (
+                  <>
+                    <button
+                      onClick={() => {
+                        api.handleCommand('collect reward');
+                      }}
+                      className="center h-full text-lg"
+                    >
+                      Collect Reward
+                    </button>
+                  </>
+                ) : (
+                  <Play
+                    amount={amount}
+                    setAmount={setAmount}
+                    loading={loading}
+                    api={api}
+                    balances={balances}
+                    result={result}
+                    wait={wait}
+                    userVaultBal={userVaultBal}
+                    tokenInfo={tokenInfo}
+                    escrow={tokenEscrow}
+                  />
+                )}
               </>
             ) : (
-              <Play
-                amount={amount}
-                setAmount={setAmount}
-                loading={loading}
-                api={api}
-                balances={balances}
-                result={result}
-                wait={wait}
-                userVaultBal={userVaultBal}
-                tokenMint={tokenmint}
-                escrow={tokenEscrow}
-              />
+              <>
+                <div className="center h-full text-white border-white">
+                  <CircularProgress color="inherit" />
+                </div>
+              </>
             )}
           </>
         ) : (
           <>
+            {console.log("loading escrow doesnt exists part")}
             {loading ? (
               <div className="center h-full text-white border-white">
                 <CircularProgress color="inherit" />
@@ -322,7 +345,7 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
           </>
         )}
       </div>
-      { wait > 0 && (
+      {wait > 0 && (
         <div className="bg-red-00 w-full py-2 text-white">
           <LinearProgressWithLabel sx={{ height: 5, borderRadius: '30px' }} variant="determinate" value={wait} />
         </div>
@@ -338,9 +361,11 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
               <div className="flex flex-col">
                 <p className="text-xl text-center font-extrabold pb-6 2xl:text-3xl">
                   {Number(result?.multiplier) >= 1
-                    ? `Congrats! You Won ${result?.change / (Math.pow(10,tokenInfo?.decimals || 9))} ${tokenInfo?.symbol}`
+                    ? `Congrats! You Won ${result?.change / Math.pow(10, tokenInfo?.decimals || 9)} ${
+                        tokenInfo?.symbol
+                      }`
                     : Number(result?.multiplier) < 1 && Number(result?.multiplier) > 0
-                    ? `You won ${result?.change / (Math.pow(10,tokenInfo?.decimals || 9))} ${tokenInfo?.symbol}`
+                    ? `You won ${result?.change / Math.pow(10, tokenInfo?.decimals || 9)} ${tokenInfo?.symbol}`
                     : 'You Lost'}
                 </p>
 
@@ -378,9 +403,9 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
 }
 
 //@ts-ignore
-const Play = ({ amount, setAmount, api, balances, loading, result, wait, userVaultBal, tokenMint, escrow }) => {
-  const isWsol = tokenMint === wsol;
-  const token = tokenInfoMap.get(tokenMint);
+const Play = ({ amount, setAmount, api, balances, loading, result, wait, userVaultBal, tokenInfo, escrow }) => {
+  const isWsol = tokenInfo.address === wsol;
+  const token = tokenInfo;
   return (
     <>
       {loading && (result?.status === 'loading' || result?.status === 'waiting') ? (
@@ -406,7 +431,7 @@ const Play = ({ amount, setAmount, api, balances, loading, result, wait, userVau
                 <hr className="my-2 border-black" />
               </div>
               <div className="flex flex-wrap text-3xl italic justify-between bg-red-00 w-full">
-                {token?.bets?.map((item) => (
+                {token?.bets?.map((item:number) => (
                   <div
                     className={`w-${token?.bets?.length === 4 ? 5 : 4}/12 center bg-red-00 my-1 p-1`}
                     onClick={() => setAmount(Number(item))}
@@ -424,20 +449,20 @@ const Play = ({ amount, setAmount, api, balances, loading, result, wait, userVau
               </div>
               <div>
                 <button
-                  disabled={tokenMint !== wsol && balances.token === 0}
+                  disabled={tokenInfo.address !== wsol && balances.token === 0}
                   onClick={() => {
                     api.handleCommand(`user play 1 ${amount}`);
                   }}
                   className={`border-black  border-4 p-1 rounded-3xl w-full font-extrabold ${
-                    tokenMint !== wsol && balances.token === 0 ? 'bg-gray-600 cursor-not-allowed' : ''
+                    tokenInfo.address !== wsol && balances.token === 0 ? 'bg-gray-600 cursor-not-allowed' : ''
                   }`}
                 >
-                  {tokenMint !== wsol && balances.token === 0 ? `Insufficient ${token?.symbol} Balance` : 'PLAY'}
+                  {loading?"Loading...":tokenInfo.address !== wsol && balances.token === 0 ? `Insufficient ${token?.symbol} Balance` : 'PLAY'}
                 </button>
                 <p className="text-xs text-gray-700 text-center">
                       {Number(balances.sol || 0).toFixed(4)} SOL{' '}
                       
-                  {balances.token && token && tokenMint !== wsol ? (
+                  {balances.token && token && tokenInfo.address !== wsol ? (
                     <span className="pl-4">
                       {Number(result && result.status === 'claimed' ? 0 : balances.token || 0).toFixed(2)} {token.symbol}
                     </span>
@@ -445,7 +470,7 @@ const Play = ({ amount, setAmount, api, balances, loading, result, wait, userVau
                     <></>
                   )}
                 </p>
-                {tokenMint === wsol && Number(amount) > 2 && (
+                {tokenInfo.address === wsol && Number(amount) > 2 && (
                   <p className="text-red-800 text-xs pt-2 text-center">Amount should be less than 2 SOL</p>
                 )}
               </div>
