@@ -91,22 +91,22 @@ const tokenRegistry = {
   //     twitter: 'https://twitter.com/CreamyFriends',
   //   },
   // },
-  DUSTawucrTsGU8hcqRdHDCbuYhCPADMLM2VcCb8VnFnQ: {
-    chainId: 101,
-    address: 'DUSTawucrTsGU8hcqRdHDCbuYhCPADMLM2VcCb8VnFnQ',
-    symbol: 'DUST',
-    name: 'DUST Protocol',
-    decimals: 9,
-    logoURI:
-      'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/DUSTawucrTsGU8hcqRdHDCbuYhCPADMLM2VcCb8VnFnQ/logo.jpg',
-    tags: ['NFT', 'utility-token'],
-    extensions: {
-      discord: 'https://discord.com/invite/dedao',
-      twitter: 'https://twitter.com/degodsnft',
-      website: 'https://docs.dustprotocol.com/',
-    },
-    bets: [1, 2, 4, 6, 10, 20]
-  },
+  // DUSTawucrTsGU8hcqRdHDCbuYhCPADMLM2VcCb8VnFnQ: {
+  //   chainId: 101,
+  //   address: 'DUSTawucrTsGU8hcqRdHDCbuYhCPADMLM2VcCb8VnFnQ',
+  //   symbol: 'DUST',
+  //   name: 'DUST Protocol',
+  //   decimals: 9,
+  //   logoURI:
+  //     'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/DUSTawucrTsGU8hcqRdHDCbuYhCPADMLM2VcCb8VnFnQ/logo.jpg',
+  //   tags: ['NFT', 'utility-token'],
+  //   extensions: {
+  //     discord: 'https://discord.com/invite/dedao',
+  //     twitter: 'https://twitter.com/degodsnft',
+  //     website: 'https://docs.dustprotocol.com/',
+  //   },
+  //   bets: [1, 2, 4, 6, 10, 20]
+  // },
   // '4Up16GyRmybEEDfaCsDszkzkvtWgoKDtS4cUyBEjvPBM': {
   //   chainId: 101,
   //   address: '4Up16GyRmybEEDfaCsDszkzkvtWgoKDtS4cUyBEjvPBM',

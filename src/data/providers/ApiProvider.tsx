@@ -642,6 +642,9 @@ class ApiState implements PrivateApiInterface {
                   }
                   if (id !== 'userBet') this.dispatch(thunks.setLoading(false));
                 }
+                else {
+                   this.log('Tx Error...', Severity.Error);
+                }
               })
               .catch((e) => {
                 this.log("Tx failed...", Severity.Error)
@@ -662,6 +665,7 @@ class ApiState implements PrivateApiInterface {
           .catch((e) => {
             if (id !== 'collectReward') this.dispatch(thunks.setResult({ status: 'error' }));
             // this.dispatch(thunks.setResult({ status: 'error' }));
+            this.log("Tx Error...", Severity.Error)
             this.dispatch(thunks.setLoading(false));
             if (e instanceof anchor.web3.SendTransactionError) {
               const anchorError = e.logs ? anchor.AnchorError.parse(e.logs) : null;
@@ -697,11 +701,9 @@ class ApiState implements PrivateApiInterface {
             token: undefined,
           })
         );
-        console.log("passing empty token amout")
         return;
       } else if (account?.data?.length === 0) {
         this.dispatch(thunks.setUserBalance({ sol: this.userBalance, token: undefined }));
-        console.log('passing empty token amout 2');
         return;
       }
       const rawAccount = spl.AccountLayout.decode(account.data);

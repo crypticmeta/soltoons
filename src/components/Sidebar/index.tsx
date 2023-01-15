@@ -327,7 +327,6 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
           </div>
         </div>
       </div>
-
       <div className="part3 h-[35%] 2xl:h-[35%] p-1">
         <div className="bg-brand_yellow rounded-3xl border-4 border-black text-sm p-1 text-center h-full flex flex-col overflow-hidden justify-between relative">
           {result?.status === 'waiting' && (
@@ -487,7 +486,7 @@ const Play = ({ amount, setAmount, api, balances, loading, result, wait, userVau
           ) : (
             <>
               <div>
-                <p className="font-extrabold text-center">PLAY with {token?.symbol}</p>
+                <p className="font-extrabold text-center text-xs pt-2">PLAY with {token?.symbol}</p>
                 <hr className="my-2 border-black" />
               </div>
               <div className="flex flex-wrap text-3xl italic justify-between bg-red-00 w-full">
