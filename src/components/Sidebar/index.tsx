@@ -13,6 +13,7 @@ import LinearProgress, { LinearProgressProps } from '@mui/material/LinearProgres
 import useSound from 'use-sound';
 import Select, { SelectChangeEvent } from '@mui/material/Select';
 import { Box, FormControl, MenuItem } from '@mui/material';
+import { useWallet } from '@solana/wallet-adapter-react';
 const wsol = 'So11111111111111111111111111111111111111112';
 const Alert = React.forwardRef<HTMLDivElement, AlertProps>(function Alert(props, ref) {
   return <MuiAlert elevation={6} ref={ref} variant="filled" {...props} />;
@@ -32,6 +33,7 @@ function LinearProgressWithLabel(props: LinearProgressProps & { value: number })
 }
 //@ts-ignore
 function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal }) {
+  const wallet = useWallet()
     const [playLoading, stopLoading] = useSound('/assets/audio/loading.mp3', {
       volume: 0.7,
     });
@@ -66,7 +68,7 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
   const user = useSelector((store: Store) => store.gameState.user);
   const result = useSelector((store: Store) => store.gameState.result);
   const userVaultBal = useSelector((store: Store) => store.gameState.userVaultBalance);
-  const [userAccountExists, setUserAccountExists] = useState(true);
+  const [userAccountExists, setUserAccountExists] = useState(false);
   const [userEscrowExists, setUserEscrowExists] = useState(true);
   const [wait, setWait] = useState(0);
 
@@ -87,9 +89,9 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
   useEffect(() => {
     if(tokenEscrow)
     {
-      localStorage.setItem(tokenmint + "Escrow", tokenEscrow.publicKey);      
+      localStorage.setItem(tokenmint +wallet.publicKey?.toBase58()+"Escrow", tokenEscrow.publicKey);      
       localStorage.setItem('oldTokenMint', tokenmint);
-      localStorage.setItem(localStorage.getItem('tokenMint') + 'EscrowIsInitialized', String(tokenEscrow.isInitialized));
+      localStorage.setItem(tokenEscrow.publicKey + 'EscrowIsInitialized', String(tokenEscrow.isInitialized));
     }
   }, [tokenEscrow])
   
@@ -198,7 +200,8 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
     const newRound = step === 0; //new round or page refresh
     const tokenEscrowHasClaimableBalance = tokenmint === wsol ? userVaultBal > 0.03552384 : tokenEscrow.balance > 0; //should have claimable balance to claim reward
   
-    const escrowUpdated = localStorage.getItem(localStorage.getItem('oldTokenMint') + 'Escrow') === tokenEscrow.publicKey;
+    //@ts-ignore
+    const escrowUpdated = localStorage.getItem(localStorage.getItem('oldTokenMint')+wallet.publicKey?.toBase58() + 'Escrow') === tokenEscrow.publicKey;
      const mintUpdated =
        localStorage.getItem("oldTokenMint") === token;
     // console.log(escrowUpdated, ' Escrow Updated?')
@@ -231,6 +234,7 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
   }, [tokenmint, userAccountExists, userEscrowExists, token, step, userVaultBal, tokenEscrow, result.status])
 
   useEffect(() => {
+    // console.log("setting control as : ", control)
     if (control) {
       dispatch(thunks.setLoading(false))
     }
@@ -459,19 +463,31 @@ const Play = ({ amount, setAmount, api, balances, loading, result, wait, userVau
               </div>
               <div className="flex flex-wrap  italic justify-between bg-red-00 w-full ">
                 {token?.bets?.map((item: number) => (
-                  <div
-                    className={`w-${token?.bets?.length === 4 ? 5 : 4}/12 center bg-red-00 my-1 p-1`}
+                  <button
+                    disabled={isWsol ? balances.sol < item : balances.token < item}
+                    className={`w-${token?.bets?.length === 4 ? 5 : 4}/12 center bg-red-00 my-1 p-1 `}
                     onClick={() => setAmount(Number(item))}
                     key={item}
                   >
-                    <p
+                    <span
                       className={`text-xs w-full p-1 text-center ${
                         amount === item ? 'bg-yellow-400' : 'bg-yellow-100'
-                      } hover:bg-yellow-600 cursor-pointer`}
+                      } hover:bg-yellow-600 cursor-pointer 
+                        ${
+                          isWsol
+                            ? balances.sol < item
+                              ? ' bg-red-600 cursor-not-allowed '
+                              : ''
+                            : balances.token < item
+                            ? ' bg-red-600 cursor-not-allowed '
+                            : ''
+                        }
+                   
+                      `}
                     >
                       {item}
-                    </p>
-                  </div>
+                    </span>
+                  </button>
                 ))}
               </div>
               <div>

@@ -521,6 +521,11 @@ class ApiState implements PrivateApiInterface {
     const tokenData = tokenInfoMap.get(this.tokenMint.toBase58());
     this.dispatch(thunks.setLoading(true));
     const game = games[this.gameMode];
+    
+    this.log(`Building bet request...`);
+    this.dispatch(thunks.setResult({ status: 'loading' }));
+
+    this.dispatch(thunks.setLoading(true));
 
     // Gather necessary programs.
     const user = await this.user; // Make sure that user is logged in and has accounts.
@@ -549,10 +554,6 @@ class ApiState implements PrivateApiInterface {
         }
     }
 
-    this.log(`Building bet request...`);
-    this.dispatch(thunks.setResult({ status: 'loading' }));
-
-    this.dispatch(thunks.setLoading(true));
     const vrf: any = await getVRF(this.wallet.publicKey.toBase58());
     //Throw error if no VRF
     if (!vrf || !vrf.id) {
@@ -698,12 +699,12 @@ class ApiState implements PrivateApiInterface {
         this.dispatch(
           thunks.setUserBalance({
             sol: this.userBalance,
-            token: undefined,
+            token: undefined||0,
           })
         );
         return;
       } else if (account?.data?.length === 0) {
-        this.dispatch(thunks.setUserBalance({ sol: this.userBalance, token: undefined }));
+        this.dispatch(thunks.setUserBalance({ sol: this.userBalance, token: undefined||0 }));
         return;
       }
       const rawAccount = spl.AccountLayout.decode(account.data);
@@ -725,8 +726,16 @@ class ApiState implements PrivateApiInterface {
       this.tokenMint.toBase58() === 'So11111111111111111111111111111111111111112'
         ? user?.publicKey
         : await spl.getAssociatedTokenAddress(this.tokenMint, this.wallet.publicKey, true);
+    
+     this.dispatch(
+       thunks.setUserBalance({
+         sol: this.userBalance,
+         token:  0,
+       })
+     );
     // const accountInfo = await spl.getAccount(program.provider.connection, rewardAddress).catch((err) => console.error(err));
 
+    // console.log(rewardAddress.toBase58(), 'reward address')
     // const rewardAddress =
     await program.provider.connection.getAccountInfo(this.wallet.publicKey).then(onSolAccountChange);
     await program.provider.connection.getAccountInfo(rewardAddress).then(onTokenAccountChange);

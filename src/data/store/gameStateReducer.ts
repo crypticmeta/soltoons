@@ -41,8 +41,8 @@ const initialState: GameState = {
   gameMode: GameTypeValue.CLAW,
   tokenmint: localStorage.getItem("tokenMint")||"So11111111111111111111111111111111111111112",
   tokenEscrow: {
-    publicKey: localStorage.getItem(localStorage.getItem("tokenMint")+"Escrow")||"",
-    isInitialized: Boolean(localStorage.getItem(localStorage.getItem("tokenMint") + "EscrowIsInitialized")) || false,
+    publicKey: "",
+    isInitialized: false,
     balance: 0
   },
   userBalances: {},
