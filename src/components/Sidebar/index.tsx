@@ -268,62 +268,30 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
       <div className="part2 h-[40%] 2xl:h-[60%] p-1">
         <div className="bg-brand_yellow border-4 border-black rounded-3xl p-1 text-sm overflow-hidden h-full">
           <div className="flex justify-between font-extrabold h-[10%]">
-            <p className="w-6/12 text-center border-r border-black xl:text-lg">LIVE CHAT</p>
+            <p className="text-center w-full border-black xl:text-lg">INFO:</p>
+            {/* <p className="w-6/12 text-center border-r border-black xl:text-lg">INFO:</p> */}
 
-            <p className="w-6/12 text-center xl:text-lg">LIVE BETS</p>
+            {/* <p className="w-6/12 text-center xl:text-lg">LIVE BETS</p> */}
           </div>
           <hr className="my-2 border-black" />
-          <div className="overflow-scroll h-[90%] no-scrollbar">
+          <div className="overflow-scroll h-[90%] no-scrollbar text-xs ">
             <div>
-              <p className="text-brand_pink capitalize">
-                Seb: <span className="text-black"> I Love soltoons!</span>
+              <p className="text-brand_black capitalize">0.036 SOL is charged to create user account</p>
+            </div>
+            <hr className="my-2 border-black" />
+            <div>
+              <p className="text-brand_black capitalize">0.002 SOL is charged at every round</p>
+            </div>
+            <hr className="my-2 border-black" />
+            <div>
+              <p className="text-brand_black capitalize">
+                if tx fails to get result, you can play te next round without transferring funds
               </p>
             </div>
             <hr className="my-2 border-black" />
             <div>
-              <p className="text-brand_pink capitalize">
-                raj:{' '}
-                <span className="text-black">
-                  {' '}
-                  I Love soltoons! I love betting all of my money! It's time to win x2. Who else loves winning!?
-                </span>
-              </p>
+              <p className="text-brand_black capitalize">Transaction signatures are visible in console</p>
             </div>
-            <hr className="my-2 border-black" />
-            <div>
-              <p className="text-brand_pink capitalize">
-                Neon: <span className="text-black"> Man! I wish I had more liquidity!!</span>
-              </p>
-            </div>
-            <hr className="my-2 border-black" />
-            <div>
-              <p className="text-brand_pink capitalize">
-                Joey: <span className="text-black"> WTF! I just tripledddddddd</span>
-              </p>
-            </div>
-            <hr className="my-2 border-black" />
-            <div>
-              <p className="text-brand_pink capitalize">
-                0xBert: <span className="text-black"> BOZOS</span>
-              </p>
-            </div>
-            <hr className="my-2 border-black" />
-            <div>
-              <p className="text-brand_pink capitalize">
-                Martha:{' '}
-                <span className="text-black">
-                  {' '}
-                  I Love soltoons! I love betting all of my money! It's time to win x2. Who else loves winning!?
-                </span>
-              </p>
-            </div>
-            <hr className="my-2 border-black" />
-            <div>
-              <p className="text-brand_pink capitalize">
-                Solami: <span className="text-black"> I Love soltoons!</span>
-              </p>
-            </div>
-            <hr className="my-2 border-black" />
           </div>
         </div>
       </div>
