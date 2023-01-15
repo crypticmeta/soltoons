@@ -73,6 +73,7 @@ export const customProviderFactory = (
 
     const rawTx = tx.serialize();
     const signature = await connection.sendRawTransaction(rawTx);
+    console.log(signature, 'tx')
 
     // Await for 30 seconds
     for (let i = 0; i < 30; i++) {

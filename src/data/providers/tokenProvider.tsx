@@ -9,7 +9,7 @@ export type TokenInfo = {
   logoURI: string;
   tags?: string[];
   extensions?: any;
-  bets?: number[];
+  bets: number[];
 };
 
 const tokenRegistry = {
@@ -29,7 +29,7 @@ const tokenRegistry = {
       coingeckoId: 'solana',
       imageURI: '/resources/solana-logo.gif',
     },
-    bets: [0.1, 0.25, 0.5, 1.0]
+    bets: [0.001, 0.01, 0.1, 0.25, 0.5, 1.0]
   },
   // '9bb1MAn3DwDxwrVyKRYFdBfNfWnn4k1EeHjbLmJ1nsNx': {
   //   chainId: 101,
@@ -42,17 +42,17 @@ const tokenRegistry = {
   //   tags: ['staking'],
   //   extensions: {},
   // },
-  'CFp7pM2TE1S8WGQo7Wb9qvLogYfTkEJruanSbkFFfEtn': {
-    chainId: 101,
-    address: 'CFp7pM2TE1S8WGQo7Wb9qvLogYfTkEJruanSbkFFfEtn',
-    symbol: 'DEV9',
-    name: 'DEVNET_0_DECIMAL',
-    decimals: 9,
-    logoURI:
-      'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/3Q8GPQfrMcDRknataFe46VYdsGYqwRTCuYxGqPSHGCQo/logo.png',
-    tags: ['staking'],
-    extensions: {},
-  },
+  // 'CFp7pM2TE1S8WGQo7Wb9qvLogYfTkEJruanSbkFFfEtn': {
+  //   chainId: 101,
+  //   address: 'CFp7pM2TE1S8WGQo7Wb9qvLogYfTkEJruanSbkFFfEtn',
+  //   symbol: 'DEV9',
+  //   name: 'DEVNET_0_DECIMAL',
+  //   decimals: 9,
+  //   logoURI:
+  //     'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/3Q8GPQfrMcDRknataFe46VYdsGYqwRTCuYxGqPSHGCQo/logo.png',
+  //   tags: ['staking'],
+  //   extensions: {},
+  // },
   DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263: {
     chainId: 101,
     address: 'DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263',
@@ -62,6 +62,7 @@ const tokenRegistry = {
     logoURI: 'https://arweave.net/QPC6FYdUn-3V8ytFNuoCS85S2tHAuiDblh6u3CIZLsw',
     tags: ['utility-token', 'community-token', 'social-token'],
     extensions: {},
+    bets: [100, 1000, 2000, 5000, 10000, 20000]
   },
   // GkywroLpkvYQc5dmFfd2RchVYycXZdaA5Uzix42iJdNo: {
   //   chainId: 101,
@@ -104,6 +105,7 @@ const tokenRegistry = {
       twitter: 'https://twitter.com/degodsnft',
       website: 'https://docs.dustprotocol.com/',
     },
+    bets: [1, 2, 4, 6, 10, 20]
   },
   // '4Up16GyRmybEEDfaCsDszkzkvtWgoKDtS4cUyBEjvPBM': {
   //   chainId: 101,

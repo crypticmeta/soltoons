@@ -9,17 +9,27 @@ import Snackbar from '@mui/material/Snackbar';
 import MuiAlert, { AlertProps } from '@mui/material/Alert';
 import { Severity } from '../../util/const';
 import Modal from '@mui/material/Modal';
-import { LAMPORTS_PER_SOL } from '@solana/web3.js';
-import LinearProgress from '@mui/material/LinearProgress';
+import LinearProgress, { LinearProgressProps } from '@mui/material/LinearProgress';
 import useSound from 'use-sound';
 import Select, { SelectChangeEvent } from '@mui/material/Select';
-import { FormControl, MenuItem } from '@mui/material';
+import { Box, FormControl, MenuItem } from '@mui/material';
 const wsol = 'So11111111111111111111111111111111111111112';
 const Alert = React.forwardRef<HTMLDivElement, AlertProps>(function Alert(props, ref) {
   return <MuiAlert elevation={6} ref={ref} variant="filled" {...props} />;
 });
 
-
+function LinearProgressWithLabel(props: LinearProgressProps & { value: number }) {
+  return (
+    <Box sx={{ display: 'flex', alignItems: 'center' }} color="inherit">
+      <Box sx={{ width: '100%', mr: 1 }} color="inherit">
+        <LinearProgress color='inherit' variant="determinate" {...props} />
+      </Box>
+      <Box sx={{ minWidth: 35 }}>
+        <p className='text-white'>{Math.round(props.value)}%</p>
+      </Box>
+    </Box>
+  );
+}
 //@ts-ignore
 function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal }) {
     const [playLoading, stopLoading] = useSound('/assets/audio/loading.mp3', {
@@ -74,8 +84,9 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
   }, [step])
 
   useEffect(() => {
-    if (tokenmint) {
-      setTokenInfo(tokenInfoMap.get(tokenmint))
+    if (tokenmint && tokenInfoMap.get(tokenmint)) {
+      setTokenInfo(tokenInfoMap.get(tokenmint));
+      if (tokenInfoMap.get(tokenmint)?.bets.length) setAmount(tokenInfoMap.get(tokenmint)?.bets[0] || 0);
     }
     if (logs && tokenmint !== wsol) {
       if (!tokenEscrow?.publicKey) {
@@ -175,22 +186,22 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
       <div className="part1 h-[20%] center w-full">
         <div className="w-full">
           <div className="tokenSelector mb-1">
-            <FormControl fullWidth variant='filled'>
+            <FormControl fullWidth variant="filled">
               <Select
                 labelId="select-token"
                 id="select-token"
-                sx={{ width: '100%', height:"40px", outline: "none", border:"none" }}
+                sx={{ width: '100%', height: '40px', outline: 'none', border: 'none' }}
                 value={token}
                 label="Token"
                 onChange={handleChange}
               >
-                  {Array.from(tokenInfoMap.values())
-                    .filter((t) => t.symbol)
-                    .map((item: any) => (
-                      <MenuItem value={item.address} key={item.symbol + Math.random()}>
-                        {item.symbol}
-                      </MenuItem>
-                    ))}
+                {Array.from(tokenInfoMap.values())
+                  .filter((t) => t.symbol)
+                  .map((item: any) => (
+                    <MenuItem value={item.address} key={item.symbol + Math.random()}>
+                      {item.symbol}
+                    </MenuItem>
+                  ))}
               </Select>
             </FormControl>
           </div>
@@ -264,7 +275,7 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
         {userAccountExists ? (
           <>
             {step === 0 &&
-            (tokenmint === wsol ? userVaultBal > 0.0362616 : tokenEscrow.balance > 0) &&
+            (tokenmint === wsol ? userVaultBal > 0.03552384 : tokenEscrow.balance > 0) &&
             !result?.status &&
             lastGameStatus.includes('Settled') ? (
               <>
@@ -311,9 +322,9 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
           </>
         )}
       </div>
-      {wait > 0 && (
-        <div className="bg-red-00 w-full py-2">
-          <LinearProgress sx={{ height: 5, borderRadius: '30px' }} variant="determinate" value={wait} />
+      { wait > 0 && (
+        <div className="bg-red-00 w-full py-2 text-white">
+          <LinearProgressWithLabel sx={{ height: 5, borderRadius: '30px' }} variant="determinate" value={wait} />
         </div>
       )}
       <Modal open={openModal} onClose={handleModalClose}>
@@ -327,9 +338,9 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
               <div className="flex flex-col">
                 <p className="text-xl text-center font-extrabold pb-6 2xl:text-3xl">
                   {Number(result?.multiplier) >= 1
-                    ? `Congrats! You Won ${result?.change / (tokenInfo?.decimals||9)} ${tokenInfo?.symbol}`
+                    ? `Congrats! You Won ${result?.change / (Math.pow(10,tokenInfo?.decimals || 9))} ${tokenInfo?.symbol}`
                     : Number(result?.multiplier) < 1 && Number(result?.multiplier) > 0
-                    ? `You won ${result?.change / (tokenInfo?.decimals||9)} ${tokenInfo?.symbol}`
+                    ? `You won ${result?.change / (Math.pow(10,tokenInfo?.decimals || 9))} ${tokenInfo?.symbol}`
                     : 'You Lost'}
                 </p>
 
@@ -391,20 +402,22 @@ const Play = ({ amount, setAmount, api, balances, loading, result, wait, userVau
           ) : (
             <>
               <div>
-                <p className="font-extrabold text-center">PLAY</p>
+                    <p className="font-extrabold text-center">PLAY with { token?.symbol}</p>
                 <hr className="my-2 border-black" />
               </div>
               <div className="flex flex-wrap text-3xl italic justify-between bg-red-00 w-full">
                 {token?.bets?.map((item) => (
                   <div
-                    className={`w-${
-                      token?.bets?.length === 4 ? 5 : 3
-                    }/12 center m-1 py-1 ${amount===item?"bg-yellow-400":"bg-yellow-100"} hover:bg-yellow-600 cursor-pointer`}
+                    className={`w-${token?.bets?.length === 4 ? 5 : 4}/12 center bg-red-00 my-1 p-1`}
                     onClick={() => setAmount(Number(item))}
                     key={item}
                   >
-                    <p className="text-sm ">
-                      {item} {token.symbol}
+                    <p
+                      className={`text-sm w-full p-1 text-center ${
+                        amount === item ? 'bg-yellow-400' : 'bg-yellow-100'
+                      } hover:bg-yellow-600 cursor-pointer`}
+                    >
+                      {item}
                     </p>
                   </div>
                 ))}
@@ -422,10 +435,11 @@ const Play = ({ amount, setAmount, api, balances, loading, result, wait, userVau
                   {tokenMint !== wsol && balances.token === 0 ? `Insufficient ${token?.symbol} Balance` : 'PLAY'}
                 </button>
                 <p className="text-xs text-gray-700 text-center">
-                  {Number(balances.sol || 0).toFixed(4)} sol{' '}
+                      {Number(balances.sol || 0).toFixed(4)} SOL{' '}
+                      
                   {balances.token && token && tokenMint !== wsol ? (
                     <span className="pl-4">
-                      {Number(result && result.status === 'claimed' ? 0 : balances.token || 0).toFixed(2)} token
+                      {Number(result && result.status === 'claimed' ? 0 : balances.token || 0).toFixed(2)} {token.symbol}
                     </span>
                   ) : (
                     <></>

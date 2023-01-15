@@ -45,7 +45,7 @@ const initialState: GameState = {
   },
   userBalances: {},
   user: {},
-  result: {},
+  result: { },
   vaultBalance: 0,
   userVaultBalance: 0,
 };

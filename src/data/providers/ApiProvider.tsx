@@ -2,7 +2,7 @@ import * as anchor from '@project-serum/anchor';
 import * as spl from '@solana/spl-token-v2';
 import { useWallet} from '@solana/wallet-adapter-react';
 import { getAssociatedTokenAddress, TOKEN_PROGRAM_ID } from '@solana/spl-token-v2';
-import { SystemProgram, SYSVAR_RECENT_BLOCKHASHES_PUBKEY} from '@solana/web3.js';
+import { SystemProgram, SYSVAR_RECENT_BLOCKHASHES_PUBKEY, TransactionConfirmationStrategy} from '@solana/web3.js';
 import { LAMPORTS_PER_SOL, PublicKey, TransactionInstruction } from '@solana/web3.js';
 import { sleep } from "@switchboard-xyz/common"
 import { getVRF } from '../providers/utils';
@@ -294,7 +294,7 @@ class ApiState implements PrivateApiInterface {
     // Build out and sign transactions.
     const [userKey, userInitTxns] = await api.User.createReq(program, TOKENMINT, this.wallet.publicKey);
 
-    if (userInitTxns) await this.packSignAndSubmit(userInitTxns, 'userInit');
+    if (userInitTxns) await this.packSignAndSubmit(userInitTxns, "User account created successfully", 'userInit');
 
     let retryCount = 5;
     while (retryCount) {
@@ -377,7 +377,7 @@ class ApiState implements PrivateApiInterface {
 
     const request = new TransactionObject(this.wallet.publicKey, ixns, []);
 
-    await this.packSignAndSubmit(request, 'drain');
+    await this.packSignAndSubmit(request, "Draining Successfull",'drain');
   };
 
   // get vault info
@@ -433,39 +433,35 @@ class ApiState implements PrivateApiInterface {
       );
       escrow = escrowKey;
     }
-let ixns:TransactionInstruction[]=[];
+    let ixns: TransactionInstruction[] = [];
 
-if (escrow && flip_payer)
-{
-  ixns.push(
-    await program
-    .methods.collectReward({})
-    .accounts({
-      user: user.publicKey,
-      house: house.publicKey,
-      mint: TOKENMINT,
-      escrow,
-      rewardAddress: flip_payer,
-      authority: payerPubkey,
-      recentBlockhashes: SYSVAR_RECENT_BLOCKHASHES_PUBKEY,
-      systemProgram: SystemProgram.programId,
-      tokenProgram: spl.TOKEN_PROGRAM_ID,
-    })
-    .instruction(),
-  )
-  if (!flip_payer_is_initialized && flip_payer) {
-    ixns.unshift(spl.createAssociatedTokenAccountInstruction(payerPubkey, flip_payer, payerPubkey, TOKENMINT));
-  }
-  if(ixns.length)
-  {
-    const request = new TransactionObject(this.wallet.publicKey, ixns, []);
-    if(request)
-      await this.packSignAndSubmit(request, 'collectReward');
-    else {
-      
+    if (escrow && flip_payer) {
+      ixns.push(
+        await program.methods
+          .collectReward({})
+          .accounts({
+            user: user.publicKey,
+            house: house.publicKey,
+            mint: TOKENMINT,
+            escrow,
+            rewardAddress: flip_payer,
+            authority: payerPubkey,
+            recentBlockhashes: SYSVAR_RECENT_BLOCKHASHES_PUBKEY,
+            systemProgram: SystemProgram.programId,
+            tokenProgram: spl.TOKEN_PROGRAM_ID,
+          })
+          .instruction()
+      );
+      if (!flip_payer_is_initialized && flip_payer) {
+        ixns.unshift(spl.createAssociatedTokenAccountInstruction(payerPubkey, flip_payer, payerPubkey, TOKENMINT));
+      }
+      if (ixns.length) {
+        const request = new TransactionObject(this.wallet.publicKey, ixns, []);
+        if (request) await this.packSignAndSubmit(request, "Reward Collected Successfully",'collectReward');
+        else {
+        }
+      }
     }
-  }
-}
   };
 
   /**
@@ -475,7 +471,7 @@ if (escrow && flip_payer)
     const TOKENMINT = this.tokenMint;
     this.dispatch(thunks.setLoading(true));
     this.log('Collecting reward...');
-    
+
     const payerPubkey = this.wallet.publicKey;
     const program = await this.program;
     const user = await this.user;
@@ -484,69 +480,36 @@ if (escrow && flip_payer)
       [Buffer.from('ESCROWSTATESEED'), payerPubkey.toBytes(), TOKENMINT.toBytes()],
       program.programId
     );
-     const rewardAddress = await spl.getAssociatedTokenAddress(TOKENMINT, this.wallet.publicKey, true);
-    const accountInfo = await spl.getAccount(program.provider.connection, rewardAddress).catch((err) => console.error(err));
+    const rewardAddress = await spl.getAssociatedTokenAddress(TOKENMINT, this.wallet.publicKey, true);
+    const accountInfo = await spl
+      .getAccount(program.provider.connection, rewardAddress)
+      .catch((err) => console.error(err));
 
-    const ixns = [await (
-      await this.program
-    ).methods
-      .createEscrow({})
-      .accounts({
-        house: house.publicKey,
-        mint: TOKENMINT,
-        authority: payerPubkey,
-        escrow: escrow,
-        rewardAddress,
-        recentBlockhashes: SYSVAR_RECENT_BLOCKHASHES_PUBKEY,
-        systemProgram: SystemProgram.programId,
-        tokenProgram: spl.TOKEN_PROGRAM_ID,
-      })
-      .instruction()
-    ]
-    
+    const ixns = [
+      await (
+        await this.program
+      ).methods
+        .createEscrow({})
+        .accounts({
+          house: house.publicKey,
+          mint: TOKENMINT,
+          authority: payerPubkey,
+          escrow: escrow,
+          rewardAddress,
+          recentBlockhashes: SYSVAR_RECENT_BLOCKHASHES_PUBKEY,
+          systemProgram: SystemProgram.programId,
+          tokenProgram: spl.TOKEN_PROGRAM_ID,
+        })
+        .instruction(),
+    ];
+
     if (!accountInfo || !accountInfo?.isInitialized) {
-      spl.createAssociatedTokenAccountInstruction(
-        payerPubkey,
-        rewardAddress,
-        payerPubkey,
-        this.tokenMint
-      )
+      spl.createAssociatedTokenAccountInstruction(payerPubkey, rewardAddress, payerPubkey, this.tokenMint);
     }
-  
+
     const request = new TransactionObject(this.wallet.publicKey, ixns, []);
     if (request) {
-      // const pack = TransactionObject.pack([request])
-      const program = await this.program;
-      const blockhash = await program.provider.connection.getLatestBlockhash();
-      const sign = request.sign(blockhash, request.signers);
-      const signedTxs = await this.wallet.signAllTransactions([sign]);
-      for (const tx of signedTxs) {
-        const serialTx = tx.serialize();
-        await program.provider.connection
-          .sendRawTransaction(serialTx, { skipPreflight: true })
-          .then((sig) => {
-            console.info(sig, ' tx');
-            this.log('Reward collected Successfully!');
-            this.dispatch(thunks.setLoading(false));
-            this.dispatch(thunks.log({ message: 'Successfully claimed funds. ', severity: Severity.Success }));
-            this.dispatch(thunks.setResult({ status: 'claimed' }));
-          })
-          .catch((e) => {
-            this.dispatch(thunks.setResult({ status: 'error' }));
-            this.dispatch(thunks.setLoading(false));
-            if (e instanceof anchor.web3.SendTransactionError) {
-              const anchorError = e.logs ? anchor.AnchorError.parse(e.logs) : null;
-              if (anchorError) {
-                console.error(anchorError);
-                throw ApiError.anchorError(anchorError);
-              } else {
-                console.error(e);
-                throw ApiError.sendTransactionError(e.message);
-              }
-            }
-          });
-      }
-      // await this.packSignAndSubmit(request.ixns, request.signers, false);
+      await this.packSignAndSubmit(request, "Escrow Created Succesfully", 'CreateEscrow')
     }
   };
 
@@ -555,7 +518,7 @@ if (escrow && flip_payer)
    */
   private playGame = async (args: string[]) => {
     const TOKENMINT = this.tokenMint;
-    const tokenData = tokenInfoMap.get(this.tokenMint.toBase58())
+    const tokenData = tokenInfoMap.get(this.tokenMint.toBase58());
     this.dispatch(thunks.setLoading(true));
     const game = games[this.gameMode];
 
@@ -572,7 +535,7 @@ if (escrow && flip_payer)
 
     // Validate the bet.
     const bet = Number.isFinite(Number(args[1])) ? Number(args[1]) : undefined;
-    if (_.isUndefined(bet) || bet <= 0  || bet > this.userBalance - 0.004) {
+    if (_.isUndefined(bet) || bet <= 0 || bet > this.userBalance - 0.004) {
       // Bet must be a positive number that's less than the user's balance.
       this.dispatch(thunks.setLoading(false));
       throw ApiError.badBet();
@@ -585,11 +548,11 @@ if (escrow && flip_payer)
     const vrf: any = await getVRF(this.wallet.publicKey.toBase58());
     //Throw error if no VRF
     if (!vrf || !vrf.id) {
-      this.log("No VRF Available")
+      this.log('No VRF Available');
       this.dispatch(thunks.setResult({ status: 'error' }));
-      return
+      return;
     }
-    console.info("VRF used is: ", vrf.id)
+    console.info('VRF used is: ', vrf.id);
     const DEFAULT_STATE_BUMP = process.env.REACT_APP_NETWORK === 'devnet' ? 255 : 249;
     const request = await user
       .placeBetReq(
@@ -597,37 +560,35 @@ if (escrow && flip_payer)
           TOKENMINT,
           gameType: this.gameMode,
           userGuess: guess,
-          betAmount: new anchor.BN(bet * LAMPORTS_PER_SOL),
+          betAmount: new anchor.BN(bet * (Math.pow(10, tokenData?.decimals||9))),
           switchboardTokenAccount: undefined,
         },
         this.wallet.publicKey,
         new PublicKey(
           vrf
             ? vrf.id
-          :
-          process.env.REACT_APP_NETWORK === 'devnet'
+            : process.env.REACT_APP_NETWORK === 'devnet'
             ? '4V4hFcswusaQ9tC5CJekc5YqraNQw4QxBDiSbPLDF4k5'
             : '8fGps8aCBrkNguLHt9SKHwNvtg7UeTH6MvVQ5y8dDySs'
         ),
-        vrf?.permission_bump ||
-        255,
-        vrf?.state_bump ||
-        DEFAULT_STATE_BUMP,
+        vrf?.permission_bump || 255,
+        vrf?.state_bump || DEFAULT_STATE_BUMP,
         this.userTokenBalance
       )
       .catch((err) => {
         this.dispatch(thunks.setResult({ status: 'error' }));
         console.error(err, 'err creating bet req');
       });
-    if (request) await this.packSignAndSubmit(request, 'userBet');
-    else {
+    if (request) {
+      await this.packSignAndSubmit(request, 'Waiting for result...', 'userBet');
+    } else {
       this.dispatch(thunks.setResult({ status: 'error' }));
     }
   };
-
-  private packSignAndSubmit = async (request: TransactionObject, id?: string) => {
+  private packSignAndSubmit = async (request: TransactionObject, message:string, id: string) => {
     const program = await this.program;
-    const blockhash = await program.provider.connection.getLatestBlockhash();
+    const connection = (await this.program).provider.connection;
+    const blockhash = await program.provider.connection.getLatestBlockhash('finalized');
     const sign = request.sign(blockhash, request.signers);
     const signedTxs = await this.wallet.signAllTransactions([sign]).catch((e) => {
       this.dispatch(thunks.setResult({ status: 'error' }));
@@ -651,25 +612,43 @@ if (escrow && flip_payer)
       }
       for (const tx of signedTxs) {
         const serialTx = tx.serialize();
-        await program.provider.connection
-          .sendRawTransaction(serialTx, { skipPreflight: false })
-          .then((sig) => {
+        await connection
+          .sendRawTransaction(serialTx, { skipPreflight: false, preflightCommitment: 'finalized' })
+          .then(async (sig) => {
             console.info(sig, ' tx');
-            if (id === 'userBet')
-            {
-              this.dispatch(thunks.setLoading(false));
-              this.dispatch(thunks.log({ message: 'Waiting for Tx confirmation... ', severity: Severity.Success }));
+            
+            this.dispatch(thunks.log({ message: 'Waiting for Tx confirmation ...' + sig.slice(40), severity: Severity.Success }));
+            const strategy: TransactionConfirmationStrategy = {
+              signature: sig,
+              blockhash: blockhash.blockhash,
+              lastValidBlockHeight: blockhash.lastValidBlockHeight
             }
-            else if (id==="collectReward") {
-              this.dispatch(thunks.setLoading(false));
-              this.dispatch(thunks.log({ message: 'Successfully claimed funds. ', severity: Severity.Success }));
-              this.dispatch(thunks.setResult({ status: 'claimed' }));
-              }
-            else {
-              this.dispatch(thunks.log({ message: 'Tx sent successfully. ', severity: Severity.Success }));
-
-              this.dispatch(thunks.setLoading(false));
-            }
+            await connection
+              .confirmTransaction(strategy)
+              .then((res) => {
+                console.log(res.value, 'TX Status')
+                if (!res.value.err) {
+                  this.dispatch(thunks.log({ message, severity: Severity.Success }));
+                  if (id === 'collectReward') {
+                    this.dispatch(thunks.setResult({ status: 'claimed' }));
+                  }                  
+                  this.dispatch(thunks.setLoading(false));
+                }
+              })
+              .catch((e) => {
+                if (id !== 'collectReward') this.dispatch(thunks.setResult({ status: 'error' }));
+                this.dispatch(thunks.setLoading(false));
+                if (e instanceof anchor.web3.SendTransactionError) {
+                  const anchorError = e.logs ? anchor.AnchorError.parse(e.logs) : null;
+                  if (anchorError) {
+                    console.error(anchorError);
+                    throw ApiError.anchorError(anchorError);
+                  } else {
+                    console.error(e);
+                    throw ApiError.general('An error occurred while sending transaction.');
+                  }
+                }
+              });
           })
           .catch((e) => {
             this.dispatch(thunks.setResult({ status: 'error' }));
@@ -682,7 +661,6 @@ if (escrow && flip_payer)
               } else {
                 console.error(e);
                 throw ApiError.general('An error occurred while sending transaction.');
-                // throw ApiError.sendTransactionError(e.message);
               }
             }
           });
@@ -701,6 +679,7 @@ if (escrow && flip_payer)
       this.dispatch(thunks.setUserVaultBalance(account ? account.lamports / LAMPORTS_PER_SOL : undefined));
     };
     const onTokenAccountChange = (account: anchor.web3.AccountInfo<Buffer> | null) => {
+      const tokenData = tokenInfoMap.get(this.tokenMint.toBase58())
       if (!account) {
         this.dispatch(
           thunks.setUserBalance({
@@ -718,19 +697,22 @@ if (escrow && flip_payer)
       }
       const rawAccount = spl.AccountLayout.decode(account.data);
       if (Number(rawAccount?.amount?.toString()) > 0)
+      {
         this.dispatch(
           thunks.setUserBalance({
-            token: rawAccount.amount ? Number(rawAccount.amount) / RIBS_PER_RACK : undefined,
+            token: rawAccount.amount ? Number(rawAccount.amount) / (Math.pow(10, tokenData?.decimals||9)) : undefined,
           })
         );
+      }
     };
 
     // Grab initial values.
     const program = await this.program;
     const user = await this.user;
-    const rewardAddress = this.tokenMint.toBase58() === "So11111111111111111111111111111111111111112" ?
-      user?.publicKey:
-      await spl.getAssociatedTokenAddress(this.tokenMint, this.wallet.publicKey, true);
+    const rewardAddress =
+      this.tokenMint.toBase58() === 'So11111111111111111111111111111111111111112'
+        ? user?.publicKey
+        : await spl.getAssociatedTokenAddress(this.tokenMint, this.wallet.publicKey, true);
     // const accountInfo = await spl.getAccount(program.provider.connection, rewardAddress).catch((err) => console.error(err));
 
     // const rewardAddress =
@@ -738,28 +720,24 @@ if (escrow && flip_payer)
     await program.provider.connection.getAccountInfo(rewardAddress).then(onTokenAccountChange);
     await program.provider.connection.getAccountInfo(user.publicKey).then(onUserVaultAccountChange);
 
-    
-
     const [escrow] = anchor.utils.publicKey.findProgramAddressSync(
       [Buffer.from('ESCROWSTATESEED'), this.wallet.publicKey.toBytes(), this.tokenMint.toBytes()],
       program.programId
     );
 
-    
-      if (escrow)
-      {
-        const accountInfo = await program.provider.connection.getParsedAccountInfo(
-          escrow
-        ).catch((err) => console.error(err));
-        //@ts-ignore
-        const bal = Number(accountInfo.value.data.parsed.info.tokenAmount.amount);
-        this.dispatch(
-          thunks.setTokenEscrow({
-            publicKey: escrow?.toBase58(),
-            balance: bal,
-          })
-        );
-      }
+    if (escrow) {
+      const accountInfo = await program.provider.connection
+        .getParsedAccountInfo(escrow)
+        .catch((err) => console.error(err));
+      //@ts-ignore
+      const bal = Number(accountInfo?.value?.data?.parsed?.info?.tokenAmount.amount||0);
+      this.dispatch(
+        thunks.setTokenEscrow({
+          publicKey: escrow?.toBase58(),
+          balance: bal,
+        })
+      );
+    }
     // Listen for account changes.
     this.accountChangeListeners.push(
       ...[
@@ -768,16 +746,14 @@ if (escrow && flip_payer)
         program.provider.connection.onAccountChange(user.publicKey, onUserVaultAccountChange),
       ]
     );
-
     // Watch user object
-    await user.watch(
+    user.watch(
       /* betPlaced= */ async (event) => {
         const bet = event.betAmount.div(new anchor.BN(RIBS_PER_RACK));
         await this.log(`BetPlaced: User bet ${bet} on number ${event.guess}`);
         await this.log(`Awaiting result from vrf...`);
       },
       /* betSettled= */ async (event) => {
-        console.log(event, ' bet settled')
         let multiplier = [
           1.0, 0.3, 1.0, 0.3, 0.3, 1.0, 0.3, 1.0, 0.5, 1.0, 1.0, 0.0, 0.8, 0.3, 2.0, 0.3, 1.0, 0.3, 0.5, 0.8, 2.0, 1.0,
           0.5, 2.0, 1.0, 1.0, 0.5, 0.3, 0.8, 0.3, 0.3, 0.0, 0.8, 0.3, 0.5, 0.0, 0.5, 1.0, 0.0, 0.5, 1.0, 0.3, 0.0, 0.3,
@@ -833,6 +809,10 @@ if (escrow && flip_payer)
         } else event.userWon = false;
         !event.userWon && this.log(`You missed the plushie, please try again`, Severity.Error);
 
+        console.log({result: event.result.toString(),
+            change: event.escrowChange.toString(),
+            multiplier: multiplier[Number(event.result.toString())].toFixed(1),
+            userWon: event.userWon}, 'result')
         this.dispatch(
           thunks.setResult({
             status: 'success',
@@ -943,7 +923,7 @@ export const ApiProvider: React.FC<React.PropsWithChildren> = (props) => {
   // If a new wallet has been set, dispose of the old api object and set the new wallet state.
   React.useEffect(() => {
     if (wallet !== stateWallet) api.dispose().then(() => setStateWallet(wallet));
-    if (mint !== tokenmint) api.dispose().then(() => setMint(tokenmint));
+    // if (mint !== tokenmint) api.dispose().then(() => setMint(tokenmint));
   }, [api, wallet, stateWallet, tokenmint, mint]);
 
   React.useEffect(() => {
