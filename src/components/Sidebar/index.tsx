@@ -486,7 +486,7 @@ const Play = ({ amount, setAmount, api, balances, loading, result, wait, userVau
           ) : (
             <>
               <div>
-                <p className="font-extrabold text-center text-xs pt-2">PLAY with {token?.symbol}</p>
+                <p className="font-extrabold text-center text-xs">PLAY with {token?.symbol}</p>
                 <hr className="my-2 border-black" />
               </div>
               <div className="flex flex-wrap text-3xl italic justify-between bg-red-00 w-full">
