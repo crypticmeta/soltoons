@@ -285,7 +285,7 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
       <div className="part3 h-[35%] 2xl:h-[35%] bg-brand_yellow rounded-3xl border-4 border-black text-sm p-3 flex flex-col justify-between">
         {!loading && userAccountExists ? (
           <>
-            {console.log('loading user exists part')}
+          
             {!oldTokenEscrow ? (
               <>
                 {step === 0 &&
@@ -327,7 +327,7 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
           </>
         ) : (
           <>
-            {console.log("loading escrow doesnt exists part")}
+           
             {loading ? (
               <div className="center h-full text-white border-white">
                 <CircularProgress color="inherit" />

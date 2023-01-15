@@ -352,7 +352,6 @@ export class User {
     }
     if(escrow && flip_payer)
     {
-      console.log(escrow.toBase58(), 'escrow')
       userBetIxn = await this.program.methods
       .userBet({
         gameType: params.gameType,
