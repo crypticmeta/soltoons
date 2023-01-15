@@ -489,7 +489,7 @@ const Play = ({ amount, setAmount, api, balances, loading, result, wait, userVau
                 <p className="font-extrabold text-center text-xs">PLAY with {token?.symbol}</p>
                 <hr className="my-2 border-black" />
               </div>
-              <div className="flex flex-wrap text-3xl italic justify-between bg-red-00 w-full">
+              <div className="flex flex-wrap  italic justify-between bg-red-00 w-full ">
                 {token?.bets?.map((item: number) => (
                   <div
                     className={`w-${token?.bets?.length === 4 ? 5 : 4}/12 center bg-red-00 my-1 p-1`}
@@ -497,7 +497,7 @@ const Play = ({ amount, setAmount, api, balances, loading, result, wait, userVau
                     key={item}
                   >
                     <p
-                      className={`text-sm w-full p-1 text-center ${
+                      className={`text-xs w-full p-1 text-center ${
                         amount === item ? 'bg-yellow-400' : 'bg-yellow-100'
                       } hover:bg-yellow-600 cursor-pointer`}
                     >
