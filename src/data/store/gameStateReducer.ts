@@ -25,6 +25,7 @@ export interface GameState {
   result: any;
   vaultBalance: number;
   userVaultBalance: number;
+  houseVault: string;
   tokenmint: string;
   discount: any,
   tokenEscrow: {
@@ -42,6 +43,7 @@ const initialState: GameState = {
   gameMode: GameTypeValue.CLAW,
   tokenmint: localStorage.getItem("tokenMint") || "So11111111111111111111111111111111111111112",
   discount: {},
+  houseVault: "",
   tokenEscrow: {
     publicKey: "",
     isInitialized: false,
@@ -104,8 +106,20 @@ const gameStateSlice = createSlice({
     setDiscount: (state: GameState, action: PayloadAction<any>) => {
       state.discount = action.payload
     },
+    setHouseVault: (state: GameState, action: PayloadAction<string>) => {
+      state.houseVault = action.payload
+    },
   },
 });
 
-export const { setUserBalance, setLoading, setUser, setResult, setVaultBalance, setUserVaultBalance, setTokenmint, setTokenEscrow, setDiscount } = gameStateSlice.actions;
+export const { setUserBalance,
+  setLoading,
+  setUser,
+  setResult,
+  setVaultBalance,
+  setUserVaultBalance,
+  setTokenmint,
+  setTokenEscrow,
+  setDiscount,
+  setHouseVault} = gameStateSlice.actions;
 export default gameStateSlice.reducer;

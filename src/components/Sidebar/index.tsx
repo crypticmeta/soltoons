@@ -236,10 +236,9 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
     const tokenEscrowHasClaimableBalance = tokenmint === wsol ? userVaultBal > 0.03552384 : tokenEscrow.balance > 0; //should have claimable balance to claim reward
 
     //@ts-ignore
-    const escrowUpdated =
-      localStorage.getItem(localStorage.getItem('oldTokenMint') + wallet.publicKey?.toBase58() + 'Escrow') ===
-      tokenEscrow.publicKey;
-    const mintUpdated = localStorage.getItem('oldTokenMint') === token;
+    const escrowUpdated = localStorage.getItem(localStorage.getItem('oldTokenMint') + wallet.publicKey?.toBase58() + 'Escrow') ===
+      tokenEscrow.publicKey||false;
+    const mintUpdated = localStorage.getItem('oldTokenMint') === token||false;
     // console.log(escrowUpdated, ' Escrow Updated?')
     // console.log(mintUpdated, ' Mint Updated?');
     if (

@@ -413,16 +413,32 @@ class ApiState implements PrivateApiInterface {
 
   // get vault info
   private Vault = async () => {
-    const TOKENMINT = this.tokenMint;
-    this.dispatch(thunks.setLoading(true));
-    this.log('Getting vault info...');
-    const program = await this.program;
-    const house = await House.load(program, TOKENMINT);
-    // const associatedTokenAcc = await getAssociatedTokenAddress(TOKENMINT, payerPubkey);
-    const data = await program.provider.connection.getBalance(house.publicKey);
-    if (data && data > 0) {
-      this.dispatch(thunks.setVaultBalance(data / LAMPORTS_PER_SOL));
-      this.log('Vault Balance Loaded');
+    const tempMint = localStorage?.getItem('tokenMint')||""
+    if (tempMint) {
+      const TOKENMINT = new PublicKey(tempMint);
+      const tokenData = tokenInfoMap.get(TOKENMINT.toBase58());
+      this.dispatch(thunks.setLoading(true));
+      this.log('Getting vault info...');
+      const program = await this.program;
+      const house = await House.load(program, TOKENMINT);
+      if (tokenData && tokenData?.symbol === 'SOL') {
+        const data = await program.provider.connection.getBalance(house.publicKey);
+        if (data && data > 0) {
+          this.dispatch(thunks.setVaultBalance(data / LAMPORTS_PER_SOL));
+          this.dispatch(thunks.setHouseVault(house.publicKey.toBase58()));
+          this.log('Vault Balance Loaded');
+        }
+      } else {
+        const associatedTokenAcc = await getAssociatedTokenAddress(TOKENMINT, house.publicKey, true);
+        this.dispatch(thunks.setHouseVault(associatedTokenAcc.toBase58()));
+        const accountInfo = await spl
+          .getAccount(program.provider.connection, associatedTokenAcc)
+          .catch((err) => console.error(err));
+        const amount = Number(accountInfo?.amount.toString() || "0");
+        if (amount) {
+          this.dispatch(thunks.setVaultBalance(amount / Math.pow(10, tokenData?.decimals||9)));
+        }
+      }
     }
   };
 
