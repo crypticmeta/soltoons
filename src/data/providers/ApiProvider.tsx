@@ -601,7 +601,7 @@ class ApiState implements PrivateApiInterface {
     const blockhash = await program.provider.connection.getLatestBlockhash('finalized');
     const sign = request.sign(blockhash, request.signers);
     const signedTxs = await this.wallet.signAllTransactions([sign]).catch((e) => {
-      this.dispatch(thunks.setResult({ status: 'error' }));
+      if (id !== 'collectReward') this.dispatch(thunks.setResult({ status: 'error' }));
       this.log('User Rejected to sign Tx', Severity.Error);
       this.dispatch(thunks.setLoading(false));
       if (e instanceof anchor.web3.SendTransactionError) {
@@ -828,15 +828,15 @@ class ApiState implements PrivateApiInterface {
         ];
         this.log('Received Result.', Severity.Normal);
 
-        if (multiplier[Number(event.result.toString())] > 1) {
+        if (multiplier[Number(event.result.toString())] > 0) {
           event.userWon = true;
         } else event.userWon = false;
         !event.userWon && this.log(`You missed the plushie, please try again`, Severity.Error);
 
-        console.log({result: event.result.toString(),
-            change: event.escrowChange.toString(),
-            multiplier: multiplier[Number(event.result.toString())].toFixed(1),
-            userWon: event.userWon}, 'result')
+        // console.log({result: event.result.toString(),
+        //     change: event.escrowChange.toString(),
+        //     multiplier: multiplier[Number(event.result.toString())].toFixed(1),
+        //     userWon: event.userWon}, 'result')
         this.dispatch(
           thunks.setResult({
             status: 'success',

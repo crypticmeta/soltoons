@@ -40,9 +40,9 @@ function LinearProgressWithLabel(props: LinearProgressProps & { value: number })
 function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal }) {
   const wallet = useWallet();
   const {connection} = useConnection();
-    const [playLoading, stopLoading] = useSound('/assets/audio/loading.mp3', {
-      volume: 0.7,
-    });
+  const [playLoading, stopLoading] = useSound('/assets/audio/loading.mp3', {
+    volume: 0.7,
+  });
   const [playLose] = useSound('/assets/audio/error.mp3', {
     volume: 1,
   });
@@ -393,11 +393,11 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
               <div className="flex flex-col">
                 <p className="text-xl text-center font-extrabold pb-6 2xl:text-3xl">
                   {Number(result?.multiplier) >= 1
-                    ? `Congrats! You Won ${result?.change / Math.pow(10, tokenInfo?.decimals || 9)>0?convertToShortForm(result?.change / Math.pow(10, tokenInfo?.decimals || 9)):result?.change / Math.pow(10, tokenInfo?.decimals || 9)} ${
+                    ? `Congrats! You Won ${result?.change / Math.pow(10, tokenInfo?.decimals || 9)>10000?convertToShortForm(result?.change / Math.pow(10, tokenInfo?.decimals || 9)):result?.change / Math.pow(10, tokenInfo?.decimals || 9)} ${
                         tokenInfo?.symbol
                       }`
                     : Number(result?.multiplier) < 1 && Number(result?.multiplier) > 0
-                    ? `You won ${result?.change / Math.pow(10, tokenInfo?.decimals || 9)>0?convertToShortForm(result?.change / Math.pow(10, tokenInfo?.decimals || 9)):result?.change / Math.pow(10, tokenInfo?.decimals || 9)} ${tokenInfo?.symbol}`
+                    ? `Collect ${result?.change / Math.pow(10, tokenInfo?.decimals || 9)>10000?convertToShortForm(result?.change / Math.pow(10, tokenInfo?.decimals || 9)):result?.change / Math.pow(10, tokenInfo?.decimals || 9)} ${tokenInfo?.symbol}`
                     : 'You Lost'}
                 </p>
 

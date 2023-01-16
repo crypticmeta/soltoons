@@ -348,12 +348,10 @@ export class User {
 
     // ******************* NFT Accounts ***************************
 
-    console.log("getting nft accounts")
     let nftATA = null;
 
     const discount_mint = gameState?.discount?.mint || null;
     if (discount_mint && wallet) {
-      console.log(discount_mint, 'discount mint')
       const [associatedTokenAcc] = PublicKey.findProgramAddressSync(
         [
           wallet.toBuffer(),
@@ -366,7 +364,6 @@ export class User {
         nftATA = associatedTokenAcc
       }
     }
-    console.log("got associatedTokenAcc ", nftATA)
     const METADATA_PROGRAM = new PublicKey('metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s');
 
     const [metadata_account_pda, _] = await PublicKey.findProgramAddress(
@@ -377,7 +374,6 @@ export class User {
       ],
       METADATA_PROGRAM
     );
-    console.log("got nft accounts")
     // ******************* Instructions ***************************
     let userBetIxn;
     let ixns;

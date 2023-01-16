@@ -21,8 +21,11 @@ import useSound from 'use-sound';
       const [playWin, stopWin] = useSound('/assets/audio/win.mp3', {
         volume: 1,
       });
+       const [playNeutral] = useSound('/assets/audio/reward.m4a', {
+         volume: 0.7,
+       });
       const [playSlide, stopSlide] = useSound('/assets/audio/slide.mp3', {
-        volume: 1,
+        volume: 0.7,
       });
       //rive
       const STATE_MACHINE_NAME = 'State Machine 1';
@@ -37,7 +40,7 @@ import useSound from 'use-sound';
       //api
 
       const api = hooks.useApi();
-      const [x, setX] = useState(0);
+      const [x, setX] = useState(30);
       const [styleX, setStyleX] = useState({ transform: 'translateX(0%)', zIndex: 1, animationName: 'none' });
       const [y, setY] = useState(0);
       const [styleY, setStyleY] = useState({ transform: 'translateY(0%)', animationName: 'none' });
@@ -180,7 +183,8 @@ useEffect(() => {
           setStyleReward({ animationName: 'freefall' });
           setStyleRewardItem({ animationName: 'freefallItem' });
           setTimeout(() => {
-             if (result?.userWon) playWin();
+            if (result?.userWon && Number(result.multiplier) >= 1) playWin();
+            if (result?.userWon && Number(result.multiplier) < 1) playNeutral();
             setStep(4);
           }, 2000);
         } else if (step === 4 && !result?.userWon) {
