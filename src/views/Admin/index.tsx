@@ -58,6 +58,7 @@ function Admin() {
     if (token !== tokenmint) {
       dispatch(thunks.setTokenmint(token));
     }
+    setTokenInfo(tokenInfoMap.get(token))
   }, [dispatch, token, tokenmint]);
   return (
     <div className="w-full h-screen center">

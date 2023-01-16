@@ -82,7 +82,8 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
   const tokenmint = useSelector((store: Store) => store.gameState.tokenmint);
   const user = useSelector((store: Store) => store.gameState.user);
   const result = useSelector((store: Store) => store.gameState.result);
-  const userVaultBal = useSelector((store: Store) => store.gameState.userVaultBalance);
+  const userVaultBal = useSelector((store: Store) => store.gameState.userVaultBalance);  
+  const houseVaultBal = useSelector((store: Store) => store.gameState.vaultBalance);
   const [userAccountExists, setUserAccountExists] = useState(false);
   const [userEscrowExists, setUserEscrowExists] = useState(true);
   const [wait, setWait] = useState(0);
@@ -147,6 +148,7 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
   //
   useEffect(() => {
     if (tokenmint && tokenInfoMap.get(tokenmint)) {
+      api?.handleCommand('vault');
       setTokenInfo(tokenInfoMap.get(tokenmint));
       if (tokenInfoMap.get(tokenmint)?.bets.length) setAmount(tokenInfoMap.get(tokenmint)?.bets[0] || 0);
     }
@@ -368,6 +370,7 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
                 tokenInfo={tokenInfo}
                 escrow={tokenEscrow}
                 discountNft={discountNft}
+                houseVaultBal = {houseVaultBal}
               />
             </div>
           )}
@@ -549,7 +552,8 @@ const Play = ({
   userVaultBal,
   tokenInfo,
   escrow,
-  discountNft}:any) => {
+  discountNft,
+  houseVaultBal}: any) => {
   const isWsol = tokenInfo.address === wsol;
   const token = tokenInfo;
   //TODO: loading when play button pressed
@@ -580,7 +584,11 @@ const Play = ({
               <div className="flex flex-wrap  italic justify-between bg-red-00 w-full ">
                 {token?.bets?.map((item: number) => (
                   <button
-                    disabled={isWsol ? balances.sol < item : balances.token < item}
+                    disabled={
+                      isWsol
+                        ? balances.sol < item || houseVaultBal < item * 10
+                        : balances.token < item || houseVaultBal < item * 10
+                    }
                     className={`w-${token?.bets?.length === 4 ? 5 : 4}/12 center bg-red-00 my-1 p-1 `}
                     onClick={() => setAmount(Number(item))}
                     key={item}
@@ -591,10 +599,10 @@ const Play = ({
                       } hover:bg-yellow-600 cursor-pointer 
                         ${
                           isWsol
-                            ? balances.sol < item
+                            ? balances.sol < item || houseVaultBal < item * 10
                               ? ' bg-red-600 cursor-not-allowed '
                               : ''
-                            : balances.token < item
+                            : balances.token < item || houseVaultBal < item * 10
                             ? ' bg-red-600 cursor-not-allowed '
                             : ''
                         }
@@ -606,7 +614,7 @@ const Play = ({
                   </button>
                 ))}
               </div>
-              <div className='pt-6 md:pt-1 2xl:pt-6'>
+              <div className="pt-6 md:pt-1 2xl:pt-6">
                 <button
                   disabled={tokenInfo.address !== wsol && balances.token === 0}
                   onClick={() => {
@@ -659,7 +667,7 @@ const CreateEscrowAccount = ({ api, tokenmint, token }: any) => {
       }}
       className="center h-full text-lg"
     >
-      "Create Vault Account"
+      Create Vault Account
     </button>
   );
 };
