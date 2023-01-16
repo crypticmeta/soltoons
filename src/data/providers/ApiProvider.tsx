@@ -17,6 +17,7 @@ import { Severity } from '../../util/const';
 import { GameState, setLoading } from '../store/gameStateReducer';
 import { AnchorWallet, TransactionObject } from '@switchboard-xyz/solana.js';
 import {tokenInfoMap } from "../providers/tokenProvider"
+import { Mixpanel } from '../../util/Mixpanel';
 const truncatedPubkey = (pubkey: string) => {
   return `${pubkey.slice(0, 5)}...${pubkey.slice(-5)}`;
 };
@@ -48,7 +49,7 @@ const games: { [type: number]: { type: api.GameTypeEnum; prompt: string; minGues
   },
   [api.GameTypeValue.CLAW]: {
     type: api.GameTypeEnum.CLAW,
-    prompt: `CLAW: Ready To Play.`,
+    prompt: `Ready To Play.`,
     minGuess: 1,
     maxGuess: 6,
   },
@@ -251,8 +252,7 @@ class ApiState implements PrivateApiInterface {
 
   public handleCommand = async (command: string) => {
     try {
-      
-     this.dispatch(thunks.setLoading(true));
+      this.dispatch(thunks.setLoading(true));
       command = command.trim(); // Trim the initial command.
       if (command === ApiCommands.UserCreate) await this.createUserAccounts();
       // else if (command === ApiCommands.UserAirdrop) await this.userAirdrop();
@@ -296,13 +296,27 @@ class ApiState implements PrivateApiInterface {
     // Build out and sign transactions.
     const [userKey, userInitTxns] = await api.User.createReq(program, TOKENMINT, this.wallet.publicKey);
 
-    if (userInitTxns) await this.packSignAndSubmit(userInitTxns, "User account created successfully", 'userInit');
+    let tx: string[] = [];
+    if (userInitTxns) {
+      const signatures = await this.packSignAndSubmit(userInitTxns, 'User account created successfully', 'userInit');
+      tx = signatures;
+    }
 
     let retryCount = 5;
     while (retryCount) {
       const userState = await api.UserState.fetch(program.provider.connection, userKey);
       if (userState !== null) {
+        Mixpanel.identify(this.wallet.publicKey.toBase58());
         this.log('User Account Created Successfully', Severity.Normal);
+        Mixpanel.track('CreateUser', {
+          walletId: this.wallet.publicKey.toBase58(),
+          id: tx[0],
+          source: 'Soltoons Website',
+          network: process.env.REACT_APP_NETWORK,
+          userID: userState.toJSON().publicKey,
+          house: userState.house.toBase58(),
+          tx: [...tx]
+        });
         this.dispatch(thunks.setLoading(false));
         return (async () => {
           const pubkey = this.wallet.publicKey;
@@ -379,7 +393,22 @@ class ApiState implements PrivateApiInterface {
 
     const request = new TransactionObject(this.wallet.publicKey, ixns, []);
 
-    await this.packSignAndSubmit(request, "Draining Successfull",'drain');
+    
+    const tx = await this.packSignAndSubmit(request, 'Draining Successfull', 'drain');
+    if (tx?.length) {
+      Mixpanel.identify(this.wallet.publicKey.toBase58());
+      Mixpanel.track('HouseDrain', {
+        walletId: this.wallet.publicKey.toBase58(),
+        id: tx[0],
+        source: 'Soltoons Website',
+        network: process.env.REACT_APP_NETWORK,
+        mint: TOKENMINT.toBase58(),
+        house: house.publicKey.toBase58(),
+        houseVault: house.state.houseVault.toBase58(),
+        userATA: associatedTokenAcc.toBase58(),
+        tx: [...tx],
+      });
+    }
   };
 
   // get vault info
@@ -459,8 +488,25 @@ class ApiState implements PrivateApiInterface {
       }
       if (ixns.length) {
         const request = new TransactionObject(this.wallet.publicKey, ixns, []);
-        if (request) await this.packSignAndSubmit(request, "Reward Collected Successfully",'collectReward');
-        else {
+        if (request) {
+          const tx = await this.packSignAndSubmit(request, 'Reward Collected Successfully', 'collectReward');
+          if (tx?.length) {
+            Mixpanel.identify(this.wallet.publicKey.toBase58());
+            Mixpanel.track('CollectReward', {
+              walletId: this.wallet.publicKey.toBase58(),
+              id: tx[0],
+              source: 'Soltoons Website',
+              network: process.env.REACT_APP_NETWORK,
+              mint: TOKENMINT.toBase58(),
+              house: house.publicKey.toBase58(),
+              houseVault: house.state.houseVault.toBase58(),
+              user: user.publicKey.toBase58(),
+              escrow: escrow.toBase58(),
+              rewardAddress: flip_payer.toBase58(),
+              tx: [...tx],
+            });
+          }
+        } else {
         }
       }
     }
@@ -511,7 +557,23 @@ class ApiState implements PrivateApiInterface {
 
     const request = new TransactionObject(this.wallet.publicKey, ixns, []);
     if (request) {
-      await this.packSignAndSubmit(request, "Escrow Created Succesfully", 'CreateEscrow')
+      const tx = await this.packSignAndSubmit(request, 'Escrow Created Succesfully', 'CreateEscrow');
+      if (tx?.length) {
+         Mixpanel.identify(this.wallet.publicKey.toBase58());
+         Mixpanel.track('CreateEscrow', {
+           walletId: this.wallet.publicKey.toBase58(),
+           id: tx[0],
+           source: 'Soltoons Website',
+           network: process.env.REACT_APP_NETWORK,
+           mint: TOKENMINT.toBase58(),
+           house: house.publicKey.toBase58(),
+           houseVault: house.state.houseVault.toBase58(),
+           user: user.publicKey.toBase58(),
+           escrow: escrow.toBase58(),
+           rewardAddress: rewardAddress.toBase58(),
+           tx: [...tx],
+         });
+       }
     }
   };
 
@@ -522,11 +584,10 @@ class ApiState implements PrivateApiInterface {
     const TOKENMINT = this.tokenMint;
     const tokenData = tokenInfoMap.get(this.tokenMint.toBase58());
     const game = games[this.gameMode];
-    
+   
+
     this.log(`Building bet request...`);
     this.dispatch(thunks.setResult({ status: 'loading' }));
-
-   
 
     // Gather necessary programs.
     const user = await this.user; // Make sure that user is logged in and has accounts.
@@ -546,14 +607,13 @@ class ApiState implements PrivateApiInterface {
         // Bet must be a positive number that's less than the user's balance.
         this.dispatch(thunks.setLoading(false));
         throw ApiError.badBet();
-      }
-      else {
+      } else {
         if (_.isUndefined(bet) || bet <= 0 || bet > this.userTokenBalance) {
           // Bet must be a positive number that's less than the user's balance.
           this.dispatch(thunks.setLoading(false));
           throw ApiError.badBet();
         }
-    }
+      }
 
     const vrf: any = await getVRF(this.wallet.publicKey.toBase58());
     //Throw error if no VRF
@@ -570,7 +630,7 @@ class ApiState implements PrivateApiInterface {
           TOKENMINT,
           gameType: this.gameMode,
           userGuess: guess,
-          betAmount: new anchor.BN((bet||0) * (Math.pow(10, tokenData?.decimals||9))),
+          betAmount: new anchor.BN((bet || 0) * Math.pow(10, tokenData?.decimals || 9)),
           switchboardTokenAccount: undefined,
         },
         this.wallet.publicKey,
@@ -583,20 +643,40 @@ class ApiState implements PrivateApiInterface {
         ),
         vrf?.permission_bump || 255,
         vrf?.state_bump || DEFAULT_STATE_BUMP,
-        this._gameState||null
+        this._gameState || null
       )
       .catch((err) => {
-        this.dispatch(thunks.setLoading(false))
+        this.dispatch(thunks.setLoading(false));
         this.dispatch(thunks.setResult({ status: 'error' }));
         console.error(err, 'err creating bet req');
       });
     if (request) {
-      await this.packSignAndSubmit(request, 'Waiting for result...', 'userBet');
+      const tx = await this.packSignAndSubmit(request, 'Waiting for result...', 'userBet');
+       const house = House.load(await this.program, TOKENMINT)
+      if (tx?.length) {
+         Mixpanel.identify(this.wallet.publicKey.toBase58());
+         Mixpanel.track('PlayGame', {
+           walletId: this.wallet.publicKey.toBase58(),
+           id: tx[0],
+           source: 'Soltoons Website',
+           network: process.env.REACT_APP_NETWORK,
+           mint: TOKENMINT.toBase58(),
+           discount: this._gameState?.discount,
+           house: (await house).publicKey.toBase58(),
+           houseVault: (await house).state.houseVault.toBase58(),
+           user: user.publicKey.toBase58(),
+           vrf: vrf.id,
+           token: tokenData?.symbol,
+           gameType: this.gameMode,
+           bet: bet,
+           tx: [...tx],
+         });
+       }
     } else {
       this.dispatch(thunks.setResult({ status: 'error' }));
     }
   };
-  private packSignAndSubmit = async (request: TransactionObject, message:string, id: string) => {
+  private packSignAndSubmit = async (request: TransactionObject, message: string, id: string): Promise<string[]> => {
     const program = await this.program;
     const connection = (await this.program).provider.connection;
     const blockhash = await program.provider.connection.getLatestBlockhash('finalized');
@@ -617,6 +697,7 @@ class ApiState implements PrivateApiInterface {
         }
       }
     });
+    let txSign: string[] = [];
     if (signedTxs) {
       if (id === 'userBet') {
         this.dispatch(thunks.setResult({ status: 'waiting' }));
@@ -627,13 +708,16 @@ class ApiState implements PrivateApiInterface {
           .sendRawTransaction(serialTx, { skipPreflight: true, preflightCommitment: 'finalized' })
           .then(async (sig) => {
             console.info(sig, ' tx');
-            
-            this.dispatch(thunks.log({ message: 'Waiting for Tx confirmation ...' + sig.slice(40), severity: Severity.Success }));
+            txSign.push(sig);
+
+            this.dispatch(
+              thunks.log({ message: 'Waiting for Tx confirmation ...' + sig.slice(40), severity: Severity.Success })
+            );
             const strategy: TransactionConfirmationStrategy = {
               signature: sig,
               blockhash: blockhash.blockhash,
-              lastValidBlockHeight: blockhash.lastValidBlockHeight
-            }
+              lastValidBlockHeight: blockhash.lastValidBlockHeight,
+            };
             await connection
               .confirmTransaction(strategy)
               .then((res) => {
@@ -644,13 +728,12 @@ class ApiState implements PrivateApiInterface {
                     this.dispatch(thunks.setResult({ status: 'claimed' }));
                   }
                   if (id !== 'userBet') this.dispatch(thunks.setLoading(false));
-                }
-                else {
-                   this.log('Tx Error...', Severity.Error);
+                } else {
+                  this.log('Tx Error...', Severity.Error);
                 }
               })
               .catch((e) => {
-                this.log("Tx failed...", Severity.Error)
+                this.log('Tx failed...', Severity.Error);
                 if (id !== 'collectReward') this.dispatch(thunks.setResult({ status: 'error' }));
                 this.dispatch(thunks.setLoading(false));
                 if (e instanceof anchor.web3.SendTransactionError) {
@@ -668,7 +751,7 @@ class ApiState implements PrivateApiInterface {
           .catch((e) => {
             if (id !== 'collectReward') this.dispatch(thunks.setResult({ status: 'error' }));
             // this.dispatch(thunks.setResult({ status: 'error' }));
-            this.log("Tx Error...", Severity.Error)
+            this.log('Tx Error...', Severity.Error);
             this.dispatch(thunks.setLoading(false));
             if (e instanceof anchor.web3.SendTransactionError) {
               const anchorError = e.logs ? anchor.AnchorError.parse(e.logs) : null;
@@ -683,6 +766,7 @@ class ApiState implements PrivateApiInterface {
           });
       }
     }
+    return txSign;
   };
 
   /**
@@ -690,28 +774,32 @@ class ApiState implements PrivateApiInterface {
    */
   private watchUserAccounts = async () => {
     const onSolAccountChange = (account: anchor.web3.AccountInfo<Buffer> | null) => {
-      this.dispatch(thunks.setUserBalance({ sol: account ? account.lamports / LAMPORTS_PER_SOL : undefined, token: this.userTokenBalance }));
+      this.dispatch(
+        thunks.setUserBalance({
+          sol: account ? account.lamports / LAMPORTS_PER_SOL : undefined,
+          token: this.userTokenBalance,
+        })
+      );
     };
     const onUserVaultAccountChange = (account: anchor.web3.AccountInfo<Buffer> | null) => {
       this.dispatch(thunks.setUserVaultBalance(account ? account.lamports / LAMPORTS_PER_SOL : undefined));
     };
     const onTokenAccountChange = (account: anchor.web3.AccountInfo<Buffer> | null) => {
-      const tokenData = tokenInfoMap.get(this.tokenMint.toBase58())
+      const tokenData = tokenInfoMap.get(this.tokenMint.toBase58());
       if (!account) {
         this.dispatch(
           thunks.setUserBalance({
             sol: this.userBalance,
-            token: undefined||0,
+            token: undefined || 0,
           })
         );
         return;
       } else if (account?.data?.length === 0) {
-        this.dispatch(thunks.setUserBalance({ sol: this.userBalance, token: undefined||0 }));
+        this.dispatch(thunks.setUserBalance({ sol: this.userBalance, token: undefined || 0 }));
         return;
       }
       const rawAccount = spl.AccountLayout.decode(account.data);
-      if (Number(rawAccount?.amount?.toString()) > 0)
-      {
+      if (Number(rawAccount?.amount?.toString()) > 0) {
         this.dispatch(
           thunks.setUserBalance({
             sol: this.userBalance,
@@ -728,13 +816,13 @@ class ApiState implements PrivateApiInterface {
       this.tokenMint.toBase58() === 'So11111111111111111111111111111111111111112'
         ? user?.publicKey
         : await spl.getAssociatedTokenAddress(this.tokenMint, this.wallet.publicKey, true);
-    
-     this.dispatch(
-       thunks.setUserBalance({
-         sol: this.userBalance,
-         token:  0,
-       })
-     );
+
+    this.dispatch(
+      thunks.setUserBalance({
+        sol: this.userBalance,
+        token: 0,
+      })
+    );
     // const accountInfo = await spl.getAccount(program.provider.connection, rewardAddress).catch((err) => console.error(err));
 
     // const rewardAddress =
@@ -752,13 +840,13 @@ class ApiState implements PrivateApiInterface {
         .getParsedAccountInfo(escrow)
         .catch((err) => console.error(err));
       //@ts-ignore
-      const bal = Number(accountInfo?.value?.data?.parsed?.info?.tokenAmount.amount || 0);   
-      
+      const bal = Number(accountInfo?.value?.data?.parsed?.info?.tokenAmount.amount || 0);
+
       this.dispatch(
         thunks.setTokenEscrow({
           publicKey: escrow?.toBase58(),
           //@ts-ignore
-          isInitialized: accountInfo?.value?.data?.parsed?.info?.state==="initialized"? true : false,
+          isInitialized: accountInfo?.value?.data?.parsed?.info?.state === 'initialized' ? true : false,
           balance: bal,
         })
       );
@@ -778,7 +866,7 @@ class ApiState implements PrivateApiInterface {
         await this.log(`BetPlaced: User bet ${bet} on number ${event.guess}`);
         await this.log(`Awaiting result from vrf...`);
       },
-      /* betSettled= */ async (event) => {
+      /* betSettled= */ async (event, signature) => {
         let multiplier = [
           1.0, 0.3, 1.0, 0.3, 0.3, 1.0, 0.3, 1.0, 0.5, 1.0, 1.0, 0.0, 0.8, 0.3, 2.0, 0.3, 1.0, 0.3, 0.5, 0.8, 2.0, 1.0,
           0.5, 2.0, 1.0, 1.0, 0.5, 0.3, 0.8, 0.3, 0.3, 0.0, 0.8, 0.3, 0.5, 0.0, 0.5, 1.0, 0.0, 0.5, 1.0, 0.3, 0.0, 0.3,
@@ -847,6 +935,24 @@ class ApiState implements PrivateApiInterface {
             userWon: event.userWon,
           })
         );
+        if (signature) {
+          Mixpanel.identify(this.wallet.publicKey.toBase58());
+          Mixpanel.track('BetSettled', {
+            walletId: this.wallet.publicKey.toBase58(),
+            id: signature,
+            source: 'Soltoons Website',
+            network: process.env.REACT_APP_NETWORK,
+            status: 'success',
+            result: event.result.toString(),
+            change: event.escrowChange.toString(),
+            multiplier: multiplier[Number(event.result.toString())].toFixed(1),
+            userWon: event.userWon,
+            bet: Number(event.betAmount),
+            roundId: event.roundId,
+            user: event.user.toBase58(),
+            tx: [signature],
+          });
+        }
 
         this.dispatch(thunks.setLoading(false));
         // await this.playPrompt();

@@ -516,7 +516,7 @@ export class User {
   }
   watch(
     betPlaced: (event: UserBetPlaced) => Promise<void> | void,
-    betSettled: (event: UserBetSettled) => Promise<void> | void, user:any
+    betSettled: (event: UserBetSettled, signature: string) => Promise<void> | void, user:any
   ) {
     this._programEventListeners.push(
       this.program.addEventListener(
@@ -546,8 +546,9 @@ export class User {
           console.info(signature, ' bet settled tx')
           await betSettled({
             ...event,
-            gameType: convertGameType(event.gameType),
-          });
+            gameType: convertGameType(event.gameType)
+          },
+            signature);
         }
       )
     );
