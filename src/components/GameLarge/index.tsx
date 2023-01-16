@@ -16,16 +16,16 @@ import useSound from 'use-sound';
       '10.0': { img: '/assets/images/snake.png' },
     };
     //@ts-ignore
-    function Game({ amount, setAmount, step, setStep , handleModalOpen }) {
+    function Game({ amount,  step, setStep , handleModalOpen, sound }) {
       //sound
       const [playWin, stopWin] = useSound('/assets/audio/win.mp3', {
-        volume: 1,
+        volume: sound?1:0,
       });
        const [playNeutral] = useSound('/assets/audio/reward.m4a', {
-         volume: 0.7,
+         volume: sound?0.7:0,
        });
       const [playSlide, stopSlide] = useSound('/assets/audio/slide.mp3', {
-        volume: 0.7,
+        volume: sound?0.7:0,
       });
       //rive
       const STATE_MACHINE_NAME = 'State Machine 1';

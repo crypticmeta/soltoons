@@ -1795,83 +1795,6 @@
     prop-types "^15.7.2"
     react-is "^16.8.0 || ^17.0.0"
 
-"@metaplex-foundation/mpl-auction@^0.0.2":
-  version "0.0.2"
-  resolved "https://registry.yarnpkg.com/@metaplex-foundation/mpl-auction/-/mpl-auction-0.0.2.tgz#3de3c982e88d6a88f0ef05be73453cf3cfaccf26"
-  integrity sha512-4UDDi8OiQr+D6KrCNTRrqf/iDD6vi5kzRtMRtuNpywTyhX9hnbr1Zkc6Ncncbh9GZhbhcn+/h5wHgzh+xA6TnQ==
-  dependencies:
-    "@metaplex-foundation/mpl-core" "^0.0.2"
-    "@solana/spl-token" "^0.1.8"
-    "@solana/web3.js" "^1.31.0"
-
-"@metaplex-foundation/mpl-core@^0.0.2":
-  version "0.0.2"
-  resolved "https://registry.yarnpkg.com/@metaplex-foundation/mpl-core/-/mpl-core-0.0.2.tgz#17ee2cc216e17629d6df1dbba75964625ebbd603"
-  integrity sha512-UUJ4BlYiWdDegAWmjsNQiNehwYU3QfSFWs3sv4VX0J6/ZrQ28zqosGhQ+I2ZCTEy216finJ82sZWNjuwSWCYyQ==
-  dependencies:
-    "@solana/web3.js" "^1.31.0"
-    bs58 "^4.0.1"
-
-"@metaplex-foundation/mpl-metaplex@^0.0.5":
-  version "0.0.5"
-  resolved "https://registry.yarnpkg.com/@metaplex-foundation/mpl-metaplex/-/mpl-metaplex-0.0.5.tgz#f4b94582831824d134337453a8556c6c1ea13642"
-  integrity sha512-VRt3fiO/7/jcHwN+gWvTtpp+7wYhIcEDzMG1lOeV3yYyhz9fAT0E3LqEl2moifNTAopGCE4zYa84JA/OW+1YvA==
-  dependencies:
-    "@metaplex-foundation/mpl-auction" "^0.0.2"
-    "@metaplex-foundation/mpl-core" "^0.0.2"
-    "@metaplex-foundation/mpl-token-metadata" "^0.0.2"
-    "@metaplex-foundation/mpl-token-vault" "^0.0.2"
-    "@solana/spl-token" "^0.1.8"
-    "@solana/web3.js" "^1.31.0"
-
-"@metaplex-foundation/mpl-token-metadata@^0.0.2":
-  version "0.0.2"
-  resolved "https://registry.yarnpkg.com/@metaplex-foundation/mpl-token-metadata/-/mpl-token-metadata-0.0.2.tgz#02058970320459e2550e90caf54c58bcacbe6bb2"
-  integrity sha512-yKJPhFlX8MkNbSCi1iwHn4xKmguLK/xFhYa+RuYdL2seuT4CKXHj2CnR2AkcdQj46Za4/nR3jZcRFKq7QlnvBw==
-  dependencies:
-    "@metaplex-foundation/mpl-core" "^0.0.2"
-    "@solana/spl-token" "^0.1.8"
-    "@solana/web3.js" "^1.31.0"
-
-"@metaplex-foundation/mpl-token-metadata@^1.1.0":
-  version "1.2.5"
-  resolved "https://registry.yarnpkg.com/@metaplex-foundation/mpl-token-metadata/-/mpl-token-metadata-1.2.5.tgz#1a927b1c7d30cd634a1e4782022712a02f6865c2"
-  integrity sha512-pxRG53JsTSwXpiJJMHNulJhH8kO3hHztQ3QxslUoKw2hBYKXsg9TGsiHgNIhN2MPZGBJ2pDeK6kNGv0sd54HhA==
-  dependencies:
-    "@metaplex-foundation/mpl-core" "^0.0.2"
-    "@solana/spl-token" "^0.1.8"
-    "@solana/web3.js" "^1.31.0"
-
-"@metaplex-foundation/mpl-token-vault@^0.0.2":
-  version "0.0.2"
-  resolved "https://registry.yarnpkg.com/@metaplex-foundation/mpl-token-vault/-/mpl-token-vault-0.0.2.tgz#84d2fc86f750f8413acd9e9c24f4b3c016a12c47"
-  integrity sha512-JiVcow8OzUGW0KTs/E1QrAdmYGqE9EGKE6cc2gxNNBYqDeVdjYlgEa64IiGvNF9rvbI2g2Z3jw0mYuA9LD9S/A==
-  dependencies:
-    "@metaplex-foundation/mpl-core" "^0.0.2"
-    "@solana/spl-token" "^0.1.8"
-    "@solana/web3.js" "^1.31.0"
-
-"@metaplex/js@^4.12.0":
-  version "4.12.0"
-  resolved "https://registry.yarnpkg.com/@metaplex/js/-/js-4.12.0.tgz#1190767a4e69d4e5613002aab3f4c1fb8de07896"
-  integrity sha512-rIUTMXo5gIXFIZt08AEHyqH4oVoLL2dMYiNePQluw9pydesRym4jDayJ5POxEmKmyc6KGqVKw/YWUIivmUY5zg==
-  dependencies:
-    "@metaplex-foundation/mpl-auction" "^0.0.2"
-    "@metaplex-foundation/mpl-core" "^0.0.2"
-    "@metaplex-foundation/mpl-metaplex" "^0.0.5"
-    "@metaplex-foundation/mpl-token-metadata" "^1.1.0"
-    "@metaplex-foundation/mpl-token-vault" "^0.0.2"
-    "@solana/spl-token" "^0.1.8"
-    "@solana/web3.js" "^1.30.2"
-    "@types/bs58" "^4.0.1"
-    axios "^0.25.0"
-    bn.js "^5.2.0"
-    borsh "^0.4.0"
-    bs58 "^4.0.1"
-    buffer "^6.0.3"
-    crypto-hash "^1.3.0"
-    form-data "^4.0.0"
-
 "@mui/base@5.0.0-alpha.89":
   version "5.0.0-alpha.89"
   resolved "https://registry.npmjs.org/@mui/base/-/base-5.0.0-alpha.89.tgz"
@@ -2300,18 +2223,6 @@
     buffer-layout "^1.2.0"
     dotenv "8.2.0"
 
-"@solana/spl-token@^0.1.8":
-  version "0.1.8"
-  resolved "https://registry.yarnpkg.com/@solana/spl-token/-/spl-token-0.1.8.tgz#f06e746341ef8d04165e21fc7f555492a2a0faa6"
-  integrity sha512-LZmYCKcPQDtJgecvWOgT/cnoIQPWjdH+QVyzPcFvyDUiT0DiRjZaam4aqNUyvchLFhzgunv3d9xOoyE34ofdoQ==
-  dependencies:
-    "@babel/runtime" "^7.10.5"
-    "@solana/web3.js" "^1.21.0"
-    bn.js "^5.1.0"
-    buffer "6.0.3"
-    buffer-layout "^1.2.0"
-    dotenv "10.0.0"
-
 "@solana/spl-token@^0.3.6":
   version "0.3.7"
   resolved "https://registry.npmjs.org/@solana/spl-token/-/spl-token-0.3.7.tgz"
@@ -2446,7 +2357,7 @@
     "@solana/wallet-adapter-tokenpocket" "^0.1.0"
     "@solana/wallet-adapter-torus" "^0.7.1"
 
-"@solana/web3.js@^1.11.0", "@solana/web3.js@^1.21.0", "@solana/web3.js@^1.30.2", "@solana/web3.js@^1.31.0", "@solana/web3.js@^1.33.0", "@solana/web3.js@^1.68.0", "@solana/web3.js@^1.73.0", "@solana/web3.js@^1.9.1":
+"@solana/web3.js@^1.11.0", "@solana/web3.js@^1.33.0", "@solana/web3.js@^1.68.0", "@solana/web3.js@^1.73.0", "@solana/web3.js@^1.9.1":
   version "1.73.0"
   resolved "https://registry.npmjs.org/@solana/web3.js/-/web3.js-1.73.0.tgz"
   integrity sha512-YrgX3Py7ylh8NYkbanoINUPCj//bWUjYZ5/WPy9nQ9SK3Cl7QWCR+NmbDjmC/fTspZGR+VO9LTQslM++jr5PRw==
@@ -3728,13 +3639,6 @@ axios@^0.21.0, axios@^0.21.1:
   integrity sha512-ut5vewkiu8jjGBdqpM44XxjuCjq9LAKeHVmoVfHVzy8eHgxxq8SbAVQNovDA8mVi05kP0Ea/n/UzcSHcTJQfNg==
   dependencies:
     follow-redirects "^1.14.0"
-
-axios@^0.25.0:
-  version "0.25.0"
-  resolved "https://registry.yarnpkg.com/axios/-/axios-0.25.0.tgz#349cfbb31331a9b4453190791760a8d35b093e0a"
-  integrity sha512-cD8FOb0tRH3uuEe6+evtAbgJtfxr7ly3fQjYcMcuPlgkwVS9xboaVIpcDV+cYQe+yGykgwZCs1pzjntcGa6l5g==
-  dependencies:
-    follow-redirects "^1.14.7"
 
 axios@^1.2.2:
   version "1.2.2"
@@ -5228,15 +5132,15 @@ dotenv-expand@^5.1.0:
   resolved "https://registry.npmjs.org/dotenv-expand/-/dotenv-expand-5.1.0.tgz"
   integrity sha512-YXQl1DSa4/PQyRfgrv6aoNjhasp/p4qs9FjJ4q4cQk+8m4r6k4ZSiEyytKG8f8W9gi8WsQtIObNmKd+tMzNTmA==
 
-dotenv@10.0.0, dotenv@^10.0.0:
-  version "10.0.0"
-  resolved "https://registry.npmjs.org/dotenv/-/dotenv-10.0.0.tgz"
-  integrity sha512-rlBi9d8jpv9Sf1klPjNfFAuWDjKLwTIJJ/VxtoTwIR6hnZxcEOQCZg2oIL3MWBYw5GpUDKOEnND7LXTbIpQ03Q==
-
 dotenv@8.2.0:
   version "8.2.0"
   resolved "https://registry.yarnpkg.com/dotenv/-/dotenv-8.2.0.tgz#97e619259ada750eea3e4ea3e26bceea5424b16a"
   integrity sha512-8sJ78ElpbDJBHNeBzUbUVLsqKdccaa/BXF1uPTw3GrvQTBgrQrtObr2mUrE38vzYd8cEv+m/JBfDLioYcfXoaw==
+
+dotenv@^10.0.0:
+  version "10.0.0"
+  resolved "https://registry.npmjs.org/dotenv/-/dotenv-10.0.0.tgz"
+  integrity sha512-rlBi9d8jpv9Sf1klPjNfFAuWDjKLwTIJJ/VxtoTwIR6hnZxcEOQCZg2oIL3MWBYw5GpUDKOEnND7LXTbIpQ03Q==
 
 dotenv@^16.0.3:
   version "16.0.3"
@@ -6042,7 +5946,7 @@ follow-redirects@^1.0.0:
   resolved "https://registry.npmjs.org/follow-redirects/-/follow-redirects-1.15.1.tgz"
   integrity sha512-yLAMQs+k0b2m7cVxpS1VKJVvoz7SS9Td1zss3XRwXj+ZDH00RJgnuLx7E44wx02kQLrdM3aOOy+FpzS7+8OizA==
 
-follow-redirects@^1.14.0, follow-redirects@^1.14.7, follow-redirects@^1.15.0:
+follow-redirects@^1.14.0, follow-redirects@^1.15.0:
   version "1.15.2"
   resolved "https://registry.npmjs.org/follow-redirects/-/follow-redirects-1.15.2.tgz"
   integrity sha512-VQLG33o04KaQ8uYi2tVNbdrWp1QWxNNea+nmIB4EVM28v0hmP17z7aG1+wAkNzVq4KeXTq3221ye5qTJP91JwA==
@@ -9594,6 +9498,11 @@ react-hot-toast@^2.4.0:
   integrity sha512-qnnVbXropKuwUpriVVosgo8QrB+IaPJCpL8oBI6Ov84uvHZ5QQcTp2qg6ku2wNfgJl6rlQXJIQU5q+5lmPOutA==
   dependencies:
     goober "^2.1.10"
+
+react-icons@^4.7.1:
+  version "4.7.1"
+  resolved "https://registry.yarnpkg.com/react-icons/-/react-icons-4.7.1.tgz#0f4b25a5694e6972677cb189d2a72eabea7a8345"
+  integrity sha512-yHd3oKGMgm7zxo3EA7H2n7vxSoiGmHk5t6Ou4bXsfcgWyhfDKMpyKfhHR6Bjnn63c+YXBLBPUql9H4wPJM6sXw==
 
 react-is@^16.13.1, react-is@^16.7.0:
   version "16.13.1"

@@ -30,40 +30,44 @@ function Index() {
   
    const [openModal, setOpenModal] = React.useState(false);
    const handleModalOpen = () => setOpenModal(true);
-   const handleModalClose = () => setOpenModal(false);
+  const handleModalClose = () => setOpenModal(false);
+  const [sound, setSound] = useState(true)
+
+  useEffect(() => {
+    setSound(localStorage.getItem('soltoons-sound') === 'true');
+  }, [])
+  
+  
   return (
     <div className="flex flex-wrap justify-center items-center min-h-screen h-screen relative">
-      {
-        splash ? (<LoadingScreen style={style} />):(<></>)
-      }
+      {splash ? <LoadingScreen style={style} /> : <></>}
       <div className="max-w-[1536px] max-h-[1920px] w-full flex flex-wrap justify-between items-center h-full">
         {getWindowDimension().width >= DeviceWidthObject.md.min &&
           getWindowDimension().width < DeviceWidthObject._2xl.min && (
             <Game
               amount={amount}
-              setAmount={setAmount}
               step={step}
               setStep={setStep}
               handleModalOpen={handleModalOpen}
+              sound={sound}
             />
           )}
-        {
-          getWindowDimension().width < DeviceWidthObject.md.min && (
-            <GameSmall
-              amount={amount}
-              setAmount={setAmount}
-              step={step}
-              setStep={setStep}
-              handleModalOpen={handleModalOpen}
-            />
-          )}
-        {getWindowDimension().width >= DeviceWidthObject._2xl.min && (
-          <GameLarge
+        {getWindowDimension().width < DeviceWidthObject.md.min && (
+          <GameSmall
             amount={amount}
-            setAmount={setAmount}
             step={step}
             setStep={setStep}
             handleModalOpen={handleModalOpen}
+            sound={sound}
+          />
+        )}
+        {getWindowDimension().width >= DeviceWidthObject._2xl.min && (
+          <GameLarge
+            amount={amount}
+            step={step}
+            setStep={setStep}
+            handleModalOpen={handleModalOpen}
+            sound={sound}
           />
         )}
         <Sidebar
@@ -73,6 +77,8 @@ function Index() {
           setStep={setStep}
           handleModalClose={handleModalClose}
           openModal={openModal}
+          sound={sound}
+          setSound={setSound}
         />
       </div>
     </div>
