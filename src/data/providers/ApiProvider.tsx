@@ -735,7 +735,6 @@ class ApiState implements PrivateApiInterface {
      );
     // const accountInfo = await spl.getAccount(program.provider.connection, rewardAddress).catch((err) => console.error(err));
 
-    // console.log(rewardAddress.toBase58(), 'reward address')
     // const rewardAddress =
     await program.provider.connection.getAccountInfo(this.wallet.publicKey).then(onSolAccountChange);
     await program.provider.connection.getAccountInfo(rewardAddress).then(onTokenAccountChange);

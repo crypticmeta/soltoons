@@ -240,7 +240,9 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
     if (control) {
       dispatch(thunks.setLoading(false))
     }
-  },[control])
+  }, [control])
+  
+  
   
   return (
     <div className="flex h-full flex-col max-h-[800px] justify-between md:justify-center w-full lg:w-3/12 p-6 font-bold">
@@ -248,24 +250,30 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
         <div className="w-full">
           {wallet?.connected && (
             <div className="tokenSelector mb-1">
-              <FormControl fullWidth variant="filled">
-                <Select
-                  labelId="select-token"
-                  id="select-token"
-                  sx={{ width: '100%', height: '40px', outline: 'none', border: 'none' }}
-                  value={token}
-                  label="Token"
-                  onChange={handleChange}
-                >
-                  {Array.from(tokenInfoMap.values())
-                    .filter((t) => t.symbol)
-                    .map((item: any) => (
-                      <MenuItem value={item.address} key={item.symbol + Math.random()}>
-                        {item.symbol}
-                      </MenuItem>
-                    ))}
-                </Select>
-              </FormControl>
+              <Select
+                labelId="select-token"
+                id="select-token"
+                sx={{
+                  width: '100%',
+                  height: '40px',
+                  outline: 'none',
+                  border: 'none',
+                  textAlign: 'center',
+                  display: 'flex',
+                  alignItems: 'center',
+                }}
+                value={token}
+                label="Token"
+                onChange={handleChange}
+              >
+                {Array.from(tokenInfoMap.values())
+                  .filter((t) => t.symbol)
+                  .map((item: any) => (
+                    <MenuItem value={item.address} key={item.symbol + Math.random()}>
+                      {item.symbol}
+                    </MenuItem>
+                  ))}
+              </Select>
             </div>
           )}
           <div className="bg-brand_yellow walletMultiButton">
@@ -373,7 +381,7 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
         <div className="bg-black w-full h-screen center bg-opacity-75">
           <div className="bg-brand_yellow rounded-xl md:w-6/12 2xl:w-4/12 p-6 text-xl">
             <div className="flex flex-col">
-              <div className="flex justify-between font-extrabold">
+              <div className="flex justify-between font-extrabold mb-4">
                 <p
                   onClick={() => setOpenHowTo(true)}
                   className="text-center w-full cursor-pointer border-black xl:text-lg"
@@ -382,24 +390,32 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
                 </p>
               </div>
               <div className="overflow-scroll h-[90%] no-scrollbar text-xs ">
-            <div>
-              <p className="text-brand_black capitalize">0.036 SOL is charged to create user account</p>
-            </div>
-            <hr className="my-2 border-black" />
-            <div>
-              <p className="text-brand_black capitalize">0.002 SOL is charged at every round</p>
-            </div>
-            <hr className="my-2 border-black" />
-            <div>
-              <p className="text-brand_black capitalize">
-                if tx fails to get result, you can play te next round without transferring funds
-              </p>
-            </div>
-            <hr className="my-2 border-black" />
-            <div>
-              <p className="text-brand_black capitalize">Transaction signatures are visible in console</p>
-            </div>
-          </div>
+                <div>
+                  <p className="text-brand_black capitalize">
+                    0.036 SOL is charged to create user account (required only ONCE)
+                  </p>
+                </div>
+                <hr className="my-2 border-black" />
+                <div>
+                  <p className="text-brand_black capitalize">
+                    0.002 SOL is charged at every round (for verifiable randomness)
+                  </p>
+                </div>
+                <hr className="my-2 border-black" />
+                <div>
+                  <p className="text-brand_black capitalize">standard 3% fee is applied on every game</p>
+                </div>
+                <hr className="my-2 border-black" />
+                <div>
+                  <p className="text-brand_black capitalize">
+                    if tx fails to get result, you can play te next round without transferring funds
+                  </p>
+                </div>
+                <hr className="my-2 border-black" />
+                <div>
+                  <p className="text-brand_black capitalize">Transaction signatures are visible in console</p>
+                </div>
+              </div>
               <div className="center space-x-4 flex-wrap text-sm md:text-xl">
                 <button
                   className="bg-[#fd675d] border-2 rounded-3xl border-black uppercase font-extrabold px-4 py-2 cursor-pointer"
@@ -430,13 +446,13 @@ const Play = ({ amount, setAmount, api, balances, loading, result, wait, userVau
   const isWsol = tokenInfo.address === wsol;
   const token = tokenInfo;
   return (
-    <div className='w-full h-full'>
+    <div className="w-full h-full">
       {loading && (result?.status === 'loading' || result?.status === 'waiting') ? (
         <div className="center h-full text-white border-white p-6">
           <img src="/assets/images/coin-transparent.gif" alt="loading" />
         </div>
       ) : (
-        <div className='center w-full h-full'>
+        <div className="center w-full h-full">
           {result?.status === 'success' &&
           result?.userWon &&
           (isWsol ? userVaultBal > 0.03552384 : escrow.balance > 0) ? (
@@ -444,8 +460,8 @@ const Play = ({ amount, setAmount, api, balances, loading, result, wait, userVau
               <button className="center h-full w-full text-lg">Received Result!</button>
             </>
           ) : (
-            <div className=''>
-              <div className=''>
+            <div className="">
+              <div className="">
                 <p className="font-extrabold text-center text-xs">PLAY with {token?.symbol}</p>
                 <hr className="my-2 border-black" />
               </div>
@@ -473,7 +489,7 @@ const Play = ({ amount, setAmount, api, balances, loading, result, wait, userVau
                    
                       `}
                     >
-                      {item}
+                      {item<10000?item:convertToShortForm(item)}
                     </span>
                   </button>
                 ))}
@@ -556,3 +572,26 @@ const CollectPreviousReward = ({ api }: any) => {
     </button>
   );
 };
+
+function convertToShortForm(n: number): string {
+  const suffixes = { 9: 'B', 12: 'T' };
+  let num = n;
+  let suffix = '';
+  for (let key in suffixes) {
+    if (num >= Math.pow(10, key)) {
+      num /= Math.pow(10, key);
+      suffix = suffixes[key];
+    }
+  }
+  if (num >= 1000000) {
+    num /= 1000000;
+    suffix = 'M';
+  }
+  if (num >= 1000) {
+    num /= 1000;
+    suffix = 'K';
+  }
+  return num.toFixed(1) + suffix;
+}
+
+
