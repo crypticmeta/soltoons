@@ -45,10 +45,12 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
   });
 
   const [open, setOpen] = React.useState(false);
+    const [openHowTo, setOpenHowTo] = React.useState(false);
 
-  const handleClick = () => {
-    setOpen(true);
-  };
+
+   const closeHowTo = () => {
+     setOpenHowTo(false);
+   };
 
   const handleClose = (event?: React.SyntheticEvent | Event, reason?: string) => {
     if (reason === 'clickaway') {
@@ -244,63 +246,47 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
     <div className="flex h-full flex-col max-h-[800px] justify-between md:justify-center w-full lg:w-3/12 p-6 font-bold">
       <div className="part1 h-[20%] center w-full">
         <div className="w-full">
-          <div className="tokenSelector mb-1">
-            <FormControl fullWidth variant="filled">
-              <Select
-                labelId="select-token"
-                id="select-token"
-                sx={{ width: '100%', height: '40px', outline: 'none', border: 'none' }}
-                value={token}
-                label="Token"
-                onChange={handleChange}
-              >
-                {Array.from(tokenInfoMap.values())
-                  .filter((t) => t.symbol)
-                  .map((item: any) => (
-                    <MenuItem value={item.address} key={item.symbol + Math.random()}>
-                      {item.symbol}
-                    </MenuItem>
-                  ))}
-              </Select>
-            </FormControl>
-          </div>
+          {wallet?.connected && (
+            <div className="tokenSelector mb-1">
+              <FormControl fullWidth variant="filled">
+                <Select
+                  labelId="select-token"
+                  id="select-token"
+                  sx={{ width: '100%', height: '40px', outline: 'none', border: 'none' }}
+                  value={token}
+                  label="Token"
+                  onChange={handleChange}
+                >
+                  {Array.from(tokenInfoMap.values())
+                    .filter((t) => t.symbol)
+                    .map((item: any) => (
+                      <MenuItem value={item.address} key={item.symbol + Math.random()}>
+                        {item.symbol}
+                      </MenuItem>
+                    ))}
+                </Select>
+              </FormControl>
+            </div>
+          )}
           <div className="bg-brand_yellow walletMultiButton">
             <WalletMultiButton color="inherit" className={'walletButton'} />
           </div>
         </div>
       </div>
-      <div className="part2 h-[40%] 2xl:h-[60%] p-1">
+      <div className="part2 h-[10%] 2xl:h-[60%] p-1">
         <div className="bg-brand_yellow border-4 border-black rounded-3xl p-1 text-sm overflow-hidden h-full">
-          <div className="flex justify-between font-extrabold h-[10%]">
-            <p className="text-center w-full border-black xl:text-lg">INFO:</p>
+          <div className="flex justify-between font-extrabold">
+            <p onClick={() => setOpenHowTo(true)} className="text-center w-full cursor-pointer border-black xl:text-lg">
+              How To Play
+            </p>
             {/* <p className="w-6/12 text-center border-r border-black xl:text-lg">INFO:</p> */}
 
             {/* <p className="w-6/12 text-center xl:text-lg">LIVE BETS</p> */}
           </div>
-          <hr className="my-2 border-black" />
-          <div className="overflow-scroll h-[90%] no-scrollbar text-xs ">
-            <div>
-              <p className="text-brand_black capitalize">0.036 SOL is charged to create user account</p>
-            </div>
-            <hr className="my-2 border-black" />
-            <div>
-              <p className="text-brand_black capitalize">0.002 SOL is charged at every round</p>
-            </div>
-            <hr className="my-2 border-black" />
-            <div>
-              <p className="text-brand_black capitalize">
-                if tx fails to get result, you can play te next round without transferring funds
-              </p>
-            </div>
-            <hr className="my-2 border-black" />
-            <div>
-              <p className="text-brand_black capitalize">Transaction signatures are visible in console</p>
-            </div>
-          </div>
         </div>
       </div>
-      <div className="part3 h-[35%] 2xl:h-[35%] p-1">
-        <div className="bg-brand_yellow rounded-3xl border-4 border-black text-sm p-1 text-center h-full flex flex-col overflow-hidden justify-between relative">
+      <div className="part3 h-[40%] 2xl:h-[35%] p-1">
+        <div className="bg-brand_yellow rounded-3xl border-4 border-black text-sm p-2 text-center h-full center overflow-hidden justify-between relative">
           {result?.status === 'waiting' && (
             <div className="center h-full text-white border-white absolute top-0 bottom-0 z-[12] bg-brand_yellow left-0 right-0">
               <img src="/assets/images/coin-transparent.gif" alt="loading" />
@@ -344,11 +330,7 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
           )}
         </div>
       </div>
-      {wait > 0 && (
-        <div className="bg-red-00 w-full py-2 text-white">
-          <LinearProgressWithLabel sx={{ height: 5, borderRadius: '30px' }} variant="determinate" value={wait} />
-        </div>
-      )}
+
       <Modal open={openModal} onClose={handleModalClose}>
         <div className="bg-black w-full h-screen center bg-opacity-75">
           <div className="bg-brand_yellow rounded-xl md:w-6/12 2xl:w-4/12 p-6 text-xl">
@@ -387,6 +369,49 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
           </div>
         </div>
       </Modal>
+      <Modal open={openHowTo} onClose={closeHowTo}>
+        <div className="bg-black w-full h-screen center bg-opacity-75">
+          <div className="bg-brand_yellow rounded-xl md:w-6/12 2xl:w-4/12 p-6 text-xl">
+            <div className="flex flex-col">
+              <div className="flex justify-between font-extrabold">
+                <p
+                  onClick={() => setOpenHowTo(true)}
+                  className="text-center w-full cursor-pointer border-black xl:text-lg"
+                >
+                  How To Play
+                </p>
+              </div>
+              <div className="overflow-scroll h-[90%] no-scrollbar text-xs ">
+            <div>
+              <p className="text-brand_black capitalize">0.036 SOL is charged to create user account</p>
+            </div>
+            <hr className="my-2 border-black" />
+            <div>
+              <p className="text-brand_black capitalize">0.002 SOL is charged at every round</p>
+            </div>
+            <hr className="my-2 border-black" />
+            <div>
+              <p className="text-brand_black capitalize">
+                if tx fails to get result, you can play te next round without transferring funds
+              </p>
+            </div>
+            <hr className="my-2 border-black" />
+            <div>
+              <p className="text-brand_black capitalize">Transaction signatures are visible in console</p>
+            </div>
+          </div>
+              <div className="center space-x-4 flex-wrap text-sm md:text-xl">
+                <button
+                  className="bg-[#fd675d] border-2 rounded-3xl border-black uppercase font-extrabold px-4 py-2 cursor-pointer"
+                  onClick={() => closeHowTo()}
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Modal>
       <Snackbar open={open} onClose={handleClose}>
         <Alert
           style={{ display: 'flex', alignItems: 'center' }}
@@ -400,55 +425,18 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
     </div>
   );
 }
-const CreateEscrowAccount = ({ api, tokenmint, token }: any) => {
-  return (
-    <button
-      onClick={() => {
-        api.handleCommand('create escrow');
-      }}
-      className="center h-full text-lg"
-    >
-      "Create Vault Account"
-    </button>
-  );
-};
-const CreateUserAccount = ({ api }: any) => {
-  return (
-    <button
-      onClick={() => {
-        api.handleCommand('user create');
-      }}
-      className="center h-full text-lg"
-    >
-      Create Account
-    </button>
-  );
-};
-const CollectPreviousReward = ({api}:any) => {
-  return (
-    <button
-      onClick={() => {
-        api.handleCommand('collect reward');
-      }}
-      className="center h-full text-lg"
-    >
-      Collect Reward
-    </button>
-  );
-}
-
 //@ts-ignore
 const Play = ({ amount, setAmount, api, balances, loading, result, wait, userVaultBal, tokenInfo, escrow }) => {
   const isWsol = tokenInfo.address === wsol;
   const token = tokenInfo;
   return (
-    <>
+    <div className='w-full h-full'>
       {loading && (result?.status === 'loading' || result?.status === 'waiting') ? (
         <div className="center h-full text-white border-white p-6">
           <img src="/assets/images/coin-transparent.gif" alt="loading" />
         </div>
       ) : (
-        <>
+        <div className='center w-full h-full'>
           {result?.status === 'success' &&
           result?.userWon &&
           (isWsol ? userVaultBal > 0.03552384 : escrow.balance > 0) ? (
@@ -456,8 +444,8 @@ const Play = ({ amount, setAmount, api, balances, loading, result, wait, userVau
               <button className="center h-full w-full text-lg">Received Result!</button>
             </>
           ) : (
-            <>
-              <div>
+            <div className=''>
+              <div className=''>
                 <p className="font-extrabold text-center text-xs">PLAY with {token?.symbol}</p>
                 <hr className="my-2 border-black" />
               </div>
@@ -522,11 +510,49 @@ const Play = ({ amount, setAmount, api, balances, loading, result, wait, userVau
                   <p className="text-red-800 text-xs pt-2 text-center">Amount should be less than 2 SOL</p>
                 )}
               </div>
-            </>
+            </div>
           )}
-        </>
+        </div>
       )}
-    </>
+    </div>
   );
 }
 export default Sidebar;
+
+
+const CreateEscrowAccount = ({ api, tokenmint, token }: any) => {
+  return (
+    <button
+      onClick={() => {
+        api.handleCommand('create escrow');
+      }}
+      className="center h-full text-lg"
+    >
+      "Create Vault Account"
+    </button>
+  );
+};
+const CreateUserAccount = ({ api }: any) => {
+  return (
+    <button
+      onClick={() => {
+        api.handleCommand('user create');
+      }}
+      className="center h-full text-lg"
+    >
+      Create Account
+    </button>
+  );
+};
+const CollectPreviousReward = ({ api }: any) => {
+  return (
+    <button
+      onClick={() => {
+        api.handleCommand('collect reward');
+      }}
+      className="center h-full text-lg"
+    >
+      Collect Reward
+    </button>
+  );
+};
