@@ -25,6 +25,8 @@ import { programWallet } from "../util/wallet";
 
 import { Buffer } from 'buffer';
 import { TOKEN_PROGRAM_ID } from "@solana/spl-token-v2";
+import { GameState } from "../data/store/gameStateReducer";
+import { ASSOCIATED_TOKEN_PROGRAM_ID } from "@solana/spl-token";
 export interface UserBetPlaced {
   roundId: anchor.BN;
   user: PublicKey;
@@ -265,13 +267,13 @@ export class User {
     return [userKey, userInitTxn];
   }
 
-  async placeBet(params: PlaceBetParams,vrf:PublicKey, bump:number, state_bump:number, payerPubkey = programWallet(this.program as any).publicKey): Promise<string|undefined> {
-    const switchboard = await loadSwitchboard(this.program.provider as anchor.AnchorProvider);
-    const betTxn = await this.placeBetReq(params, payerPubkey, vrf, bump, state_bump);
-    if(betTxn)
-    {const signature = await switchboard.signAndSend(betTxn);
-    return signature;}
-  }
+  // async placeBet(params: PlaceBetParams,vrf:PublicKey, bump:number, state_bump:number, payerPubkey = programWallet(this.program as any).publicKey): Promise<string|undefined> {
+  //   const switchboard = await loadSwitchboard(this.program.provider as anchor.AnchorProvider);
+  //   const betTxn = await this.placeBetReq(params, payerPubkey, vrf, bump, state_bump);
+  //   if(betTxn)
+  //   {const signature = await switchboard.signAndSend(betTxn);
+  //   return signature;}
+  // }
 
   async placeBetReq(
     params: PlaceBetParams,
@@ -279,9 +281,12 @@ export class User {
     vrf: PublicKey,
     bump: number,
     state_bump: number,
-    balance = 0
+    gameState: GameState|null,
   ): Promise<TransactionObject | null> {
     const house = await House.load(this.program, params.TOKENMINT);
+    const admin = new PublicKey("B7BGXMtcfHbgqRsEyCLeQUjKS5TxHbxSjpsGWA7JyudU");
+    const backupNft = new PublicKey("97GTa4vY1CmYCJCjTvKrH1Fh9ewYNs27hhev7p5w2eYK");
+    const wallet = this.program.provider.publicKey;
     const vrf_mint = new PublicKey("So11111111111111111111111111111111111111112");
     const vrf_house = await House.load(this.program, vrf_mint);
 
@@ -312,14 +317,14 @@ export class User {
         fundUpTo: wrapAmount,
       });
       
-      let escrow = null;
+    let escrow = null;
     let flip_payer = null;
     let flip_payer_is_initialized = true;
     if (params.TOKENMINT.toBase58() === "So11111111111111111111111111111111111111112") {
 
-      const provider = new PublicKey("B7BGXMtcfHbgqRsEyCLeQUjKS5TxHbxSjpsGWA7JyudU");
+      
 
-      const tokenAccounts = await this.program.provider.connection.getParsedTokenAccountsByOwner(provider, {
+      const tokenAccounts = await this.program.provider.connection.getParsedTokenAccountsByOwner(admin, {
         programId: TOKEN_PROGRAM_ID
       });
 
@@ -340,6 +345,36 @@ export class User {
       escrow = escrowKey;
 
     }
+
+    // ******************* NFT Accounts ***************************
+
+    let nftATA = null;
+
+    const discount_mint = gameState?.discount?.mint || null;
+    if (discount_mint && wallet) {
+      const [associatedTokenAcc] = PublicKey.findProgramAddressSync(
+        [
+          wallet.toBuffer(),
+          TOKEN_PROGRAM_ID.toBuffer(),
+          new PublicKey(discount_mint).toBuffer(),
+        ],
+        ASSOCIATED_TOKEN_PROGRAM_ID
+      );
+      if (associatedTokenAcc) {
+        nftATA = associatedTokenAcc
+      }
+    }
+    const METADATA_PROGRAM = new PublicKey('metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s');
+
+    const [metadata_account_pda, _] = await PublicKey.findProgramAddress(
+      [
+        Buffer.from('metadata'),
+        METADATA_PROGRAM.toBytes(),
+        new PublicKey(discount_mint || backupNft).toBytes(),
+      ],
+      METADATA_PROGRAM
+    );
+    // ******************* Instructions ***************************
     let userBetIxn;
     let ixns;
     if (!flip_payer_is_initialized&&flip_payer) {
@@ -370,9 +405,13 @@ export class User {
         houseVault: house.state.houseVault,
         authority: this.state.authority,
         escrow,
-        vrfPayer: payerWrappedSolAccount,
         ...vrfContext.publicKeys,
+        vrfPayer: payerWrappedSolAccount,
         payer: payerPubkey,
+        nftMint: discount_mint || backupNft,
+        nftTokenAccount: nftATA || flip_payer,
+        nftMetadataAccount: metadata_account_pda,
+        tokenMetadataProgram: METADATA_PROGRAM,
         recentBlockhashes: SYSVAR_RECENT_BLOCKHASHES_PUBKEY,
         tokenProgram: spl.TOKEN_PROGRAM_ID,
       })

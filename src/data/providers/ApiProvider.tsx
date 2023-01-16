@@ -251,6 +251,8 @@ class ApiState implements PrivateApiInterface {
 
   public handleCommand = async (command: string) => {
     try {
+      
+     this.dispatch(thunks.setLoading(true));
       command = command.trim(); // Trim the initial command.
       if (command === ApiCommands.UserCreate) await this.createUserAccounts();
       // else if (command === ApiCommands.UserAirdrop) await this.userAirdrop();
@@ -519,13 +521,12 @@ class ApiState implements PrivateApiInterface {
   private playGame = async (args: string[]) => {
     const TOKENMINT = this.tokenMint;
     const tokenData = tokenInfoMap.get(this.tokenMint.toBase58());
-    this.dispatch(thunks.setLoading(true));
     const game = games[this.gameMode];
     
     this.log(`Building bet request...`);
     this.dispatch(thunks.setResult({ status: 'loading' }));
 
-    this.dispatch(thunks.setLoading(true));
+   
 
     // Gather necessary programs.
     const user = await this.user; // Make sure that user is logged in and has accounts.
@@ -569,7 +570,7 @@ class ApiState implements PrivateApiInterface {
           TOKENMINT,
           gameType: this.gameMode,
           userGuess: guess,
-          betAmount: new anchor.BN(bet * (Math.pow(10, tokenData?.decimals||9))),
+          betAmount: new anchor.BN((bet||0) * (Math.pow(10, tokenData?.decimals||9))),
           switchboardTokenAccount: undefined,
         },
         this.wallet.publicKey,
@@ -582,9 +583,10 @@ class ApiState implements PrivateApiInterface {
         ),
         vrf?.permission_bump || 255,
         vrf?.state_bump || DEFAULT_STATE_BUMP,
-        this.userTokenBalance
+        this._gameState||null
       )
       .catch((err) => {
+        this.dispatch(thunks.setLoading(false))
         this.dispatch(thunks.setResult({ status: 'error' }));
         console.error(err, 'err creating bet req');
       });
@@ -600,7 +602,7 @@ class ApiState implements PrivateApiInterface {
     const blockhash = await program.provider.connection.getLatestBlockhash('finalized');
     const sign = request.sign(blockhash, request.signers);
     const signedTxs = await this.wallet.signAllTransactions([sign]).catch((e) => {
-      this.dispatch(thunks.setResult({ status: 'error' }));
+      if (id !== 'collectReward') this.dispatch(thunks.setResult({ status: 'error' }));
       this.log('User Rejected to sign Tx', Severity.Error);
       this.dispatch(thunks.setLoading(false));
       if (e instanceof anchor.web3.SendTransactionError) {
@@ -622,7 +624,7 @@ class ApiState implements PrivateApiInterface {
       for (const tx of signedTxs) {
         const serialTx = tx.serialize();
         await connection
-          .sendRawTransaction(serialTx, { skipPreflight: false, preflightCommitment: 'finalized' })
+          .sendRawTransaction(serialTx, { skipPreflight: true, preflightCommitment: 'finalized' })
           .then(async (sig) => {
             console.info(sig, ' tx');
             
@@ -832,10 +834,10 @@ class ApiState implements PrivateApiInterface {
         } else event.userWon = false;
         !event.userWon && this.log(`You missed the plushie, please try again`, Severity.Error);
 
-        console.log({result: event.result.toString(),
-            change: event.escrowChange.toString(),
-            multiplier: multiplier[Number(event.result.toString())].toFixed(1),
-            userWon: event.userWon}, 'result')
+        // console.log({result: event.result.toString(),
+        //     change: event.escrowChange.toString(),
+        //     multiplier: multiplier[Number(event.result.toString())].toFixed(1),
+        //     userWon: event.userWon}, 'result')
         this.dispatch(
           thunks.setResult({
             status: 'success',

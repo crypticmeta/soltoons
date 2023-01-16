@@ -24,8 +24,11 @@ function Game({ amount, setAmount, step, setStep, handleModalOpen }) {
    const [playWin, stopWin] = useSound('/assets/audio/win.mp3', {
      volume: 1,
    });
+  const [playNeutral] = useSound('/assets/audio/reward.m4a', {
+    volume: 0.7,
+  });
    const [playSlide, stopSlide] = useSound('/assets/audio/slide.mp3', {
-     volume: 1,
+     volume: 0.7,
    });
   //rive
   const STATE_MACHINE_NAME = 'State Machine 1';
@@ -193,7 +196,8 @@ function Game({ amount, setAmount, step, setStep, handleModalOpen }) {
        setStyleReward({ animationName: 'freefall' });
        setStyleRewardItem({ animationName: 'freefallItem' });
       setTimeout(() => {
-        if (result?.userWon) playWin();
+        if (result?.userWon && Number(result.multiplier) >= 1) playWin();
+        if (result?.userWon && Number(result.multiplier) < 1) playNeutral();
          setStep(4);
        }, 2000);
     } else if (step === 4 && !result?.userWon) {

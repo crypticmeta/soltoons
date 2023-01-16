@@ -5,6 +5,25 @@
 #loading{
   transition: all ease-in-out 1s;
 }
+.corner-ribbon.top-left{
+  top: 0px;
+  left: -70px;
+  transform: rotate(-45deg);
+  -webkit-transform: rotate(-45deg);
+}
+.corner-ribbon{
+  width: 200px;
+  background: #e43;
+  position: absolute;
+  top: 25px;
+  left: -50px;
+  text-align: center;
+  line-height: 50px;
+  letter-spacing: 1px;
+  color: #f0f0f0;
+  transform: rotate(-45deg);
+  -webkit-transform: rotate(-45deg);
+}
 
 /* wallet button */
 .walletButton{

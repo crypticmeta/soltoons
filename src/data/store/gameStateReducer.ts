@@ -26,6 +26,7 @@ export interface GameState {
   vaultBalance: number;
   userVaultBalance: number;
   tokenmint: string;
+  discount: any,
   tokenEscrow: {
     publicKey: string;
     isInitialized: boolean;
@@ -39,7 +40,8 @@ export interface GameState {
 const initialState: GameState = {
   loading: true,
   gameMode: GameTypeValue.CLAW,
-  tokenmint: localStorage.getItem("tokenMint")||"So11111111111111111111111111111111111111112",
+  tokenmint: localStorage.getItem("tokenMint") || "So11111111111111111111111111111111111111112",
+  discount: {},
   tokenEscrow: {
     publicKey: "",
     isInitialized: false,
@@ -99,8 +101,11 @@ const gameStateSlice = createSlice({
       state.loading = true;
       localStorage.setItem("tokenMint", action.payload);
     },
+    setDiscount: (state: GameState, action: PayloadAction<any>) => {
+      state.discount = action.payload
+    },
   },
 });
 
-export const { setUserBalance, setLoading, setUser, setResult, setVaultBalance, setUserVaultBalance, setTokenmint, setTokenEscrow } = gameStateSlice.actions;
+export const { setUserBalance, setLoading, setUser, setResult, setVaultBalance, setUserVaultBalance, setTokenmint, setTokenEscrow, setDiscount } = gameStateSlice.actions;
 export default gameStateSlice.reducer;
