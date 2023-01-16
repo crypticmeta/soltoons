@@ -62,7 +62,7 @@ const tokenRegistry = {
     logoURI: 'https://arweave.net/QPC6FYdUn-3V8ytFNuoCS85S2tHAuiDblh6u3CIZLsw',
     tags: ['utility-token', 'community-token', 'social-token'],
     extensions: {},
-    bets: [500000, 1000000, 5000000, 10000000, 50000000, 100000000],
+    bets: [100000, 1000000, 5000000, 10000000, 50000000, 100000000],
   },
   // GkywroLpkvYQc5dmFfd2RchVYycXZdaA5Uzix42iJdNo: {
   //   chainId: 101,

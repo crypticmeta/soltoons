@@ -569,7 +569,7 @@ class ApiState implements PrivateApiInterface {
           TOKENMINT,
           gameType: this.gameMode,
           userGuess: guess,
-          betAmount: new anchor.BN(bet * (Math.pow(10, tokenData?.decimals||9))),
+          betAmount: new anchor.BN((bet||0) * (Math.pow(10, tokenData?.decimals||9))),
           switchboardTokenAccount: undefined,
         },
         this.wallet.publicKey,
@@ -582,9 +582,10 @@ class ApiState implements PrivateApiInterface {
         ),
         vrf?.permission_bump || 255,
         vrf?.state_bump || DEFAULT_STATE_BUMP,
-        this.userTokenBalance
+        this._gameState||null
       )
       .catch((err) => {
+        this.dispatch(thunks.setLoading(false))
         this.dispatch(thunks.setResult({ status: 'error' }));
         console.error(err, 'err creating bet req');
       });
@@ -622,7 +623,7 @@ class ApiState implements PrivateApiInterface {
       for (const tx of signedTxs) {
         const serialTx = tx.serialize();
         await connection
-          .sendRawTransaction(serialTx, { skipPreflight: false, preflightCommitment: 'finalized' })
+          .sendRawTransaction(serialTx, { skipPreflight: true, preflightCommitment: 'finalized' })
           .then(async (sig) => {
             console.info(sig, ' tx');
             
@@ -827,7 +828,7 @@ class ApiState implements PrivateApiInterface {
         ];
         this.log('Received Result.', Severity.Normal);
 
-        if (multiplier[Number(event.result.toString())] > 0) {
+        if (multiplier[Number(event.result.toString())] > 1) {
           event.userWon = true;
         } else event.userWon = false;
         !event.userWon && this.log(`You missed the plushie, please try again`, Severity.Error);

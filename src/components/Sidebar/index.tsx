@@ -16,6 +16,7 @@ import { Box, MenuItem } from '@mui/material';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { useConnection } from '@solana/wallet-adapter-react';
 //nft
+//@ts-ignore
 import { NftTokenAccount, useWalletNfts } from '@nfteyez/sol-rayz-react';
 import projectRegistry from '../../data/providers/discoutRegistry';
 const wsol = 'So11111111111111111111111111111111111111112';
@@ -103,7 +104,7 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
      let tempArr: any[] = [];
      if (newNFTs && newNFTs.length > 0) {
        newNFTs.map((item) => {
-         console.log(item, 'item');        
+        //  console.log(item, 'item');        
          if (item.data.creators &&
            projectRegistry.includes(item.data.creators[0].address) &&
            item.data.creators[0].verified
@@ -392,11 +393,11 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
               <div className="flex flex-col">
                 <p className="text-xl text-center font-extrabold pb-6 2xl:text-3xl">
                   {Number(result?.multiplier) >= 1
-                    ? `Congrats! You Won ${result?.change / Math.pow(10, tokenInfo?.decimals || 9)} ${
+                    ? `Congrats! You Won ${result?.change / Math.pow(10, tokenInfo?.decimals || 9)>0?convertToShortForm(result?.change / Math.pow(10, tokenInfo?.decimals || 9)):result?.change / Math.pow(10, tokenInfo?.decimals || 9)} ${
                         tokenInfo?.symbol
                       }`
                     : Number(result?.multiplier) < 1 && Number(result?.multiplier) > 0
-                    ? `You won ${result?.change / Math.pow(10, tokenInfo?.decimals || 9)} ${tokenInfo?.symbol}`
+                    ? `You won ${result?.change / Math.pow(10, tokenInfo?.decimals || 9)>0?convertToShortForm(result?.change / Math.pow(10, tokenInfo?.decimals || 9)):result?.change / Math.pow(10, tokenInfo?.decimals || 9)} ${tokenInfo?.symbol}`
                     : 'You Lost'}
                 </p>
 
@@ -512,11 +513,11 @@ const Play = ({
               <button className="center h-full w-full text-lg">Received Result!</button>
             </>
           ) : (
-            <div className="h-full relative">
-              <span className="bg-green-500 text-green-900 w-[100px] shadow-2xl absolute text-xs left-0 -ml-8 py-2 -rotate-45">
+            <div className="h-full w-full relative bg-green-00">
+              <span className="bg-green-500 text-green-900 corner-ribbon top-left">
                 {discountNft ? '1% FEE' : '3% FEE'}
               </span>
-              <div className="bg-red-00 py-2 flex flex-col justify-between h-[20%]">
+              <div className="bg-red-00 py-2 flex flex-col justify-between h-[30%]">
                 <p className="font-extrabold text-center text-md">PLAY with {token?.symbol}</p>
 
                 <hr className="my-2 border-black" />
