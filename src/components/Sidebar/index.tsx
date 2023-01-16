@@ -50,7 +50,7 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
     volume: 1,
   });
 
-  const [open, setOpen] = React.useState(false);
+  const [open, setOpen] = React.useState(true);
   const [openHowTo, setOpenHowTo] = React.useState(false);
 
 
@@ -67,7 +67,6 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
   };
 
   //for-fee-discount
-  const [holder, setHolder] = useState('');
   const [discountNft, setDiscountNft] = useState('');
   const { nfts, isLoading, error } = useWalletNfts({
     publicAddress: wallet.publicKey?.toBase58(),
@@ -267,14 +266,14 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
       setControl('createEscrowAccount');
     } else if (tokenmint === wsol && userAccountExists) {
       setControl('play');
-      dispatch(thunks.setLoading(false))
+      if (logs[0].message.includes('Accounts retrieved for user')) dispatch(thunks.setLoading(false));
     } else if (tokenmint !== wsol && userAccountExists && userEscrowExists) {
       setControl('play');
     }
     return () => {
       
     }
-  }, [tokenmint, userAccountExists, userEscrowExists, token, step, userVaultBal, tokenEscrow, result.status])
+  }, [tokenmint, userAccountExists, userEscrowExists, token, step, userVaultBal, tokenEscrow, result.status, loading])
 
   useEffect(() => {
     // console.log("setting control as : ", control)
@@ -283,6 +282,14 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
     }
   }, [control])
   
+  useEffect(() => {
+    if (logs) {
+      setOpen(true)
+      setTimeout(() => {
+        setOpen(false)
+      }, 6000);
+    }
+  }, [logs])
   
   
   return (
@@ -498,6 +505,7 @@ const Play = ({
   discountNft}:any) => {
   const isWsol = tokenInfo.address === wsol;
   const token = tokenInfo;
+  //TODO: loading when play button pressed
   return (
     <div className="w-full h-full">
       {loading && (result?.status === 'loading' || result?.status === 'waiting') ? (

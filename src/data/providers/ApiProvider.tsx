@@ -251,6 +251,8 @@ class ApiState implements PrivateApiInterface {
 
   public handleCommand = async (command: string) => {
     try {
+      
+     this.dispatch(thunks.setLoading(true));
       command = command.trim(); // Trim the initial command.
       if (command === ApiCommands.UserCreate) await this.createUserAccounts();
       // else if (command === ApiCommands.UserAirdrop) await this.userAirdrop();
@@ -519,13 +521,12 @@ class ApiState implements PrivateApiInterface {
   private playGame = async (args: string[]) => {
     const TOKENMINT = this.tokenMint;
     const tokenData = tokenInfoMap.get(this.tokenMint.toBase58());
-    this.dispatch(thunks.setLoading(true));
     const game = games[this.gameMode];
     
     this.log(`Building bet request...`);
     this.dispatch(thunks.setResult({ status: 'loading' }));
 
-    this.dispatch(thunks.setLoading(true));
+   
 
     // Gather necessary programs.
     const user = await this.user; // Make sure that user is logged in and has accounts.
