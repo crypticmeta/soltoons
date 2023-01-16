@@ -243,7 +243,10 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
     const mintUpdated = localStorage.getItem('oldTokenMint') === token||false;
     // console.log(escrowUpdated, ' Escrow Updated?')
     // console.log(mintUpdated, ' Mint Updated?');
-    if (
+    if (!wallet.connected) {
+      setControl('play');
+    }
+    else if (
       userAccountExists &&
       userEscrowExists &&
       newRound &&
@@ -321,15 +324,20 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
           </div>
         </div>
       </div>
-      <div className="part2 h-[10%]  2xl:h-[10%] p-1">
-        <div className="bg-brand_yellow border-4 border-black rounded-3xl p-1 text-sm overflow-hidden h-full center">
-          <div className="flex justify-between font-extrabold ">
-            <p onClick={() => setOpenHowTo(true)} className="text-center w-full cursor-pointer border-black xl:text-lg">
-              How To Play
-            </p>
+      {wallet?.connected && (
+        <div className="part2 h-[10%]  2xl:h-[10%] p-1">
+          <div className="bg-brand_yellow border-4 border-black rounded-3xl p-1 text-sm overflow-hidden h-full center">
+            <div className="flex justify-between font-extrabold ">
+              <p
+                onClick={() => setOpenHowTo(true)}
+                className="text-center w-full cursor-pointer border-black xl:text-lg"
+              >
+                How To Play
+              </p>
+            </div>
           </div>
         </div>
-      </div>
+      )}
       <div className="part3 h-[40%]  2xl:h-[45%] p-1">
         <div className="bg-brand_yellow rounded-3xl border-4 border-black text-sm p-2 text-center h-full center overflow-hidden justify-between relative">
           {result?.status === 'waiting' && (
@@ -370,7 +378,7 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
                 tokenInfo={tokenInfo}
                 escrow={tokenEscrow}
                 discountNft={discountNft}
-                houseVaultBal = {houseVaultBal}
+                houseVaultBal={houseVaultBal}
               />
             </div>
           )}
@@ -573,9 +581,9 @@ const Play = ({
             </>
           ) : (
             <div className="h-full w-full relative bg-green-00">
-              <span className="bg-green-500 text-green-900 corner-ribbon top-left">
+              {/* <span className="bg-green-500 text-green-900 corner-ribbon top-left">
                 {discountNft ? '1% FEE' : '3% FEE'}
-              </span>
+              </span> */}
               <div className="bg-red-00 py-2 flex flex-col bg-red-00 items-center justify-center h-[30%]">
                 <p className="font-extrabold text-center text-md border-b-2 w-full pb-4">PLAY with {token?.symbol}</p>
 
@@ -632,19 +640,21 @@ const Play = ({
                     ? `Insufficient ${token?.symbol} Balance`
                     : 'PLAY'}
                 </button>
-                <p className="text-xs text-gray-700 text-center">
-                  {Number(balances.sol || 0).toFixed(4)} SOL{' '}
-                  {balances.token && token && tokenInfo.address !== wsol ? (
-                    <span className="pl-4">
-                      {Number(balances.token || 0) > 1000
-                        ? convertToShortForm(Number(balances.token))
-                        : Number(balances.token)}{' '}
-                      {token.symbol}
-                    </span>
-                  ) : (
-                    <></>
-                  )}
-                </p>
+                {balances.sol && (
+                  <p className="text-xs text-gray-700 text-center">
+                    {Number(balances.sol || 0).toFixed(4)} SOL{' '}
+                    {balances.token && token && tokenInfo.address !== wsol ? (
+                      <span className="pl-4">
+                        {Number(balances.token || 0) > 1000
+                          ? convertToShortForm(Number(balances.token))
+                          : Number(balances.token)}{' '}
+                        {token.symbol}
+                      </span>
+                    ) : (
+                      <></>
+                    )}
+                  </p>
+                )}
                 {tokenInfo.address === wsol && Number(amount) > 2 && (
                   <p className="text-red-800 text-xs pt-2 text-center">Amount should be less than 2 SOL</p>
                 )}

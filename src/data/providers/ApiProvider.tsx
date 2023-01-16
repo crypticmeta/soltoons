@@ -306,8 +306,9 @@ class ApiState implements PrivateApiInterface {
     while (retryCount) {
       const userState = await api.UserState.fetch(program.provider.connection, userKey);
       if (userState !== null) {
-        Mixpanel.identify(this.wallet.publicKey.toBase58());
+        
         this.log('User Account Created Successfully', Severity.Normal);
+        Mixpanel.identify(this.wallet.publicKey.toBase58());
         Mixpanel.track('CreateUser', {
           walletId: this.wallet.publicKey.toBase58(),
           id: tx[0],
