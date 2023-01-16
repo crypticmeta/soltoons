@@ -39,7 +39,7 @@ function Game({ amount, setAmount, step, setStep, handleModalOpen }) {
   const fireInput = useStateMachineInput(rive, STATE_MACHINE_NAME, INPUT_NAME);
   //api
   const api = hooks.useApi();
-  const [x, setX] = useState(0);
+  const [x, setX] = useState(30);
   const [styleX, setStyleX] = useState({ transform: 'translateX(0%)', zIndex: 1, animationName: 'none' });
   const [y, setY] = useState(0);
   const [styleY, setStyleY] = useState({ transform: 'translateY(0%)', animationName: 'none' });

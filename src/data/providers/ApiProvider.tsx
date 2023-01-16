@@ -521,6 +521,11 @@ class ApiState implements PrivateApiInterface {
     const tokenData = tokenInfoMap.get(this.tokenMint.toBase58());
     this.dispatch(thunks.setLoading(true));
     const game = games[this.gameMode];
+    
+    this.log(`Building bet request...`);
+    this.dispatch(thunks.setResult({ status: 'loading' }));
+
+    this.dispatch(thunks.setLoading(true));
 
     // Gather necessary programs.
     const user = await this.user; // Make sure that user is logged in and has accounts.
@@ -549,10 +554,6 @@ class ApiState implements PrivateApiInterface {
         }
     }
 
-    this.log(`Building bet request...`);
-    this.dispatch(thunks.setResult({ status: 'loading' }));
-
-    this.dispatch(thunks.setLoading(true));
     const vrf: any = await getVRF(this.wallet.publicKey.toBase58());
     //Throw error if no VRF
     if (!vrf || !vrf.id) {
@@ -634,16 +635,20 @@ class ApiState implements PrivateApiInterface {
             await connection
               .confirmTransaction(strategy)
               .then((res) => {
-                console.log(res.value, 'TX Status')
+                // console.log(res.value, 'TX Status')
                 if (!res.value.err) {
                   this.dispatch(thunks.log({ message, severity: Severity.Success }));
                   if (id === 'collectReward') {
                     this.dispatch(thunks.setResult({ status: 'claimed' }));
-                  }                  
-                  this.dispatch(thunks.setLoading(false));
+                  }
+                  if (id !== 'userBet') this.dispatch(thunks.setLoading(false));
+                }
+                else {
+                   this.log('Tx Error...', Severity.Error);
                 }
               })
               .catch((e) => {
+                this.log("Tx failed...", Severity.Error)
                 if (id !== 'collectReward') this.dispatch(thunks.setResult({ status: 'error' }));
                 this.dispatch(thunks.setLoading(false));
                 if (e instanceof anchor.web3.SendTransactionError) {
@@ -659,7 +664,9 @@ class ApiState implements PrivateApiInterface {
               });
           })
           .catch((e) => {
-            this.dispatch(thunks.setResult({ status: 'error' }));
+            if (id !== 'collectReward') this.dispatch(thunks.setResult({ status: 'error' }));
+            // this.dispatch(thunks.setResult({ status: 'error' }));
+            this.log("Tx Error...", Severity.Error)
             this.dispatch(thunks.setLoading(false));
             if (e instanceof anchor.web3.SendTransactionError) {
               const anchorError = e.logs ? anchor.AnchorError.parse(e.logs) : null;
@@ -681,7 +688,7 @@ class ApiState implements PrivateApiInterface {
    */
   private watchUserAccounts = async () => {
     const onSolAccountChange = (account: anchor.web3.AccountInfo<Buffer> | null) => {
-      this.dispatch(thunks.setUserBalance({ sol: account ? account.lamports / LAMPORTS_PER_SOL : undefined }));
+      this.dispatch(thunks.setUserBalance({ sol: account ? account.lamports / LAMPORTS_PER_SOL : undefined, token: this.userTokenBalance }));
     };
     const onUserVaultAccountChange = (account: anchor.web3.AccountInfo<Buffer> | null) => {
       this.dispatch(thunks.setUserVaultBalance(account ? account.lamports / LAMPORTS_PER_SOL : undefined));
@@ -691,16 +698,13 @@ class ApiState implements PrivateApiInterface {
       if (!account) {
         this.dispatch(
           thunks.setUserBalance({
-            token: undefined,
+            sol: this.userBalance,
+            token: undefined||0,
           })
         );
         return;
       } else if (account?.data?.length === 0) {
-        this.dispatch(
-          thunks.setUserBalance({
-            token: undefined,
-          })
-        );
+        this.dispatch(thunks.setUserBalance({ sol: this.userBalance, token: undefined||0 }));
         return;
       }
       const rawAccount = spl.AccountLayout.decode(account.data);
@@ -708,7 +712,8 @@ class ApiState implements PrivateApiInterface {
       {
         this.dispatch(
           thunks.setUserBalance({
-            token: rawAccount.amount ? Number(rawAccount.amount) / (Math.pow(10, tokenData?.decimals||9)) : undefined,
+            sol: this.userBalance,
+            token: rawAccount.amount ? Number(rawAccount.amount) / Math.pow(10, tokenData?.decimals || 9) : undefined,
           })
         );
       }
@@ -721,6 +726,13 @@ class ApiState implements PrivateApiInterface {
       this.tokenMint.toBase58() === 'So11111111111111111111111111111111111111112'
         ? user?.publicKey
         : await spl.getAssociatedTokenAddress(this.tokenMint, this.wallet.publicKey, true);
+    
+     this.dispatch(
+       thunks.setUserBalance({
+         sol: this.userBalance,
+         token:  0,
+       })
+     );
     // const accountInfo = await spl.getAccount(program.provider.connection, rewardAddress).catch((err) => console.error(err));
 
     // const rewardAddress =
@@ -856,9 +868,9 @@ class ApiState implements PrivateApiInterface {
    * Log to DisplayLogger.
    */
   private log = (message: string, severity: Severity = Severity.Normal) => {
-    if (severity == 'error') {
-      this.dispatch(thunks.setLoading(false));
-    }
+    // if (severity === 'error') {
+    //   this.dispatch(thunks.setLoading(false));
+    // }
     this.dispatch(thunks.log({ message, severity }));
   };
 

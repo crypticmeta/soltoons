@@ -29,7 +29,7 @@ const tokenRegistry = {
       coingeckoId: 'solana',
       imageURI: '/resources/solana-logo.gif',
     },
-    bets: [0.001, 0.01, 0.1, 0.25, 0.5, 1.0]
+    bets: [0.001, 0.01, 0.1, 0.25, 0.5, 1.0],
   },
   // '9bb1MAn3DwDxwrVyKRYFdBfNfWnn4k1EeHjbLmJ1nsNx': {
   //   chainId: 101,
@@ -62,7 +62,7 @@ const tokenRegistry = {
     logoURI: 'https://arweave.net/QPC6FYdUn-3V8ytFNuoCS85S2tHAuiDblh6u3CIZLsw',
     tags: ['utility-token', 'community-token', 'social-token'],
     extensions: {},
-    bets: [100, 1000, 2000, 5000, 10000, 20000]
+    bets: [500000, 1000000, 5000000, 10000000, 50000000, 100000000],
   },
   // GkywroLpkvYQc5dmFfd2RchVYycXZdaA5Uzix42iJdNo: {
   //   chainId: 101,
@@ -91,22 +91,22 @@ const tokenRegistry = {
   //     twitter: 'https://twitter.com/CreamyFriends',
   //   },
   // },
-  DUSTawucrTsGU8hcqRdHDCbuYhCPADMLM2VcCb8VnFnQ: {
-    chainId: 101,
-    address: 'DUSTawucrTsGU8hcqRdHDCbuYhCPADMLM2VcCb8VnFnQ',
-    symbol: 'DUST',
-    name: 'DUST Protocol',
-    decimals: 9,
-    logoURI:
-      'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/DUSTawucrTsGU8hcqRdHDCbuYhCPADMLM2VcCb8VnFnQ/logo.jpg',
-    tags: ['NFT', 'utility-token'],
-    extensions: {
-      discord: 'https://discord.com/invite/dedao',
-      twitter: 'https://twitter.com/degodsnft',
-      website: 'https://docs.dustprotocol.com/',
-    },
-    bets: [1, 2, 4, 6, 10, 20]
-  },
+  // DUSTawucrTsGU8hcqRdHDCbuYhCPADMLM2VcCb8VnFnQ: {
+  //   chainId: 101,
+  //   address: 'DUSTawucrTsGU8hcqRdHDCbuYhCPADMLM2VcCb8VnFnQ',
+  //   symbol: 'DUST',
+  //   name: 'DUST Protocol',
+  //   decimals: 9,
+  //   logoURI:
+  //     'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/DUSTawucrTsGU8hcqRdHDCbuYhCPADMLM2VcCb8VnFnQ/logo.jpg',
+  //   tags: ['NFT', 'utility-token'],
+  //   extensions: {
+  //     discord: 'https://discord.com/invite/dedao',
+  //     twitter: 'https://twitter.com/degodsnft',
+  //     website: 'https://docs.dustprotocol.com/',
+  //   },
+  //   bets: [1, 2, 4, 6, 10, 20]
+  // },
   // '4Up16GyRmybEEDfaCsDszkzkvtWgoKDtS4cUyBEjvPBM': {
   //   chainId: 101,
   //   address: '4Up16GyRmybEEDfaCsDszkzkvtWgoKDtS4cUyBEjvPBM',

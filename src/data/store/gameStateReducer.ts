@@ -37,9 +37,9 @@ export interface GameState {
  * The initial {@linkcode GameState} to set in the data slice.
  */
 const initialState: GameState = {
-  loading: false,
+  loading: true,
   gameMode: GameTypeValue.CLAW,
-  tokenmint: "So11111111111111111111111111111111111111112",
+  tokenmint: localStorage.getItem("tokenMint")||"So11111111111111111111111111111111111111112",
   tokenEscrow: {
     publicKey: "",
     isInitialized: false,
@@ -73,7 +73,6 @@ const gameStateSlice = createSlice({
       }
     },
     setLoading: (state: GameState, action: PayloadAction<boolean>) => {
-      console.log("setting loading ", action.payload)
       state.loading = action.payload
     },
     setTokenEscrow: (state: GameState, action: PayloadAction<{
@@ -81,8 +80,6 @@ const gameStateSlice = createSlice({
       isInitialized: boolean;
       balance: number;
     }>) => {
-
-      console.log("setting tokenEscrow ", action.payload)
       state.tokenEscrow = action.payload
     },
     setUser: (state: GameState, action: PayloadAction<any>) => {
@@ -98,8 +95,9 @@ const gameStateSlice = createSlice({
       state.userVaultBalance = action.payload
     },
     setTokenmint: (state: GameState, action: PayloadAction<string>) => {
-      console.log("setting mint ", action.payload)
       state.tokenmint = action.payload
+      state.loading = true;
+      localStorage.setItem("tokenMint", action.payload);
     },
   },
 });
