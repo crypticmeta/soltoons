@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { hooks, Store, thunks } from '../../data';
 import { tokenInfoMap} from "../../data/providers/tokenProvider";
 import { WalletMultiButton } from '@solana/wallet-adapter-material-ui';
@@ -12,8 +12,12 @@ import Modal from '@mui/material/Modal';
 import LinearProgress, { LinearProgressProps } from '@mui/material/LinearProgress';
 import useSound from 'use-sound';
 import Select, { SelectChangeEvent } from '@mui/material/Select';
-import { Box, FormControl, MenuItem } from '@mui/material';
+import { Box, MenuItem } from '@mui/material';
 import { useWallet } from '@solana/wallet-adapter-react';
+import { useConnection } from '@solana/wallet-adapter-react';
+//nft
+import { NftTokenAccount, useWalletNfts } from '@nfteyez/sol-rayz-react';
+import projectRegistry from '../../data/providers/discoutRegistry';
 const wsol = 'So11111111111111111111111111111111111111112';
 const Alert = React.forwardRef<HTMLDivElement, AlertProps>(function Alert(props, ref) {
   return <MuiAlert elevation={6} ref={ref} variant="filled" {...props} />;
@@ -33,7 +37,8 @@ function LinearProgressWithLabel(props: LinearProgressProps & { value: number })
 }
 //@ts-ignore
 function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal }) {
-  const wallet = useWallet()
+  const wallet = useWallet();
+  const {connection} = useConnection();
     const [playLoading, stopLoading] = useSound('/assets/audio/loading.mp3', {
       volume: 0.7,
     });
@@ -45,7 +50,7 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
   });
 
   const [open, setOpen] = React.useState(false);
-    const [openHowTo, setOpenHowTo] = React.useState(false);
+  const [openHowTo, setOpenHowTo] = React.useState(false);
 
 
    const closeHowTo = () => {
@@ -60,6 +65,13 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
     setOpen(false);
   };
 
+  //for-fee-discount
+  const [holder, setHolder] = useState('');
+  const [discountNft, setDiscountNft] = useState('');
+  const { nfts, isLoading, error } = useWalletNfts({
+    publicAddress: wallet.publicKey?.toBase58(),
+    connection,
+  });
   const api = hooks.useApi();
   const dispatch = hooks.useThunkDispatch();
   const logs:any = useSelector(({ HUDLogger }: Store) => HUDLogger.logs);
@@ -86,6 +98,34 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
     dispatch(thunks.setLoading(true));
     setToken(event.target.value as string);
   };
+
+   const check_holder = useCallback(async (newNFTs: NftTokenAccount[]) => {
+     let tempArr: any[] = [];
+     if (newNFTs && newNFTs.length > 0) {
+       newNFTs.map((item) => {
+         console.log(item, 'item');        
+         if (item.data.creators &&
+           projectRegistry.includes(item.data.creators[0].address) &&
+           item.data.creators[0].verified
+         ) {
+           setDiscountNft(item);
+         }
+         tempArr.push(item);
+       });
+     }
+   }, []);
+
+  useEffect(() => {
+     if(!isLoading && !error)
+      check_holder(nfts);
+  }, [nfts, isLoading, error]);
+  
+  useEffect(() => {
+    if (discountNft) {
+      dispatch(thunks.setDiscount(discountNft))
+    }
+  }, [discountNft])
+  
   
   //stores old token escrow info to check if the store has updated with escrow of new token mint
   useEffect(() => {
@@ -285,11 +325,8 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
         <div className="bg-brand_yellow border-4 border-black rounded-3xl p-1 text-sm overflow-hidden h-full">
           <div className="flex justify-between font-extrabold">
             <p onClick={() => setOpenHowTo(true)} className="text-center w-full cursor-pointer border-black xl:text-lg">
-              How To Play
+              How To Play 
             </p>
-            {/* <p className="w-6/12 text-center border-r border-black xl:text-lg">INFO:</p> */}
-
-            {/* <p className="w-6/12 text-center xl:text-lg">LIVE BETS</p> */}
           </div>
         </div>
       </div>
@@ -329,15 +366,20 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
                 api={api}
                 balances={balances}
                 result={result}
-                wait={wait}
                 userVaultBal={userVaultBal}
                 tokenInfo={tokenInfo}
                 escrow={tokenEscrow}
+                discountNft = {discountNft}
               />
             </div>
           )}
         </div>
       </div>
+      {wait > 0 && (
+        <div className="bg-red-00 w-full py-2 text-white">
+          <LinearProgressWithLabel sx={{ height: 5, borderRadius: '30px' }} variant="determinate" value={wait} />
+        </div>
+      )}
 
       <Modal open={openModal} onClose={handleModalClose}>
         <div className="bg-black w-full h-screen center bg-opacity-75">
@@ -442,7 +484,17 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
   );
 }
 //@ts-ignore
-const Play = ({ amount, setAmount, api, balances, loading, result, wait, userVaultBal, tokenInfo, escrow }) => {
+const Play = ({
+  amount,
+  setAmount,
+  api,
+  balances,
+  loading,
+  result,
+  userVaultBal,
+  tokenInfo,
+  escrow,
+  discountNft}:any) => {
   const isWsol = tokenInfo.address === wsol;
   const token = tokenInfo;
   return (
@@ -460,9 +512,13 @@ const Play = ({ amount, setAmount, api, balances, loading, result, wait, userVau
               <button className="center h-full w-full text-lg">Received Result!</button>
             </>
           ) : (
-            <div className="">
-              <div className="">
-                <p className="font-extrabold text-center text-xs">PLAY with {token?.symbol}</p>
+            <div className="h-full relative">
+              <span className="bg-green-500 text-green-900 w-[100px] shadow-2xl absolute text-xs left-0 -ml-8 py-2 -rotate-45">
+                {discountNft ? '1% FEE' : '3% FEE'}
+              </span>
+              <div className="bg-red-00 py-2 flex flex-col justify-between h-[20%]">
+                <p className="font-extrabold text-center text-md">PLAY with {token?.symbol}</p>
+
                 <hr className="my-2 border-black" />
               </div>
               <div className="flex flex-wrap  italic justify-between bg-red-00 w-full ">
@@ -489,7 +545,7 @@ const Play = ({ amount, setAmount, api, balances, loading, result, wait, userVau
                    
                       `}
                     >
-                      {item<10000?item:convertToShortForm(item)}
+                      {item < 10000 ? item : convertToShortForm(item)}
                     </span>
                   </button>
                 ))}
@@ -516,7 +572,10 @@ const Play = ({ amount, setAmount, api, balances, loading, result, wait, userVau
                   {Number(balances.sol || 0).toFixed(4)} SOL{' '}
                   {balances.token && token && tokenInfo.address !== wsol ? (
                     <span className="pl-4">
-                      {Number(balances.token || 0).toFixed(2)} {token.symbol}
+                      {Number(balances.token || 0) > 1000
+                        ? convertToShortForm(Number(balances.token))
+                        : Number(balances.token)}{' '}
+                      {token.symbol}
                     </span>
                   ) : (
                     <></>
@@ -578,9 +637,10 @@ function convertToShortForm(n: number): string {
   let num = n;
   let suffix = '';
   for (let key in suffixes) {
-    if (num >= Math.pow(10, key)) {
-      num /= Math.pow(10, key);
-      suffix = suffixes[key];
+    if (num >= Math.pow(10, Number(key))) {
+      num /= Math.pow(10, Number(key));
+      //@ts-ignore
+      suffix = suffixes[Number(key)];
     }
   }
   if (num >= 1000000) {
