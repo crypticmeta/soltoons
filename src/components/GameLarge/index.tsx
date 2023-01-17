@@ -320,6 +320,7 @@ useEffect(() => {
                   <img alt="" src="/assets/images/collect.png" />
                   {reward && step === 4 && (
                     <img
+                      id="rewardItem"
                       onClick={handleModalOpen}
                       className="w-[50px] z-20 absolute bottom-[10px] left-[60px] cursor-pointer"
                       //@ts-ignore

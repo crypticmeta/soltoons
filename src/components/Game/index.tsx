@@ -334,6 +334,7 @@ function Game({ amount, step, setStep, handleModalOpen, sound }) {
 
               {reward && step === 4 && (
                 <img
+                  id="rewardItem"
                   onClick={handleModalOpen}                  
                   className="w-[30px] z-20 absolute bottom-[10px] left-[55px] cursor-pointer"
                   //@ts-ignore

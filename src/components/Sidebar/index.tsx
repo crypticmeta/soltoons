@@ -444,7 +444,8 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
                 </p>
 
                 <div className="center space-x-4 flex-wrap text-sm md:text-xl">
-                  <button
+                    <button
+                      id="collectRewardButton"
                     className="bg-[#a23acd] border-2 rounded-3xl border-black uppercase font-extrabold px-4 py-2 cursor-pointer"
                     onClick={() => api.handleCommand('collect reward')}
                   >
@@ -610,6 +611,7 @@ const Play = ({
                     className={`w-${token?.bets?.length === 4 ? 5 : 4}/12 center bg-red-00 my-1 p-1 `}
                     onClick={() => setAmount(Number(item))}
                     key={item}
+                    id={String(item)+tokenInfo.symbol}
                   >
                     <span
                       className={`text-xs w-full p-1 text-center ${
@@ -634,11 +636,12 @@ const Play = ({
               </div>
               <div className="pt-6 md:pt-1 2xl:pt-6">
                 <button
+                  id="play-button"
                   disabled={tokenInfo.address !== wsol && balances.token === 0}
                   onClick={() => {
                     api.handleCommand(`user play 1 ${amount}`);
                   }}
-                  className={`border-black  border-4 p-1 rounded-3xl text-xs w-10/12 font-extrabold ${
+                  className={`border-black play-button border-4 p-1 rounded-3xl text-xs w-10/12 font-extrabold ${
                     tokenInfo.address !== wsol && balances.token === 0
                       ? 'bg-gray-600 cursor-not-allowed'
                       : ' hover:bg-yellow-500'

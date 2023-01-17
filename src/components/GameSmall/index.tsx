@@ -293,6 +293,7 @@ import useSound from 'use-sound';
                   <img alt="" src="/assets/images/collect.png" />
                   {reward && step === 4 && (
                     <img
+                      id="rewardItem"
                       onClick={handleModalOpen}
                       className="w-[20px] z-20 absolute bottom-[5px] left-[30px] cursor-pointer"
                       //@ts-ignore
