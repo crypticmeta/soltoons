@@ -148,7 +148,6 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
   //
   useEffect(() => {
     if (tokenmint && tokenInfoMap.get(tokenmint)) {
-      api?.handleCommand('vault');
       setTokenInfo(tokenInfoMap.get(tokenmint));
       if (tokenInfoMap.get(tokenmint)?.bets.length) setAmount(tokenInfoMap.get(tokenmint)?.bets[0] || 0);
     }
@@ -158,6 +157,7 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
         // dispatch(thunks.setLoading(false));
         setUserEscrowExists(false);
       } else if (tokenEscrow.isInitialized && userAccountExists) {
+        
         //tokenescrow is initialized and new tokenescrow account belongs to new tokenmint then setUserAccountExists true and loading false
         // dispatch(thunks.setLoading(false));
         setUserEscrowExists(true);
@@ -169,10 +169,14 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
 
   useEffect(() => {
     if (user && user.authority) {
+          
       setUserAccountExists(true);
     }
   }, [user]);
 
+    useEffect(() => {
+      if (api && tokenmint) api?.handleCommand('vault');
+    }, [api, tokenmint, token]);
   useEffect(() => {
     let timer: any;
     if (result && result.status === 'waiting') {
@@ -246,6 +250,7 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
     if (!wallet.connected) {
       setControl('play');
     }
+
     else if (
       userAccountExists &&
       userEscrowExists &&
@@ -273,22 +278,27 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
 
   useEffect(() => {
     // console.log("setting control as : ", control)
-    if (control) {
-      dispatch(thunks.setLoading(false));
+    if (control) { 
+        dispatch(thunks.setLoading(false));
     }
   }, [control]);
 
   useEffect(() => {
     if (logs) {
-      setOpen(true);
-      setTimeout(() => {
-        setOpen(false);
-      }, 6000);
+      setOpen(true);      
     }
   }, [logs]);
+  useEffect(() => {
+    if (open)
+    setTimeout(() => {
+      setOpen(false);
+    }, 6000);
+  }, [open])
+  
 
   return (
     <div className="flex h-full flex-col max-h-[800px]  md:justify-center w-full lg:w-3/12 p-6 font-bold relative">
+      <div className='text-white text-center text-xs'>House Balance: { houseVaultBal } {tokenInfo?.symbol}</div>
       <div className="part1 h-[20%]  center w-full">
         <div className="w-full">
           {wallet?.connected && (

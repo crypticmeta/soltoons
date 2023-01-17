@@ -408,7 +408,7 @@ export class User {
         ...vrfContext.publicKeys,
         vrfPayer: payerWrappedSolAccount,
         payer: payerPubkey,
-        nftMint: discount_mint || backupNft,
+        nftMint: discount_mint || (process.env.REACT_APP_NETWORK==="devnet"?vrf_mint:backupNft),
         nftTokenAccount: nftATA || flip_payer,
         nftMetadataAccount: metadata_account_pda,
         tokenMetadataProgram: METADATA_PROGRAM,
