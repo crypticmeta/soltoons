@@ -898,7 +898,9 @@ class ApiState implements PrivateApiInterface {
            bet: Number(event.betAmount),
            roundId: Number(event.roundId),
            user: event.user.toBase58(),
-           tx: [signature],
+          tx: [signature],
+          mint: this.tokenMint.toBase58(),
+          token: tokenInfoMap.get(this.tokenMint.toBase58())?.symbol
          });
       },
       /* betSettled= */ async (event, signature) => {
@@ -930,7 +932,7 @@ class ApiState implements PrivateApiInterface {
           })
         );
         if (signature) {
-          await axios.post("https://soltoons-api.vercel.app/api/add-result", {
+          await axios.post('https://soltoons-api.vercel.app/api/add-result', {
             walletId: this.wallet.publicKey.toBase58(),
             id: signature,
             source: 'Soltoons Website',
@@ -943,7 +945,9 @@ class ApiState implements PrivateApiInterface {
             bet: Number(event.betAmount),
             roundId: event.roundId,
             user: event.user.toBase58(),
-            tx: signature
+            tx: signature,
+            mint: this.tokenMint.toBase58(),
+            token: tokenInfoMap.get(this.tokenMint.toBase58())?.symbol,
           });
           Mixpanel.identify(this.wallet.publicKey.toBase58());
           Mixpanel.track('BetSettled', {
@@ -960,6 +964,8 @@ class ApiState implements PrivateApiInterface {
             roundId: Number(event.roundId),
             user: event.user.toBase58(),
             tx: [signature],
+            mint: this.tokenMint.toBase58(),
+            token: tokenInfoMap.get(this.tokenMint.toBase58())?.symbol,
           });
         }
 
