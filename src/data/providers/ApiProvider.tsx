@@ -882,10 +882,24 @@ class ApiState implements PrivateApiInterface {
     );
     // Watch user object
     user.watch(
-      /* betPlaced= */ async (event) => {
+      /* betPlaced= */ async (event, signature) => {
         const bet = event.betAmount.div(new anchor.BN(RIBS_PER_RACK));
         await this.log(`BetPlaced: User bet ${bet} on number ${event.guess}`);
         await this.log(`Awaiting result from vrf...`);
+         Mixpanel.identify(this.wallet.publicKey.toBase58());
+        Mixpanel.track('BetPlaced', {
+          gameType: event.gameType,
+            timestamp: event.timestamp,
+           walletId: this.wallet.publicKey.toBase58(),
+           id: signature,
+           source: 'Soltoons Website',
+           network: process.env.REACT_APP_NETWORK,
+           status: 'success',
+           bet: Number(event.betAmount),
+           roundId: Number(event.roundId),
+           user: event.user.toBase58(),
+           tx: [signature],
+         });
       },
       /* betSettled= */ async (event, signature) => {
         let multiplier = [
@@ -938,12 +952,12 @@ class ApiState implements PrivateApiInterface {
             source: 'Soltoons Website',
             network: process.env.REACT_APP_NETWORK,
             status: 'success',
-            result: event.result.toString(),
-            change: event.escrowChange.toString(),
-            multiplier: multiplier[Number(event.result.toString())].toFixed(1),
+            result: Number(event.result.toString()),
+            change: Number(event.escrowChange.toString()),
+            multiplier: Number(multiplier[Number(event.result.toString())].toFixed(1)),
             userWon: event.userWon,
             bet: Number(event.betAmount),
-            roundId: event.roundId,
+            roundId: Number(event.roundId),
             user: event.user.toBase58(),
             tx: [signature],
           });

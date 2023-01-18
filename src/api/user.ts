@@ -515,7 +515,7 @@ export class User {
     return state.currentRound.guess === state.currentRound.result;
   }
   watch(
-    betPlaced: (event: UserBetPlaced) => Promise<void> | void,
+    betPlaced: (event: UserBetPlaced, signature: string) => Promise<void> | void,
     betSettled: (event: UserBetSettled, signature: string) => Promise<void> | void, user:any
   ) {
     this._programEventListeners.push(
@@ -530,7 +530,7 @@ export class User {
           await betPlaced({
             ...event,
             gameType: convertGameType(event.gameType),
-          });
+          }, signature);
         }
       )
     );
