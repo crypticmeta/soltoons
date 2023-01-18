@@ -29,7 +29,7 @@ const tokenRegistry = {
       coingeckoId: 'solana',
       imageURI: '/resources/solana-logo.gif',
     },
-    bets: [0.05, 0.1, 0.2, 0.4, 0.8, 1.0],
+    bets: [0.01, 0.05, 0.1, 0.25, 0.5, 1.0],
   },
   // '9bb1MAn3DwDxwrVyKRYFdBfNfWnn4k1EeHjbLmJ1nsNx': {
   //   chainId: 101,
