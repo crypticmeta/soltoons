@@ -209,8 +209,9 @@ class ApiState implements PrivateApiInterface {
         .then(
           (user) =>
             (this._user ??= (() => {
-              const temp_user = user.state.toJSON();
-              temp_user.publicKey = user.publicKey.toBase58();
+              const temp_user:any = user.state.toJSON();
+            temp_user.publicKey = user.publicKey.toBase58();
+            temp_user.exists = "success";
               this.dispatch(thunks.setUser(temp_user));
               // If there is not yet a known user, set it, log it, and return it.
               this.log(`Accounts retrieved for user: ${truncatedPubkey(pubkey.toBase58())}`);
@@ -220,6 +221,7 @@ class ApiState implements PrivateApiInterface {
             })())
         )
         .catch((e) => {
+          this.dispatch(thunks.setUser({exists:"false"}));
           this.dispatch(thunks.setLoading(false));
           if (e instanceof ApiError) throw e;
           else throw ApiError.userAccountMissing();
@@ -329,8 +331,9 @@ class ApiState implements PrivateApiInterface {
                 (this._user ??= (() => {
                   // If there is not yet a known user, set it, log it, and return it.
                   // this.log(`Accounts retrieved for user: ${truncatedPubkey(pubkey.toBase58())}`);
-                  const temp_user = user.state.toJSON();
-                  temp_user.publicKey = user.publicKey.toBase58();
+                  const temp_user:any = user.state.toJSON();
+                temp_user.publicKey = user.publicKey.toBase58();
+                temp_user.exists = 'success';
                   this.dispatch(thunks.setUser(temp_user));
                   this.watchUserAccounts();
                   return user;

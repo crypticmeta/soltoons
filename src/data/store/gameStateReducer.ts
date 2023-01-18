@@ -50,7 +50,7 @@ const initialState: GameState = {
     balance: 0
   },
   userBalances: {},
-  user: {},
+  user: { exists: "false"},
   result: { },
   vaultBalance: 0,
   userVaultBalance: 0,

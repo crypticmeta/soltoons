@@ -85,7 +85,7 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
   const userVaultBal = useSelector((store: Store) => store.gameState.userVaultBalance);  
   const houseVaultBal = useSelector((store: Store) => store.gameState.vaultBalance);
   const [userAccountExists, setUserAccountExists] = useState(false);
-  const [userEscrowExists, setUserEscrowExists] = useState(true);
+  const [userEscrowExists, setUserEscrowExists] = useState("true");
   const [wait, setWait] = useState(0);
 
   //tokenmint
@@ -97,6 +97,7 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
 
   const handleChange = (event: SelectChangeEvent) => {
     dispatch(thunks.setLoading(true));
+    setUserEscrowExists("loading")
     setToken(event.target.value as string);
   };
 
@@ -155,12 +156,12 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
       if (!tokenEscrow?.isInitialized && userAccountExists) {
         //tokenescrow is not initialized then setUserAccountExists false and loading false
         // dispatch(thunks.setLoading(false));
-        setUserEscrowExists(false);
+        setUserEscrowExists("false");
       } else if (tokenEscrow.isInitialized && userAccountExists) {
         
         //tokenescrow is initialized and new tokenescrow account belongs to new tokenmint then setUserAccountExists true and loading false
         // dispatch(thunks.setLoading(false));
-        setUserEscrowExists(true);
+        setUserEscrowExists("true");
       } else {
         // dispatch(thunks.setLoading(false));
       }
@@ -168,8 +169,7 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
   }, [tokenmint, tokenEscrow]);
 
   useEffect(() => {
-    if (user && user.authority) {
-          
+    if (user && user.authority) { 
       setUserAccountExists(true);
     }
   }, [user]);
@@ -238,9 +238,14 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
   }, [dispatch, token, tokenmint]);
 
   useEffect(() => {
-    const newRound = step === 0; //new round or page refresh
-    const tokenEscrowHasClaimableBalance = tokenmint === wsol ? userVaultBal > 0.03552384 : tokenEscrow.balance > 0; //should have claimable balance to claim reward
+    if (wallet?.connected) {
+      dispatch(thunks.setUser({ exists: "loading" }))
+    }
+  }, [wallet?.connected])
+  
 
+  useEffect(() => {
+    const newRound = step === 0; //new round or page refresh
     //@ts-ignore
     const escrowUpdated = localStorage.getItem(localStorage.getItem('oldTokenMint') + wallet.publicKey?.toBase58() + 'Escrow') ===
       tokenEscrow.publicKey||false;
@@ -250,36 +255,90 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
     if (!wallet.connected) {
       setControl('play');
     }
-
-    else if (
-      userAccountExists &&
-      userEscrowExists &&
-      newRound &&
-      tokenEscrowHasClaimableBalance &&
-      !result.status &&
-      (tokenmint === wsol ? userVaultBal > 0.03552384 : tokenEscrow.balance > 0)
-    ) {
-      //ensures the button is only shown for old rewards not current round one
-      setControl('collectPreviousReward');
-    } else if (tokenmint === wsol && !userAccountExists) {
-      setControl('createUserAccount');
-    } else if (tokenmint !== wsol && !userAccountExists) {
-      setControl('createUserAccount');
-    } else if (tokenmint !== wsol && userAccountExists && !userEscrowExists && mintUpdated && escrowUpdated) {
-      setControl('createEscrowAccount');
-    } else if (tokenmint === wsol && userAccountExists) {
-      setControl('play');
-      if (logs[0].message.includes('Accounts retrieved for user')) dispatch(thunks.setLoading(false));
-    } else if (tokenmint !== wsol && userAccountExists && userEscrowExists) {
-      setControl('play');
+    else if (wallet.connected && userAccountExists && tokenmint) {
+      if (tokenmint === wsol) {
+        if (!result.status && newRound && userVaultBal > 0.03552384) {
+          //ensures the button is only shown for old rewards not current round one
+          setControl('collectPreviousReward');
+        }
+        else {
+          setControl('play');
+        if (logs[0].message.includes('Accounts retrieved for user')) dispatch(thunks.setLoading(false));
+        }
+      }
+      else {
+        if (!result.status && newRound && tokenEscrow.balance > 0) {
+          //ensures the button is only shown for old rewards not current round one
+          setControl('collectPreviousReward');
+        }
+        else if (userEscrowExists==="false" && escrowUpdated && mintUpdated) {
+          setControl('createEscrowAccount');
+        }
+        else if(userEscrowExists === "true" &&mintUpdated){
+          setControl('play');
+        }
+        else {
+          setControl("loading")
+          console.log(mintUpdated, escrowUpdated)
+          // console.log("token used. but nothing true")
+        }
+      }
     }
+    else if (user?.exists === 'false' && houseVaultBal) {
+     setControl('createUserAccount');
+    } else {
+      setControl("loading")
+      // console.log("nothing is true")
+    }
+
+    // else if (
+    //   userAccountExists &&
+    //   userEscrowExists &&
+    //   newRound &&
+    //   !result.status &&
+    //   (tokenmint === wsol ? userVaultBal > 0.03552384 : tokenEscrow.balance > 0)
+    // ) {
+    //   //ensures the button is only shown for old rewards not current round one
+    //   setControl('collectPreviousReward');
+    // }
+    // else if (tokenmint === wsol && !userAccountExists) {
+    //   setControl('createUserAccount');
+    // }
+    // else if (tokenmint !== wsol && !userAccountExists) {
+    //   setControl('createUserAccount');
+    // }
+    // else if (tokenmint !== wsol && userAccountExists && !userEscrowExists && mintUpdated && escrowUpdated) {
+    //   setControl('createEscrowAccount');
+    // } else if (tokenmint === wsol && userAccountExists) {
+    //   setControl('play');
+    //   if (logs[0].message.includes('Accounts retrieved for user')) dispatch(thunks.setLoading(false));
+    // } else if (tokenmint !== wsol && userAccountExists && userEscrowExists) {
+    //   setControl('play');
+    // }
+    // console.log(userAccountExists, 'user exists?')
+    // console.log(user, 'USER')
     return () => {};
-  }, [tokenmint, userAccountExists, userEscrowExists, token, step, userVaultBal, tokenEscrow, result.status, loading]);
+  }, [tokenmint,
+    userAccountExists,
+    userEscrowExists,
+    token,
+    step,
+    userVaultBal,
+    tokenEscrow,
+    result.status,
+    loading,
+    wallet,
+    user,
+    logs,
+    dispatch]);
 
   useEffect(() => {
-    // console.log("setting control as : ", control)
-    if (control) { 
-        dispatch(thunks.setLoading(false));
+    console.log("setting control as : ", control, "CONTROL")
+    if ( control === "loading") {
+      dispatch(thunks.setLoading(true))
+    }
+    else if (control && control !== 'loading') {
+      dispatch(thunks.setLoading(false));
     }
   }, [control]);
 
