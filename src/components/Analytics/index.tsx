@@ -68,7 +68,7 @@ function Index() {
                   {tokenInfoMap.get(item.properties.mint)?.symbol}
                 </p>
                       <p>{item.properties.multiplier}x</p>
-                      <p>{ item.properties.id.substring(0,7)}</p>
+                      {/* <p>{ item.properties.id.substring(0,7)}</p> */}
               </a>
             </div>
           ))}
