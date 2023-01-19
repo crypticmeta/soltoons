@@ -992,25 +992,27 @@ class ApiState implements PrivateApiInterface {
             tx: signature,
             mint: this.tokenMint.toBase58(),
             token: tokenInfoMap.get(this.tokenMint.toBase58())?.symbol,
+          }).then(res => {
+            Mixpanel.identify(this.wallet.publicKey.toBase58());
+            Mixpanel.track('BetSettled', {
+              walletId: this.wallet.publicKey.toBase58(),
+              id: signature,
+              source: 'Soltoons Website',
+              network: process.env.REACT_APP_NETWORK,
+              status: 'success',
+              result: Number(event.result.toString()),
+              change: Number(event.escrowChange.toString()),
+              multiplier: Number(multiplier[Number(event.result.toString())].toFixed(1)),
+              userWon: event.userWon,
+              bet: Number(event.betAmount),
+              roundId: Number(event.roundId),
+              user: event.user.toBase58(),
+              tx: [signature],
+              mint: this.tokenMint.toBase58(),
+              token: tokenInfoMap.get(this.tokenMint.toBase58())?.symbol,
+            });
           });
-          Mixpanel.identify(this.wallet.publicKey.toBase58());
-          Mixpanel.track('BetSettled', {
-            walletId: this.wallet.publicKey.toBase58(),
-            id: signature,
-            source: 'Soltoons Website',
-            network: process.env.REACT_APP_NETWORK,
-            status: 'success',
-            result: Number(event.result.toString()),
-            change: Number(event.escrowChange.toString()),
-            multiplier: Number(multiplier[Number(event.result.toString())].toFixed(1)),
-            userWon: event.userWon,
-            bet: Number(event.betAmount),
-            roundId: Number(event.roundId),
-            user: event.user.toBase58(),
-            tx: [signature],
-            mint: this.tokenMint.toBase58(),
-            token: tokenInfoMap.get(this.tokenMint.toBase58())?.symbol,
-          });
+          
         }
 
         this.dispatch(thunks.setLoading(false));

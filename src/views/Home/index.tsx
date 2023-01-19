@@ -5,6 +5,7 @@ import GameSmall from '../../components/GameSmall';
 import GameLarge from '../../components/GameLarge';
 import { getWindowDimension, DeviceWidthObject } from '../../util'
 import LoadingScreen from "../../components/LoadingScreen"
+import Analytics from '../../components/Analytics';
 function Index() {
   const [amount, setAmount] = useState('1');
   const [step, setStep] = useState(0);
@@ -39,48 +40,33 @@ function Index() {
   
   
   return (
-    <div className="flex flex-wrap justify-center items-center min-h-screen h-screen relative">
+    <div className="relative no-scrollbar">
       {splash ? <LoadingScreen style={style} /> : <></>}
-      <div className="max-w-[1536px] max-h-[1920px] w-full flex flex-wrap justify-between items-center h-full">
-        {getWindowDimension().width >= DeviceWidthObject.md.min &&
-          getWindowDimension().width < DeviceWidthObject._2xl.min && (
-            <Game
-              amount={amount}
-              step={step}
-              setStep={setStep}
-              handleModalOpen={handleModalOpen}
-              sound={sound}
-            />
+      <div className="flex flex-wrap justify-center items-center min-h-screen h-screen">
+        <div className="max-w-[1536px] max-h-[1920px] w-full flex flex-wrap justify-between items-center h-full">
+          {getWindowDimension().width >= DeviceWidthObject.md.min &&
+            getWindowDimension().width < DeviceWidthObject._2xl.min && (
+              <Game amount={amount} step={step} setStep={setStep} handleModalOpen={handleModalOpen} sound={sound} />
+            )}
+          {getWindowDimension().width < DeviceWidthObject.md.min && (
+            <GameSmall amount={amount} step={step} setStep={setStep} handleModalOpen={handleModalOpen} sound={sound} />
           )}
-        {getWindowDimension().width < DeviceWidthObject.md.min && (
-          <GameSmall
+          {getWindowDimension().width >= DeviceWidthObject._2xl.min && (
+            <GameLarge amount={amount} step={step} setStep={setStep} handleModalOpen={handleModalOpen} sound={sound} />
+          )}
+          <Sidebar
             amount={amount}
+            setAmount={setAmount}
             step={step}
             setStep={setStep}
-            handleModalOpen={handleModalOpen}
+            handleModalClose={handleModalClose}
+            openModal={openModal}
             sound={sound}
+            setSound={setSound}
           />
-        )}
-        {getWindowDimension().width >= DeviceWidthObject._2xl.min && (
-          <GameLarge
-            amount={amount}
-            step={step}
-            setStep={setStep}
-            handleModalOpen={handleModalOpen}
-            sound={sound}
-          />
-        )}
-        <Sidebar
-          amount={amount}
-          setAmount={setAmount}
-          step={step}
-          setStep={setStep}
-          handleModalClose={handleModalClose}
-          openModal={openModal}
-          sound={sound}
-          setSound={setSound}
-        />
+        </div>
       </div>
+      {/* <Analytics/> */}
     </div>
   );
 }

@@ -129,16 +129,35 @@ a {
 }
 
 /* Hide scrollbar for Chrome, Safari and Opera */
-.no-scrollbar::-webkit-scrollbar {
+body::-webkit-scrollbar {
     display: none;
 }
 
 /* Hide scrollbar for IE, Edge and Firefox */
-.no-scrollbar {
+body {
     -ms-overflow-style: none;  /* IE and Edge */
     scrollbar-width: none;  /* Firefox */
 }
 
+
+/* width */
+.small-scrollbar::-webkit-scrollbar {
+    width: 6px;
+}
+
+/* track */
+.small-scrollbar::-webkit-scrollbar-track{
+  background-color: rgb(73, 61, 48);
+}
+
+/* handle */
+.small-scrollbar::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 163, 62);
+}
+/* handle on hover */
+.small-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: rgb(201, 107, 7);
+}
 /* game movement */
 /* The animation code */
 @keyframes horizontal {
