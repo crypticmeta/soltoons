@@ -525,8 +525,8 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
         </div>
       </Modal>
       <Modal open={openHowTo} onClose={closeHowTo}>
-        <div className="bg-black w-full h-screen overflow-y-scroll small-scrollbar center bg-opacity-75">
-          <div className="bg-brand_yellow rounded-xl md:w-6/12 2xl:w-4/12 px-6 py-6 text-xl">
+        <div className="bg-black w-full h-screen center bg-opacity-75">
+          <div className="bg-brand_yellow rounded-xl overflow-y-scroll small-scrollbar max-h-screen md:w-6/12 2xl:w-4/12 px-6 py-6 text-xl">
             <div className="flex flex-col">
               <div className="flex justify-between font-extrabold mb-4">
                 <p className="text-center w-full cursor-pointer border-black xl:text-lg">How To Play</p>
