@@ -357,7 +357,9 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
 
   return (
     <div className="flex h-full flex-col max-h-[800px]  md:justify-center w-full lg:w-3/12 p-6 font-bold relative">
-      <div className='text-white text-center text-xs'>House Balance: { houseVaultBal } {tokenInfo?.symbol}</div>
+      <div className="text-white text-center text-xs">
+        House Balance: {houseVaultBal} {tokenInfo?.symbol}
+      </div>
       <div className="part1 h-[20%]  center w-full">
         <div className="w-full">
           {wallet?.connected && (
@@ -503,8 +505,8 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
                 </p>
 
                 <div className="center space-x-4 flex-wrap text-sm md:text-xl">
-                    <button
-                      id="collectRewardButton"
+                  <button
+                    id="collectRewardButton"
                     className="bg-[#a23acd] border-2 rounded-3xl border-black uppercase font-extrabold px-4 py-2 cursor-pointer"
                     onClick={() => api.handleCommand('collect reward')}
                   >
@@ -523,8 +525,8 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
         </div>
       </Modal>
       <Modal open={openHowTo} onClose={closeHowTo}>
-        <div className="bg-black w-full h-screen center bg-opacity-75">
-          <div className="bg-brand_yellow rounded-xl md:w-6/12 2xl:w-4/12 p-6 text-xl">
+        <div className="bg-black w-full h-screen overflow-y-scroll small-scrollbar center bg-opacity-75">
+          <div className="bg-brand_yellow rounded-xl md:w-6/12 2xl:w-4/12 px-6 py-6 text-xl">
             <div className="flex flex-col">
               <div className="flex justify-between font-extrabold mb-4">
                 <p className="text-center w-full cursor-pointer border-black xl:text-lg">How To Play</p>
@@ -563,7 +565,44 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
                 </div>
               </div>
               <div className="flex justify-between font-extrabold mb-4">
-                <p className="text-center w-full cursor-pointer border-black xl:text-lg">Info</p>
+                <p className="text-center w-full cursor-pointer border-black xl:text-lg">Multipliers</p>
+              </div>
+              <div className="flex justify-center w-full flex-wrap">
+                <div className="border-4 p-4 border-black m-1">
+                  <img width={30} src="/assets/images/bwbanana.png" alt="" />
+                  <p className="text-xs font-bold pt-2">0.3X</p>
+                </div>
+                <div className="border-4 p-4 border-black m-1">
+                  <img width={30} src="/assets/images/bwtoobs.png" alt="" />
+                  <p className="text-xs font-bold pt-2">0.5X</p>
+                </div>
+                <div className="border-4 p-4 border-black m-1">
+                  <img width={30} src="/assets/images/bwcap.png" alt="" />
+                  <p className="text-xs font-bold pt-2">0.8X</p>
+                </div>
+                <div className="border-4 p-4 border-black m-1">
+                  <img width={30} src="/assets/images/skull.png" alt="" />
+                  <p className="text-xs font-bold pt-2">1.0X</p>
+                </div>
+                <div className="border-4 p-4 border-black m-1">
+                  <img width={30} src="/assets/images/banana.png" alt="" />
+                  <p className="text-xs font-bold pt-2">2.0X</p>
+                </div>
+                <div className="border-4 p-4 border-black m-1">
+                  <img width={30} src="/assets/images/cap.png" alt="" />
+                  <p className="text-xs font-bold pt-2">5.0X</p>
+                </div>
+                <div className="border-4 p-4 border-black m-1">
+                  <img width={30} src="/assets/images/toobs.png" alt="" />
+                  <p className="text-xs font-bold pt-2">8.0X</p>
+                </div>
+                <div className="border-4 p-4 border-black m-1">
+                  <img width={30} src="/assets/images/snake.png" alt="" />
+                  <p className="text-xs font-bold pt-2">10.0X</p>
+                </div>
+              </div>
+              <div className="flex justify-between font-extrabold mb-4">
+                <p className="text-center w-full border-black xl:text-lg">Info</p>
               </div>
               <div className="overflow-scroll h-[90%] no-scrollbar text-xs ">
                 <div>
@@ -586,7 +625,7 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
                 <hr className="my-2 border-black" />
                 <div>
                   <p className="text-brand_black capitalize">
-                    if tx fails to get result, you can play te next round without transferring funds
+                    if tx fails to get result, you can play the next round without transferring funds
                   </p>
                 </div>
                 <hr className="my-2 border-black" />
