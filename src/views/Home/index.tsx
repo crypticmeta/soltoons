@@ -66,7 +66,7 @@ function Index() {
           />
         </div>
       </div>
-      <Analytics/>
+      {/* <Analytics/> */}
     </div>
   );
 }
