@@ -647,6 +647,7 @@ class ApiState implements PrivateApiInterface {
       return;
     }
     console.info('VRF used is: ', vrf.id);
+    localStorage.setItem("vrf",vrf.id)
     const DEFAULT_STATE_BUMP = process.env.REACT_APP_NETWORK === 'devnet' ? 255 : 249;
     const request = await user
       .placeBetReq(
@@ -979,6 +980,7 @@ class ApiState implements PrivateApiInterface {
           await axios.post('https://soltoons-api.vercel.app/api/add-result', {
             walletId: this.wallet.publicKey.toBase58(),
             id: signature,
+            vrf: localStorage.getItem("vrf")||"",
             source: 'Soltoons Website',
             network: process.env.REACT_APP_NETWORK,
             status: 'success',
@@ -997,6 +999,7 @@ class ApiState implements PrivateApiInterface {
             Mixpanel.track('BetSettled', {
               walletId: this.wallet.publicKey.toBase58(),
               id: signature,
+              vrf: localStorage.getItem("vrf"),
               source: 'Soltoons Website',
               network: process.env.REACT_APP_NETWORK,
               status: 'success',
