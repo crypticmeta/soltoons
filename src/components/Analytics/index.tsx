@@ -33,7 +33,7 @@ function Index() {
         <p className="px-4 py-2 bg-brand_yellow  border-4 border-black">24 Hour Stat ({events.length} Rounds Played)</p>
       </div>
       {events.length ? (
-        <div className="h-80vh overflow-y-scroll px-6 small-scrollbar">
+        <div className="h-80vh overflow-y-scroll lg:px-6 small-scrollbar">
           {events &&
             events.length &&
             events
@@ -53,29 +53,30 @@ function Index() {
                     } p-3 mb-3 rounded shadow-xl flex bg-opacity-70 justify-between hover:bg-opacity-100`}
                     rel="noreferrer"
                   >
-                    <div className="flex w-8/12">
-                      <p className="w-2/12">
+                    <div className="flex w-10/12">
+                      <p className="w-4/12 text-xs lg:text-lg">
                         {item.properties.walletId.substring(0, 4)}...
                         {item.properties.walletId.substring(
                           item.properties.walletId.length - 4,
                           item.properties.walletId.length
                         )}
                       </p>
-                      <p className="w-2/12">
+                      <p className="w-4/12  text-xs lg:text-lg pl-2">
                         Bet {item.properties.bet / Math.pow(10, tokenInfoMap.get(item.properties.mint)?.decimals || 9)}{' '}
                         {tokenInfoMap.get(item.properties.mint)?.symbol}
                       </p>
-                      <p className="w-2/12">
+                      <p className="w-4/12  text-xs lg:text-lg pl-2">
                         {item.properties.multiplier === 0
                           ? 'And lost '
-                          : ('And Won ' +
-                          (item.properties.change /
-                          Math.pow(10, tokenInfoMap.get(item.properties.mint)?.decimals || 9)) + " " +
-                            tokenInfoMap.get(item.properties.mint)?.symbol)}{' '}
+                          : 'And Won ' +
+                            item.properties.change /
+                              Math.pow(10, tokenInfoMap.get(item.properties.mint)?.decimals || 9) +
+                            ' ' +
+                            tokenInfoMap.get(item.properties.mint)?.symbol}{' '}
                         {/* {tokenInfoMap.get(item.properties.mint)?.symbol} */}
                       </p>
                     </div>
-                    <p className="w-1/12 text-2xl font-bold text-right">{item.properties.multiplier}x</p>
+                    <p className="w-2/12 lg:text-2xl font-bold text-right">{item.properties.multiplier}x</p>
                     {/* <p>{item.properties.id.substring(0, 7)}</p> */}
                   </a>
                 </div>

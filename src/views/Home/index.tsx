@@ -42,7 +42,7 @@ function Index() {
   return (
     <div className="relative no-scrollbar">
       {splash ? <LoadingScreen style={style} /> : <></>}
-      <div className="flex flex-wrap justify-center items-center min-h-screen h-screen">
+      <div className="flex flex-wrap justify-center items-center bg-red-00 min-h-screen h-120vh lg:h-screen">
         <div className="max-w-[1536px] max-h-[1920px] w-full flex flex-wrap justify-between items-center h-full">
           {getWindowDimension().width >= DeviceWidthObject.md.min &&
             getWindowDimension().width < DeviceWidthObject._2xl.min && (
