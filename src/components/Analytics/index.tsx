@@ -67,8 +67,8 @@ function Index() {
                       item.properties.change / Math.pow(10, tokenInfoMap.get(item.properties.mint)?.decimals || 9)}{' '}
                   {tokenInfoMap.get(item.properties.mint)?.symbol}
                 </p>
-                      <p>{item.properties.multiplier}x</p>
-                      {/* <p>{ item.properties.id.substring(0,7)}</p> */}
+                      <p className='w-2/12'>{item.properties.multiplier}x</p>
+                      <p>{ item.properties.id.substring(0,7)}</p>
               </a>
             </div>
           ))}
