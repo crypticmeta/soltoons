@@ -13,7 +13,7 @@ function Index() {
         //  const body = await res.data.json();
 
            if (res.data?.events) {
-             console.log(res.data.events, 'EVE')
+            //  console.log(res.data.events, 'EVE')
            setEvents(res.data.events);
          } else {
            setEvents([]);
