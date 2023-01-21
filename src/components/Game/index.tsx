@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from 'react';
-import { PublicKey } from '@solana/web3.js';
+import { useState, useEffect } from 'react';
 import { hooks, Store} from '../../data';
 import { useSelector } from 'react-redux';
 import { useRive, useStateMachineInput } from '@rive-app/react-canvas';
@@ -32,9 +31,9 @@ function Game({ amount, step, setStep, handleModalOpen, sound }) {
    });
   //rive
   const STATE_MACHINE_NAME = 'State Machine 1';
-  const INPUT_NAME = 'Trigger 1';
+  const INPUT_NAME = 'Number 1';
   const params = {
-    src: '/assets/rive/loading.riv',
+    src: '/assets/rive/neon.riv',
     autoplay: true,
     stateMachines: STATE_MACHINE_NAME,
   };
@@ -147,11 +146,11 @@ function Game({ amount, step, setStep, handleModalOpen, sound }) {
   //rive movement after loading user
   useEffect(() => {
     if (fireInput) {
-      fireInput?.fire();
+      fireInput.value=1;
       setTimeout(() => {
-        fireInput?.fire();
+        fireInput.value=2;
         // playLoaded()
-      }, 600);
+      }, 1200);
    }
   }, [fireInput, rive]);
 
@@ -159,16 +158,20 @@ function Game({ amount, step, setStep, handleModalOpen, sound }) {
 
   useEffect(() => {
     if (result.status === 'claimed') {
-      fireInput?.fire();
+      if(fireInput)
+      fireInput.value=3;
       setStyleReward({ animationName: 'none' });
       setStyleRewardItem({ animationName: 'none' });
       setStep(0);
       //@ts-ignore
       setReward('');
+      if(fireInput)
       setTimeout(() => {
-        fireInput?.fire();
+        fireInput.value=4
+        // fireInput?.fire();
         setTimeout(() => {
-          fireInput?.fire();
+          fireInput.value=2
+          // fireInput?.fire();
         }, 500);
       }, 2000);
     }
