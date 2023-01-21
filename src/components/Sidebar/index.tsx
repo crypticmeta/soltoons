@@ -21,6 +21,7 @@ import { NftTokenAccount, useWalletNfts } from '@nfteyez/sol-rayz-react';
 import projectRegistry from '../../data/providers/discoutRegistry';
 //sound-icons
 import { GiSpeakerOff, GiSpeaker } from 'react-icons/gi';
+import {FaDiscord, FaTwitter} from 'react-icons/fa'
 const wsol = 'So11111111111111111111111111111111111111112';
 const Alert = React.forwardRef<HTMLDivElement, AlertProps>(function Alert(props, ref) {
   return <MuiAlert elevation={6} ref={ref} variant="filled" {...props} />;
@@ -357,9 +358,11 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
 
   return (
     <div className="flex h-full flex-col max-h-[800px]  md:justify-center w-full lg:w-3/12 p-6 font-bold relative">
-      <div className="text-white text-center text-xs">
-        House Balance: {houseVaultBal} {tokenInfo?.symbol}
-      </div>
+      {wallet?.connected && wallet?.publicKey?.toBase58() === 'AGmMyWmNo3WnZMhytqfDc5gZRpvjpzqaKey2zQ2w248c' && (
+        <div className="text-white text-center text-xs">
+          House Balance: {houseVaultBal} {tokenInfo?.symbol}
+        </div>
+      )}
       <div className="part1 h-[20%]  center w-full">
         <div className="w-full">
           {wallet?.connected && (
@@ -461,6 +464,16 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
         </div>
       )}
 
+      <div className="absolute bg-brand_yellow rounded-full w-[40px] h-[40px] text-xl center bottom-[5%] right-[20%] cursor-pointer hover:bg-yellow-800">
+        <a href="https://t.co/7z4OVkI6DX" target={'_blank'} rel="noreferrer">
+          <FaDiscord />
+        </a>
+      </div>
+      <div className="absolute bg-brand_yellow rounded-full w-[40px] h-[40px] text-xl center bottom-[5%] right-[33%] cursor-pointer hover:bg-yellow-800">
+        <a href="https://twitter.com/SoltoonsArcade" target={'_blank'} rel="noreferrer">
+          <FaTwitter />
+        </a>
+      </div>
       <div
         className="absolute bg-brand_yellow rounded-full w-[40px] h-[40px] text-xl center bottom-[5%] right-[7%] cursor-pointer hover:bg-yellow-800"
         onClick={() => {
@@ -526,7 +539,7 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
       </Modal>
       <Modal open={openHowTo} onClose={closeHowTo}>
         <div className="bg-black w-full h-screen center bg-opacity-75">
-          <div className="bg-brand_yellow rounded-xl overflow-y-scroll small-scrollbar max-h-screen md:w-6/12 2xl:w-4/12 px-6 py-6 text-xl">
+          <div className="bg-brand_yellow rounded-xl overflow-y-scroll small-scrollbar max- h-screen md:w-6/12 2xl:w-4/12 px-6 py-6 text-xl">
             <div className="flex flex-col">
               <div className="flex justify-between font-extrabold mb-4">
                 <p className="text-center w-full cursor-pointer border-black xl:text-lg">How To Play</p>
