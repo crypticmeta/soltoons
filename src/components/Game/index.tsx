@@ -150,7 +150,7 @@ function Game({ amount, step, setStep, handleModalOpen, sound }) {
       setTimeout(() => {
         fireInput.value=2;
         // playLoaded()
-      }, 1200);
+      }, 1000);
    }
   }, [fireInput, rive]);
 
