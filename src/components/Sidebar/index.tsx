@@ -140,7 +140,7 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
 
   //stops loading music when step reaches the 3rd part (plushie is released from claw)
   useEffect(() => {
-    if (step === 3) {
+    if (step === 1) {
       stopLoading.stop();
     }
   }, [step, stopLoading]);
@@ -291,33 +291,6 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
       setControl("loading")
       // console.log("nothing is true")
     }
-
-    // else if (
-    //   userAccountExists &&
-    //   userEscrowExists &&
-    //   newRound &&
-    //   !result.status &&
-    //   (tokenmint === wsol ? userVaultBal > 0.03552384 : tokenEscrow.balance > 0)
-    // ) {
-    //   //ensures the button is only shown for old rewards not current round one
-    //   setControl('collectPreviousReward');
-    // }
-    // else if (tokenmint === wsol && !userAccountExists) {
-    //   setControl('createUserAccount');
-    // }
-    // else if (tokenmint !== wsol && !userAccountExists) {
-    //   setControl('createUserAccount');
-    // }
-    // else if (tokenmint !== wsol && userAccountExists && !userEscrowExists && mintUpdated && escrowUpdated) {
-    //   setControl('createEscrowAccount');
-    // } else if (tokenmint === wsol && userAccountExists) {
-    //   setControl('play');
-    //   if (logs[0].message.includes('Accounts retrieved for user')) dispatch(thunks.setLoading(false));
-    // } else if (tokenmint !== wsol && userAccountExists && userEscrowExists) {
-    //   setControl('play');
-    // }
-    // console.log(userAccountExists, 'user exists?')
-    // console.log(user, 'USER')
     return () => {};
   }, [tokenmint,
     userAccountExists,

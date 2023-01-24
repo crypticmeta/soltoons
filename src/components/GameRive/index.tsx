@@ -26,18 +26,16 @@ function Game({ amount, step, setStep, handleModalOpen, sound }) {
     volume: sound ? 0.7 : 0,
   });
   const [playSlide, stopSlide] = useSound('/assets/audio/slide.mp3', {
-    volume: sound ? 0.7 : 0,
+    volume: sound ? 0.01 : 0,
   });
   //rive
   const STATE_MACHINE_NAME = 'State Machine 1';
-  const INPUT_NAME = 'Number 1';
   const params = {
     src: '/assets/rive/game.riv',
     autoplay: true,
     stateMachines: STATE_MACHINE_NAME,
   };
   const { RiveComponent, rive } = useRive(params);
-  // const fireInput = useStateMachineInput(rive, STATE_MACHINE_NAME, INPUT_NAME);
   const refreshInput = useStateMachineInput(rive, STATE_MACHINE_NAME, 'Refresh'); //trigger
   const xAxisInput = useStateMachineInput(rive, STATE_MACHINE_NAME, 'xAxis'); //number 0-200
   const loadingInput = useStateMachineInput(rive, STATE_MACHINE_NAME, 'Loading'); //boolean
@@ -47,187 +45,121 @@ function Game({ amount, step, setStep, handleModalOpen, sound }) {
   const posInput = useStateMachineInput(rive, STATE_MACHINE_NAME, 'pos'); //number 0/100
   //api
   const api = hooks.useApi();
-  const [x, setX] = useState(30);
-  const [styleX, setStyleX] = useState({ transform: 'translateX(0%)', zIndex: 1, animationName: 'none' });
-  const [y, setY] = useState(0);
-  const [styleY, setStyleY] = useState({ transform: 'translateY(0%)', animationName: 'none' });
-  const [styleReward, setStyleReward] = useState({ animationName: 'none' });
-  const [styleRewardItem, setStyleRewardItem] = useState({ animationName: 'none' });
+  const [x, setX] = useState(50);
   const [leftHold, setLeftHold] = useState(false);
   const [rightHold, setRightHold] = useState(false);
-
-  const [reward, setReward] = useState('');
 
   //@ts-ignore
   const result = useSelector((store: Store) => store.gameState.result);
 
   useEffect(() => {
-    if (x <= -4 && result?.status === 'success') {
-      // ('setting leftHold false and moving to step 2')
-      setLeftHold(false);
-      setStep(3);
-    }
-    if (result?.status === 'success') {
-      setStyleX({ transform: `translateX(${x}%)`, zIndex: 10, animationName: 'none' });
-    } else {
-      setStyleX({ transform: `translateX(${x}%)`, zIndex: 1, animationName: 'none' });
-    }
-  }, [result, x]);
-
-  useEffect(() => {
     if (result.status === 'waiting') {
-      if (x < 0) {
-        setX(0);
+      if (loadingInput) {
+        loadingInput.value = true;
       }
-      setY(30);
+    } else if (result.status === 'success') {
+      if (loadingInput) loadingInput.value = false;
+      if (result?.userWon) {
+        // console.log('userWon')
+        if (posInput) posInput.value = 100;
+        // console.log('pos set')
+        if (resultInput) {
+          //@ts-ignore
+          resultInput.value = plushies[result?.multiplier || '0.3'].result;
+        }
+        // console.log("result set")
+        //@ts-ignore
+        // console.log(plushies[result?.multiplier || "0.3"].result, 'RESULT NUMBER')
+        setStep(1);
+      }
     } else {
-      setY(0);
+      if (loadingInput) loadingInput.value = false;
     }
-  }, [result]);
-
-  const movedown = () => {
-    if (result && result.status === 'waiting') setStyleY({ transform: `translateY(${y}%)`, animationName: 'vertical' });
-    else setStyleY({ transform: `translateY(${y}%)`, animationName: 'none' });
-  };
+  }, [loadingInput, posInput, result, resultInput, setStep]);
 
   useEffect(() => {
-    movedown();
-  }, [y]);
+    if (step === 1) {
+      setTimeout(() => {
+        if (result?.userWon && Number(result.multiplier) >= 1) playWin();
+        if (result?.userWon && Number(result.multiplier) < 1) playNeutral();
+        setStep(2);
+      }, 2000);
+    }
+    return () => {};
+  }, [playNeutral, playWin, result.multiplier, result?.userWon, setStep, step]);
 
   useEffect(() => {
     if (leftHold || rightHold) {
       let newX = x;
       if (leftHold && step < 3) {
-        newX = x - 2;
-        if (newX >= -5 && newX <= 85) {
+        newX = x - 0.1;
+        if (newX >= 0 && newX <= 100) {
+          if (moveLeftInput) moveLeftInput.value = true; //move left button in rive
           playSlide();
         } else {
           stopSlide.stop();
         }
       } else if (rightHold && !step) {
-        newX = x + 2;
-        if (newX >= -5 && newX <= 85) {
+        newX = x + 0.1;
+        if (newX >= 0 && newX <= 100) {
           playSlide();
+          if (moveRightInput) moveRightInput.value = true; //move right button in rive
         } else {
           stopSlide.stop();
         }
       }
     } else {
+      if (moveLeftInput) moveLeftInput.value = false; //disable move button in rive
+      if (moveRightInput) moveRightInput.value = false; // disable move button in rive
       stopSlide.stop();
     }
-  }, [leftHold, rightHold, x, step]);
+  }, [leftHold, rightHold, x, step, moveLeftInput, playSlide, stopSlide, moveRightInput]);
 
   useEffect(() => {
     let interval: any;
-    let newX = x - 2;
-    if (leftHold && step < 3)
+    let newX = x - 0.1;
+    if (leftHold && posInput && posInput?.value === 0)
       interval = setInterval(() => {
-        if (newX >= -5 && newX <= 85) {
+        if (newX >= 0 && newX <= 100) {
           setX(newX);
-          newX = newX - 2;
+          if (xAxisInput) xAxisInput.value = newX;
+          newX = newX - 0.1;
         }
-      }, 100);
-
-    return () => clearInterval(interval);
-  }, [leftHold, x]);
-
-  useEffect(() => {
-    let interval: any;
-    let newX = x + 2;
-    if (rightHold && !step)
-      interval = setInterval(() => {
-        if (newX >= -5 && newX <= 85) {
-          setX(newX);
-          newX = newX - 2;
-        }
-      }, 100);
+      }, 1);
 
     return () => {
       clearInterval(interval);
     };
-  }, [rightHold, x]);
+  }, [leftHold, posInput, step, x, xAxisInput]);
 
-  //rive movement after loading user
-  //TODO: Fire default values
-  // useEffect(() => {
-  //   if (fireInput) {
-  //     fireInput.value=1;
-  //     setTimeout(() => {
-  //       fireInput.value=2;
-  //       // playLoaded()
-  //     }, 1000);
-  //  }
-  // }, [fireInput, rive]);
+  useEffect(() => {
+    let interval: any;
+    let newX = x + 0.1;
+    if (rightHold && posInput && posInput?.value === 0)
+      interval = setInterval(() => {
+        if (newX >= 0 && newX <= 100) {
+          setX(newX);
+          if (xAxisInput) xAxisInput.value = newX;
+          newX = newX + 0.1;
+        }
+      }, 1);
+
+    return () => {
+      clearInterval(interval);
+    };
+  }, [posInput, rightHold, step, x, xAxisInput]);
 
   //rive movement after getting collecting rewards
 
   useEffect(() => {
     if (result.status === 'claimed') {
-      //TODO: fire refresh
-      // if(fireInput)
-      // fireInput.value=3;
-      setStyleReward({ animationName: 'none' });
-      setStyleRewardItem({ animationName: 'none' });
+      console.log('claimed');
       setStep(0);
-      //@ts-ignore
-      setReward('');
-      //TODO: fire refresh
-      // if(fireInput)
-      // setTimeout(() => {
-      //   fireInput.value=4
-      //   // fireInput?.fire();
-      //   setTimeout(() => {
-      //     fireInput.value=2
-      //     // fireInput?.fire();
-      //   }, 500);
-      // }, 2000);
+      if (posInput) posInput.value = 0; //set pos 0
+      if (resultInput) resultInput.value = 0; //set reward 0
+      if (refreshInput) refreshInput.fire(); //fire refresh
     }
-  }, [result]);
-
-  //claw movement after getting results
-
-  useEffect(() => {
-    if (result && result?.status === 'success' && result?.userWon) {
-      setStep(1);
-    }
-  }, [result]);
-
-  useEffect(() => {
-    if (step === 1) {
-      setStyleY({ transform: `translateY(30%)`, animationName: 'none' });
-      setTimeout(() => {
-        //@ts-ignore
-        setReward(plushies[result?.multiplier || '0.0'].img);
-      }, 600);
-    } else if (step === 2) {
-      setLeftHold(true);
-    } else if (step === 3) {
-      setStyleReward({ animationName: 'freefall' });
-      setStyleRewardItem({ animationName: 'freefallItem' });
-      setTimeout(() => {
-        if (result?.userWon && Number(result.multiplier) >= 1) playWin();
-        if (result?.userWon && Number(result.multiplier) < 1) playNeutral();
-        setStep(4);
-      }, 2000);
-    } else if (step === 4 && !result?.userWon) {
-      setTimeout(() => {
-        setStep(0);
-      }, 3000);
-    }
-
-    return () => {};
-  }, [step, result, y, setStep]);
-
-  useEffect(() => {
-    if (reward && step === 1) {
-      setTimeout(() => {
-        setStyleY({ transform: `translateY(0%)`, animationName: 'none' });
-        setTimeout(() => {
-          setStep(2);
-        }, 600);
-      }, 600);
-    }
-  }, [reward, step]);
+  }, [posInput, refreshInput, result, resultInput, setStep]);
 
   function handleKeyDown(e: any) {
     if (e.code === 'Enter') {
@@ -241,6 +173,8 @@ function Game({ amount, step, setStep, handleModalOpen, sound }) {
     }
   }
   function handleKeyUp(e: any) {
+    if (moveLeftInput?.value) moveLeftInput.value = false;
+    if (moveRightInput?.value) moveRightInput.value = false;
     setLeftHold(false);
     setRightHold(false);
   }
@@ -249,10 +183,21 @@ function Game({ amount, step, setStep, handleModalOpen, sound }) {
     document.addEventListener('keydown', handleKeyDown);
     document.addEventListener('keyup', handleKeyUp);
   }, []);
+
+  useEffect(() => {
+    if (xAxisInput) {
+      xAxisInput.value = x;
+    }
+  }, [rive, xAxisInput, x]);
+
   return (
-    <div className="w-full md:w-8/12 lg:w-9/12 bg-green-00 lg:bg-red-00 md:flex justify-center md:items-center">
+    <div className="w-full md:w-8/12 lg:w-9/12 bg-green-00 lg:bg-red-00 md:flex justify-center md:items-center relative">
       <div id="game" className="relative w-full h-30vh md:h-80vh bg-indigo-00 lg:h-80vh center">
         <RiveComponent className="w-full h-[80%] md:h-[100%] bg-blue-00" />
+        <div
+          onClick={() => step === 1 && api.handleCommand('collect reward')}
+          className="bg-red-00 h-[10%] w-[15%] lg:w-[10%] absolute z-[1] bottom-10 lg:bottom-5 left-[20%] md:left-[17%] lg:left-[27%]"
+        ></div>
       </div>
     </div>
   );
