@@ -357,7 +357,7 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
   
 
   return (
-    <div className="flex lg:h-full flex-col 2xl:max-h-[800px] bg-blue-900 bg-opacity-75 justify-start lg:justify-center w-full md:w-4/12 lg:w-3/12 p-6 font-bold relative">
+    <div className="flex  flex-col 2xl:max-h-[800px] bg-blue-00 bg-opacity-75 justify-start  w-full md:w-4/12 lg:w-3/12 p-6 font-bold relative">
       {wallet?.connected && wallet?.publicKey?.toBase58() === 'AGmMyWmNo3WnZMhytqfDc5gZRpvjpzqaKey2zQ2w248c' && (
         <div className="text-white text-center text-xs">
           House Balance: {houseVaultBal} {tokenInfo?.symbol}
@@ -412,7 +412,7 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
           </div>
         </div>
       )}
-      <div className="part3 h-[60%] md:h-[40%]  2xl:h-[45%] p-1">
+      <div className="part3 h-[60%] md:h-[50%]  2xl:h-[45%] p-1">
         <div className="bg-brand_yellow rounded-3xl border-4 border-black text-sm p-2 text-center h-full center overflow-hidden justify-between relative">
           {result?.status === 'waiting' && (
             <div className="center h-full text-white border-white absolute top-0 bottom-0 z-[12] bg-brand_yellow left-0 right-0">

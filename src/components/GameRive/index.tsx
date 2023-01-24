@@ -250,9 +250,9 @@ function Game({ amount, step, setStep, handleModalOpen, sound }) {
     document.addEventListener('keyup', handleKeyUp);
   }, []);
   return (
-    <div className="w-full md:w-8/12 lg:w-9/12 bg-green-500 lg:bg-red-500 md:flex justify-center md:items-center">
-      <div id="game" className="relative w-full h-30vh md:h-80vh bg-indigo-400 lg:h-80vh center">
-        <RiveComponent className="w-full h-[80%] md:h-[100%] bg-blue-500" />
+    <div className="w-full md:w-8/12 lg:w-9/12 bg-green-00 lg:bg-red-00 md:flex justify-center md:items-center">
+      <div id="game" className="relative w-full h-30vh md:h-80vh bg-indigo-00 lg:h-80vh center">
+        <RiveComponent className="w-full h-[80%] md:h-[100%] bg-blue-00" />
       </div>
     </div>
   );

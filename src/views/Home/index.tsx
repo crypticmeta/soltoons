@@ -43,8 +43,8 @@ function Index() {
   return (
     <div className="relative no-scrollbar">
       {splash ? <LoadingScreen style={style} /> : <></>}
-      <div className=" bg-red-100 ">
-        <div className="2xl:max-w-[1536px] 2xl:max-h-[1920px] w-full flex flex-wrap bg-yellow-900 min-h-[120vh]  md:h-100vh">
+      <div className=" bg-red-00 ">
+        <div className="2xl:max-w-[1536px] 2xl:max-h-[1920px] w-full flex flex-wrap bg-yellow-00 min-h-[120vh]  md:min-h-[100vh]">
           <GameRive amount={amount} step={step} setStep={setStep} handleModalOpen={handleModalOpen} sound={sound} />
           <Sidebar
             amount={amount}
