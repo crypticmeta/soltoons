@@ -357,13 +357,13 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
   
 
   return (
-    <div className="flex h-full flex-col max-h-[800px]  md:justify-center w-full lg:w-3/12 p-6 font-bold relative">
+    <div className="flex lg:h-full flex-col 2xl:max-h-[800px] bg-blue-900 bg-opacity-75 justify-start lg:justify-center w-full md:w-4/12 lg:w-3/12 p-6 font-bold relative">
       {wallet?.connected && wallet?.publicKey?.toBase58() === 'AGmMyWmNo3WnZMhytqfDc5gZRpvjpzqaKey2zQ2w248c' && (
         <div className="text-white text-center text-xs">
           House Balance: {houseVaultBal} {tokenInfo?.symbol}
         </div>
       )}
-      <div className="part1 h-[20%]  center w-full">
+      <div className="part1  md:h-[20%]  center w-full">
         <div className="w-full">
           {wallet?.connected && (
             <div className="tokenSelector mb-1">
@@ -399,7 +399,7 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
         </div>
       </div>
       {wallet?.connected && (
-        <div className="part2 h-[10%]  2xl:h-[10%] p-1">
+        <div className="part2 md:h-[10%]  2xl:h-[10%] p-1">
           <div className="bg-brand_yellow border-4 border-black rounded-3xl p-1 text-sm overflow-hidden h-full center">
             <div className="flex justify-between font-extrabold ">
               <p
@@ -412,7 +412,7 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
           </div>
         </div>
       )}
-      <div className="part3 h-[40%]  2xl:h-[45%] p-1">
+      <div className="part3 h-[60%] md:h-[40%]  2xl:h-[45%] p-1">
         <div className="bg-brand_yellow rounded-3xl border-4 border-black text-sm p-2 text-center h-full center overflow-hidden justify-between relative">
           {result?.status === 'waiting' && (
             <div className="center h-full text-white border-white absolute top-0 bottom-0 z-[12] bg-brand_yellow left-0 right-0">

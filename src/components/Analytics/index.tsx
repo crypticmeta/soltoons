@@ -28,7 +28,7 @@ function Index() {
       getRecentPlays()
     }, [])
   return (
-    <div className="h-screen p-6 lg:px-24 ">
+    <div className="w-full p-6 lg:px-24 ">
       <div className="text-center text-lg tracking-wider center font-bold pb-4 uppercase">
         <p className="px-4 py-2 bg-brand_yellow  border-4 border-black">24 Hour Stat ({events.length} Rounds Played)</p>
       </div>

@@ -6,6 +6,7 @@ import GameLarge from '../../components/GameLarge';
 import { getWindowDimension, DeviceWidthObject } from '../../util'
 import LoadingScreen from "../../components/LoadingScreen"
 import Analytics from '../../components/Analytics';
+import GameRive from '../../components/GameRive';
 function Index() {
   const [amount, setAmount] = useState('1');
   const [step, setStep] = useState(0);
@@ -42,18 +43,9 @@ function Index() {
   return (
     <div className="relative no-scrollbar">
       {splash ? <LoadingScreen style={style} /> : <></>}
-      <div className="flex flex-wrap justify-center items-center bg-red-00 min-h-screen h-120vh lg:h-screen">
-        <div className="max-w-[1536px] max-h-[1920px] w-full flex flex-wrap justify-between items-center h-full">
-          {getWindowDimension().width >= DeviceWidthObject.md.min &&
-            getWindowDimension().width < DeviceWidthObject._2xl.min && (
-              <Game amount={amount} step={step} setStep={setStep} handleModalOpen={handleModalOpen} sound={sound} />
-            )}
-          {getWindowDimension().width < DeviceWidthObject.md.min && (
-            <GameSmall amount={amount} step={step} setStep={setStep} handleModalOpen={handleModalOpen} sound={sound} />
-          )}
-          {getWindowDimension().width >= DeviceWidthObject._2xl.min && (
-            <GameLarge amount={amount} step={step} setStep={setStep} handleModalOpen={handleModalOpen} sound={sound} />
-          )}
+      <div className=" bg-red-100 ">
+        <div className="2xl:max-w-[1536px] 2xl:max-h-[1920px] w-full flex flex-wrap bg-yellow-900 min-h-[120vh]  md:h-100vh">
+          <GameRive amount={amount} step={step} setStep={setStep} handleModalOpen={handleModalOpen} sound={sound} />
           <Sidebar
             amount={amount}
             setAmount={setAmount}
@@ -66,7 +58,7 @@ function Index() {
           />
         </div>
       </div>
-      <Analytics/>
+      <Analytics />
     </div>
   );
 }
