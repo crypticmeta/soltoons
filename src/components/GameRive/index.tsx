@@ -198,6 +198,18 @@ function Game({ amount, step, setStep, handleModalOpen, sound }) {
           onClick={() => step === 1 && api.handleCommand('collect reward')}
           className="bg-red-00 h-[10%] w-[15%] lg:w-[10%] absolute z-[1] bottom-10 lg:bottom-5 left-[20%] md:left-[17%] lg:left-[27%]"
         ></div>
+        <div
+          onMouseDown={() => setLeftHold(true)}
+          onMouseUp={() => setLeftHold(false)}
+          onTouchStart={() => !rightHold && setLeftHold(!leftHold)}
+          className="bg-red-00 h-[5%] w-[7%] lg:w-[5%] absolute z-[1] bottom-[30%] md:bottom-[29%] lg:bottom-[25%] left-[40%] md:left-[40%] lg:left-[42%]"
+        ></div>
+        <div
+          onMouseDown={() => setRightHold(true)}
+          onMouseUp={() => setRightHold(false)}
+          onTouchStart={() => !leftHold && setRightHold(!rightHold)}
+          className="bg-green-00 h-[5%] w-[7%] lg:w-[5%] absolute z-[1] bottom-[30%] md:bottom-[29%] lg:bottom-[25%] left-[50%] md:left-[55%] lg:left-[53%]"
+        ></div>
       </div>
     </div>
   );

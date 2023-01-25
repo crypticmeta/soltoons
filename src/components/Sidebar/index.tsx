@@ -226,7 +226,7 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
       }, 1500);
     } else if (result?.status === 'error' && !loading) {
       stopLoading.stop();
-      playLose();
+      if (result?.status !== 'success') playLose();
     } else {
       stopLoading.stop();
     }
@@ -330,7 +330,7 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
   
 
   return (
-    <div className="flex  flex-col 2xl:max-h-[800px] bg-blue-00 bg-opacity-75 justify-start  w-full md:w-4/12 lg:w-3/12 p-6 font-bold relative">
+    <div className="flex  flex-col 2xl:max-h-[800px] bg-blue-00 bg-opacity-75 justify-start lg:justify-center  w-full md:w-4/12 lg:w-3/12 p-6 font-bold relative">
       {wallet?.connected && wallet?.publicKey?.toBase58() === 'AGmMyWmNo3WnZMhytqfDc5gZRpvjpzqaKey2zQ2w248c' && (
         <div className="text-white text-center text-xs">
           House Balance: {houseVaultBal} {tokenInfo?.symbol}
