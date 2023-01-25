@@ -672,7 +672,9 @@ const Play = ({
           result?.userWon &&
           (isWsol ? userVaultBal > 0.03552384 : escrow.balance > 0) ? (
             <>
-              <button className="center h-full w-full text-lg">Received Result!</button>
+              <button onClick={() => api.handleCommand('collect reward')} className="center h-full w-full text-lg">
+                Received Result!
+              </button>
             </>
           ) : (
             <div className="h-full w-full relative bg-green-00">
@@ -695,7 +697,7 @@ const Play = ({
                     className={`w-${token?.bets?.length === 4 ? 5 : 4}/12 center bg-red-00 my-1 p-1 `}
                     onClick={() => setAmount(Number(item))}
                     key={item}
-                    id={String(item)+tokenInfo.symbol}
+                    id={String(item) + tokenInfo.symbol}
                   >
                     <span
                       className={`text-xs w-full p-1 text-center ${
