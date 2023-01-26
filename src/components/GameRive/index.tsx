@@ -195,9 +195,9 @@ function Game({ amount, step, setStep, handleModalOpen, sound }) {
       <div id="game" className="relative w-full h-30vh md:h-80vh bg-indigo-00 lg:h-80vh center">
         <RiveComponent className="w-full h-[80%] md:h-[100%] bg-blue-00" />
         <div
-          onClick={() => step === 1 && api.handleCommand('collect reward')}
-          className={`bg-red-00 h-[10%]  ${
-            step === 1 ? 'cursor-pointer' : ''
+          onClick={() =>result?.userWon && api.handleCommand('collect reward')}
+          className={`h-[10%]  ${
+            result?.userWon ? 'cursor-pointer' : ''
           } w-[15%] lg:w-[10%] absolute z-[1] bottom-10 lg:bottom-5 left-[20%] md:left-[17%] lg:left-[27%]`}
         ></div>
         <div

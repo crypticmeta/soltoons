@@ -181,18 +181,20 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
   useEffect(() => {
     let timer: any;
     if (result && result.status === 'waiting') {
-      setWait(1);
+      setWait(wait===0?1:wait);
       timer = setTimeout(() => {
         dispatch(thunks.setLoading(false));
         dispatch(thunks.log({ message: 'Failed to get result. Your funds are safe.', severity: Severity.Error }));
         dispatch(thunks.setResult({ status: 'error' }));
-      }, 100000);
+      }, 80000);
     } else if (result && result.status === 'success') {
       clearTimeout(timer);
     } else if (result && result.status === 'claimed') {
       handleModalClose();
     }
-    return () => clearTimeout(timer);
+    return () => {
+      clearTimeout(timer)
+    };
   }, [dispatch, handleModalClose, result]);
 
   useEffect(() => {
@@ -202,7 +204,6 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
         setWait(wait + 1);
       }, 1000);
     } else {
-      setWait(0);
       clearInterval(interval);
     }
     return () => {
@@ -213,6 +214,8 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
     if (result && result?.status === 'waiting') {
       playLoading();
     } else if (result?.status === 'success') {
+
+      setWait(0)
       if (result.userWon) {
       } else {
         stopLoading.stop();
@@ -226,6 +229,7 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
       }, 1500);
     } else if (result?.status === 'error' && !loading) {
       stopLoading.stop();
+      setWait(0)
       if (result?.status !== 'success') playLose();
     } else {
       stopLoading.stop();
@@ -280,7 +284,7 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
         }
         else {
           setControl("loading")
-          console.log(mintUpdated, escrowUpdated)
+          // console.log(mintUpdated, escrowUpdated)
           // console.log("token used. but nothing true")
         }
       }
@@ -307,7 +311,7 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
     dispatch]);
 
   useEffect(() => {
-    console.log("setting control as : ", control, "CONTROL")
+    // console.log("setting control as : ", control, "CONTROL")
     if ( control === "loading") {
       dispatch(thunks.setLoading(true))
     }
