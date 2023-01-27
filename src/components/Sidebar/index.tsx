@@ -441,7 +441,7 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
         </div>
       )}
 
-      <div className="absolute bg-brand_yellow rounded-full w-[40px] h-[40px] text-xl center bottom-[0%] right-[36%] cursor-pointer hover:bg-yellow-800">
+      <div className="absolute bg-brand_yellow rounded-full w-[40px] h-[40px] text-xl center bottom-[0%] right-[37%] cursor-pointer hover:bg-yellow-800">
         <a href="https://twitter.com/SoltoonsArcade" target={'_blank'} rel="noreferrer">
           <FaTwitter />
         </a>
