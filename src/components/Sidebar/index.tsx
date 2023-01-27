@@ -441,18 +441,18 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
         </div>
       )}
 
-      <div className="absolute bg-brand_yellow rounded-full w-[40px] h-[40px] text-xl center bottom-[5%] right-[21%] cursor-pointer hover:bg-yellow-800">
-        <a href="https://t.co/7z4OVkI6DX" target={'_blank'} rel="noreferrer">
-          <FaDiscord />
-        </a>
-      </div>
-      <div className="absolute bg-brand_yellow rounded-full w-[40px] h-[40px] text-xl center bottom-[5%] right-[36%] cursor-pointer hover:bg-yellow-800">
+      <div className="absolute bg-brand_yellow rounded-full w-[40px] h-[40px] text-xl center bottom-[0%] right-[36%] cursor-pointer hover:bg-yellow-800">
         <a href="https://twitter.com/SoltoonsArcade" target={'_blank'} rel="noreferrer">
           <FaTwitter />
         </a>
       </div>
+      <div className="absolute bg-brand_yellow rounded-full w-[40px] h-[40px] text-xl center bottom-[0%] right-[22%] cursor-pointer hover:bg-yellow-800">
+        <a href="https://t.co/7z4OVkI6DX" target={'_blank'} rel="noreferrer">
+          <FaDiscord />
+        </a>
+      </div>
       <div
-        className="absolute bg-brand_yellow rounded-full w-[40px] h-[40px] text-xl center bottom-[5%] right-[7%] cursor-pointer hover:bg-yellow-800"
+        className="absolute bg-brand_yellow rounded-full w-[40px] h-[40px] text-xl center bottom-[0%] right-[7%] cursor-pointer hover:bg-yellow-800"
         onClick={() => {
           localStorage.setItem('soltoons-sound', String(!sound));
           setSound(!sound);
