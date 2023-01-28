@@ -200,7 +200,7 @@ function Game({ amount, step, setStep, handleModalOpen, sound }) {
         <div
           onClick={() => result?.userWon && handleModalOpen()}
           className={`h-[10%]  ${
-            result?.userWon ? 'cursor-pointer  glow ' : ''
+            result?.userWon ? ' cursor-pointer  glow ' : ''
           } w-[15%] lg:w-[10%] xl:w-[13%] 2xl:w-[20%] absolute z-[1] bottom-[5%] left-[17%] md:left-[17%] lg:left-[17%] xl:left-[17%] 2xl:left-[15%]`}
         ></div>
         <div
