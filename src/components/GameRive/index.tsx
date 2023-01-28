@@ -35,7 +35,7 @@ function Game({ amount, step, setStep, handleModalOpen, sound }) {
     autoplay: true,
     stateMachines: STATE_MACHINE_NAME,
   };
-  const { RiveComponent, rive } = useRive(params);
+  const { RiveComponent, rive } = useRive(params, { fitCanvasToArtboardHeight: true });
   const refreshInput = useStateMachineInput(rive, STATE_MACHINE_NAME, 'Refresh'); //trigger
   const xAxisInput = useStateMachineInput(rive, STATE_MACHINE_NAME, 'xAxis'); //number 0-200
   const loadingInput = useStateMachineInput(rive, STATE_MACHINE_NAME, 'Loading'); //boolean
@@ -191,26 +191,29 @@ function Game({ amount, step, setStep, handleModalOpen, sound }) {
   }, [rive, xAxisInput, x]);
 
   return (
-    <div className="w-full md:w-8/12 lg:w-9/12 bg-green-00 lg:bg-red-00 md:flex justify-center md:items-center relative">
-      <div id="game" className="relative w-full h-30vh md:h-80vh bg-indigo-00 lg:h-80vh center">
-        <RiveComponent className="w-full h-[80%] md:h-[100%] bg-blue-00" />
+    <div className="w-full md:w-8/12 lg:w-9/12 md:flex justify-center md:items-center relative">
+      <div
+        id="game"
+        className="relative w-full xl:w-10/12 2xl:w-11/12 2xl:max-w-[1920px] 2xl:max-h-[1080px] center"
+      >
+        <RiveComponent className="w-full h-full " />
         <div
-          onClick={() =>result?.userWon && api.handleCommand('collect reward')}
+          onClick={() => result?.userWon && handleModalOpen()}
           className={`h-[10%]  ${
-            result?.userWon ? 'cursor-pointer' : ''
-          } w-[15%] lg:w-[10%] absolute z-[1] bottom-10 lg:bottom-5 left-[20%] md:left-[17%] lg:left-[27%]`}
+            result?.userWon ? 'cursor-pointer  glow ' : ''
+          } w-[15%] lg:w-[10%] xl:w-[13%] 2xl:w-[20%] absolute z-[1] bottom-[5%] left-[17%] md:left-[17%] lg:left-[17%] xl:left-[17%] 2xl:left-[15%]`}
         ></div>
         <div
           onMouseDown={() => setLeftHold(true)}
           onMouseUp={() => setLeftHold(false)}
           onTouchStart={() => !rightHold && setLeftHold(!leftHold)}
-          className="bg-red-00 h-[5%] w-[7%] cursor-pointer lg:w-[5%] absolute z-[1] bottom-[30%] md:bottom-[29%] lg:bottom-[25%] left-[40%] md:left-[40%] lg:left-[42%]"
+          className="h-[5%] w-[7%] cursor-pointer lg:w-[5%] absolute z-[1] bottom-[28%] md:bottom-[27%] left-[40%] "
         ></div>
         <div
           onMouseDown={() => setRightHold(true)}
           onMouseUp={() => setRightHold(false)}
           onTouchStart={() => !leftHold && setRightHold(!rightHold)}
-          className="bg-green-00 h-[5%] w-[7%]  cursor-pointer lg:w-[5%] absolute z-[1] bottom-[30%] md:bottom-[29%] lg:bottom-[25%] left-[50%] md:left-[55%] lg:left-[53%]"
+          className="h-[5%] w-[7%] cursor-pointer lg:w-[5%] absolute z-[1] bottom-[28%] md:bottom-[27%] left-[55%]"
         ></div>
       </div>
     </div>

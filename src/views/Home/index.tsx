@@ -1,9 +1,5 @@
 import Sidebar from '../../components/Sidebar';
-import Game from '../../components/Game';
 import React, { useEffect, useState } from 'react';
-import GameSmall from '../../components/GameSmall';
-import GameLarge from '../../components/GameLarge';
-import { getWindowDimension, DeviceWidthObject } from '../../util'
 import LoadingScreen from "../../components/LoadingScreen"
 import Analytics from '../../components/Analytics';
 import GameRive from '../../components/GameRive';
@@ -43,8 +39,8 @@ function Index() {
   return (
     <div className="relative no-scrollbar">
       {splash ? <LoadingScreen style={style} /> : <></>}
-      <div className=" bg-red-00 ">
-        <div className="2xl:max-w-[1536px] 2xl:max-h-[1920px] w-full flex flex-wrap bg-yellow-00 min-h-[120vh]  md:min-h-[100vh]">
+      <div className=" flex  relative 2xl:justify-center items-center">
+        <div className="2xl:max-w-[1920px] 2xl:max-h-[1080px] w-full  h-screen items-center flex flex-wrap bg-yellow-00 min-h-[120vh] lg:max-h-screen  md:min-h-[100vh]">
           <GameRive amount={amount} step={step} setStep={setStep} handleModalOpen={handleModalOpen} sound={sound} />
           <Sidebar
             amount={amount}
@@ -58,7 +54,9 @@ function Index() {
           />
         </div>
       </div>
-      <Analytics />
+      <div className='relative pt-24'>
+        <Analytics />
+      </div>
     </div>
   );
 }
