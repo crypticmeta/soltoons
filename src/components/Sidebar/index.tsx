@@ -140,7 +140,7 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
 
   //stops loading music when step reaches the 3rd part (plushie is released from claw)
   useEffect(() => {
-    if (step === 3) {
+    if (step === 1) {
       stopLoading.stop();
     }
   }, [step, stopLoading]);
@@ -181,18 +181,20 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
   useEffect(() => {
     let timer: any;
     if (result && result.status === 'waiting') {
-      setWait(1);
+      setWait(wait===0?1:wait);
       timer = setTimeout(() => {
         dispatch(thunks.setLoading(false));
         dispatch(thunks.log({ message: 'Failed to get result. Your funds are safe.', severity: Severity.Error }));
         dispatch(thunks.setResult({ status: 'error' }));
-      }, 100000);
+      }, 80000);
     } else if (result && result.status === 'success') {
       clearTimeout(timer);
     } else if (result && result.status === 'claimed') {
       handleModalClose();
     }
-    return () => clearTimeout(timer);
+    return () => {
+      clearTimeout(timer)
+    };
   }, [dispatch, handleModalClose, result]);
 
   useEffect(() => {
@@ -202,7 +204,6 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
         setWait(wait + 1);
       }, 1000);
     } else {
-      setWait(0);
       clearInterval(interval);
     }
     return () => {
@@ -213,6 +214,8 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
     if (result && result?.status === 'waiting') {
       playLoading();
     } else if (result?.status === 'success') {
+
+      setWait(0)
       if (result.userWon) {
       } else {
         stopLoading.stop();
@@ -226,7 +229,8 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
       }, 1500);
     } else if (result?.status === 'error' && !loading) {
       stopLoading.stop();
-      playLose();
+      setWait(0)
+      if (result?.status !== 'success') playLose();
     } else {
       stopLoading.stop();
     }
@@ -280,7 +284,7 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
         }
         else {
           setControl("loading")
-          console.log(mintUpdated, escrowUpdated)
+          // console.log(mintUpdated, escrowUpdated)
           // console.log("token used. but nothing true")
         }
       }
@@ -291,33 +295,6 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
       setControl("loading")
       // console.log("nothing is true")
     }
-
-    // else if (
-    //   userAccountExists &&
-    //   userEscrowExists &&
-    //   newRound &&
-    //   !result.status &&
-    //   (tokenmint === wsol ? userVaultBal > 0.03552384 : tokenEscrow.balance > 0)
-    // ) {
-    //   //ensures the button is only shown for old rewards not current round one
-    //   setControl('collectPreviousReward');
-    // }
-    // else if (tokenmint === wsol && !userAccountExists) {
-    //   setControl('createUserAccount');
-    // }
-    // else if (tokenmint !== wsol && !userAccountExists) {
-    //   setControl('createUserAccount');
-    // }
-    // else if (tokenmint !== wsol && userAccountExists && !userEscrowExists && mintUpdated && escrowUpdated) {
-    //   setControl('createEscrowAccount');
-    // } else if (tokenmint === wsol && userAccountExists) {
-    //   setControl('play');
-    //   if (logs[0].message.includes('Accounts retrieved for user')) dispatch(thunks.setLoading(false));
-    // } else if (tokenmint !== wsol && userAccountExists && userEscrowExists) {
-    //   setControl('play');
-    // }
-    // console.log(userAccountExists, 'user exists?')
-    // console.log(user, 'USER')
     return () => {};
   }, [tokenmint,
     userAccountExists,
@@ -334,7 +311,7 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
     dispatch]);
 
   useEffect(() => {
-    console.log("setting control as : ", control, "CONTROL")
+    // console.log("setting control as : ", control, "CONTROL")
     if ( control === "loading") {
       dispatch(thunks.setLoading(true))
     }
@@ -357,13 +334,13 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
   
 
   return (
-    <div className="flex h-full flex-col max-h-[800px]  md:justify-center w-full lg:w-3/12 p-6 font-bold relative">
+    <div className="flex  flex-col 2xl:max-w-[1920px] h-[70%] md:h-full 2xl:h-[70%] justify-start lg:justify-center   w-full md:w-4/12 lg:w-3/12 p-6 font-bold relative">
       {wallet?.connected && wallet?.publicKey?.toBase58() === 'AGmMyWmNo3WnZMhytqfDc5gZRpvjpzqaKey2zQ2w248c' && (
         <div className="text-white text-center text-xs">
           House Balance: {houseVaultBal} {tokenInfo?.symbol}
         </div>
       )}
-      <div className="part1 h-[20%]  center w-full">
+      <div className="part1  md:h-[20%]  center w-full">
         <div className="w-full">
           {wallet?.connected && (
             <div className="tokenSelector mb-1">
@@ -399,7 +376,7 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
         </div>
       </div>
       {wallet?.connected && (
-        <div className="part2 h-[10%]  2xl:h-[10%] p-1">
+        <div className="part2 md:h-[10%]  2xl:h-[10%] p-1">
           <div className="bg-brand_yellow border-4 border-black rounded-3xl p-1 text-sm overflow-hidden h-full center">
             <div className="flex justify-between font-extrabold ">
               <p
@@ -412,7 +389,7 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
           </div>
         </div>
       )}
-      <div className="part3 h-[40%]  2xl:h-[45%] p-1">
+      <div className="part3 h-[60%] md:h-[50%]  2xl:h-[40%] p-1">
         <div className="bg-brand_yellow rounded-3xl border-4 border-black text-sm p-2 text-center h-full center overflow-hidden justify-between relative">
           {result?.status === 'waiting' && (
             <div className="center h-full text-white border-white absolute top-0 bottom-0 z-[12] bg-brand_yellow left-0 right-0">
@@ -464,18 +441,18 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
         </div>
       )}
 
-      <div className="absolute bg-brand_yellow rounded-full w-[40px] h-[40px] text-xl center bottom-[5%] right-[21%] cursor-pointer hover:bg-yellow-800">
-        <a href="https://t.co/7z4OVkI6DX" target={'_blank'} rel="noreferrer">
-          <FaDiscord />
-        </a>
-      </div>
-      <div className="absolute bg-brand_yellow rounded-full w-[40px] h-[40px] text-xl center bottom-[5%] right-[36%] cursor-pointer hover:bg-yellow-800">
+      <div className="absolute bg-brand_yellow rounded-full w-[40px] h-[40px] text-xl center bottom-[0%] right-[37%] cursor-pointer hover:bg-yellow-800">
         <a href="https://twitter.com/SoltoonsArcade" target={'_blank'} rel="noreferrer">
           <FaTwitter />
         </a>
       </div>
+      <div className="absolute bg-brand_yellow rounded-full w-[40px] h-[40px] text-xl center bottom-[0%] right-[22%] cursor-pointer hover:bg-yellow-800">
+        <a href="https://t.co/7z4OVkI6DX" target={'_blank'} rel="noreferrer">
+          <FaDiscord />
+        </a>
+      </div>
       <div
-        className="absolute bg-brand_yellow rounded-full w-[40px] h-[40px] text-xl center bottom-[5%] right-[7%] cursor-pointer hover:bg-yellow-800"
+        className="absolute bg-brand_yellow rounded-full w-[40px] h-[40px] text-xl center bottom-[0%] right-[7%] cursor-pointer hover:bg-yellow-800"
         onClick={() => {
           localStorage.setItem('soltoons-sound', String(!sound));
           setSound(!sound);
@@ -699,7 +676,9 @@ const Play = ({
           result?.userWon &&
           (isWsol ? userVaultBal > 0.03552384 : escrow.balance > 0) ? (
             <>
-              <button className="center h-full w-full text-lg">Received Result!</button>
+              <button onClick={() => api.handleCommand('collect reward')} className="center h-full w-full text-lg">
+                Received Result!
+              </button>
             </>
           ) : (
             <div className="h-full w-full relative bg-green-00">
@@ -722,7 +701,7 @@ const Play = ({
                     className={`w-${token?.bets?.length === 4 ? 5 : 4}/12 center bg-red-00 my-1 p-1 `}
                     onClick={() => setAmount(Number(item))}
                     key={item}
-                    id={String(item)+tokenInfo.symbol}
+                    id={String(item) + tokenInfo.symbol}
                   >
                     <span
                       className={`text-xs w-full p-1 text-center ${

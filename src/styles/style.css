@@ -169,67 +169,21 @@ body {
 .small-scrollbar::-webkit-scrollbar-thumb:hover {
   background-color: rgb(201, 107, 7);
 }
-/* game movement */
-/* The animation code */
-@keyframes horizontal {
-  0% {transform: translateX(0%);}
-  25% {transform: translateX(50%);}
-  50% {transform: translateX(85%);}
-  75% {transform: translateX(50%);}
-  100% {transform: translateX(0%);}
-}
-
-@keyframes vertical {
-  0% {transform: translateY(0%);}
-  50% {transform: translateY(30%);}
-  100% {transform: translateY(0%);}
-}
-@keyframes verticalLarge {
-  0% {transform: translateY(0%);}
-  50% {transform: translateY(25%);}
-  100% {transform: translateY(0%);}
-}
-
-/* The element to apply the animation to */
-#claw {
-  transition: all 0.2s ease-in-out;
-  /* animation-name: horizontal; */
-  animation-duration: 15s;
-  animation-iteration-count: infinite;
-  animation-timing-function: cubic-bezier(0.39, 0.575, 0.565, 1);
-}
-#pipe {
-  animation-name: vertical;
-  transition: all 0.6s ease-in-out;
-  animation-duration: 5s;
-  animation-iteration-count: infinite;
-   animation-timing-function: cubic-bezier(0.39, 0.575, 0.565, 1);
-}
 
 #buttons *{
   user-select: none;
 }
 
-@keyframes freefall {
-  0% {transform: translateY(0%); }
-  100% {transform: translateY(100%);}
+.glow{
+box-shadow: 0px 1px 2px rgba(238, 255, 0, 0.5), 
+              0px 2px 4px rgba(255, 251, 0, 0.5), 
+              0px 4px 8px rgba(255, 153, 0, 0.5), 
+              0px 8px 16px rgba(255, 217, 0, 0.781);
 }
-@keyframes freefallItem {
-  0% {transform: rotate(0deg); }
-  100% {transform: rotate(360deg);}
-}
-#reward{
-  /* animation-name: freefall; */
-  transition: all 0.2s ease-in-out;
-  animation-direction: forwards;
-  animation-duration: 2s;
-  animation-iteration-count: 1;
-   animation-timing-function: cubic-bezier(0.39, 0.575, 0.565, 1);
-}
-#reward img{
-  /* animation-name: freefallItem; */
-  transition: all 0.2s ease-in-out;
-  animation-duration: 1s;
-  animation-iteration-count: 1;
-   animation-timing-function: cubic-bezier(0.39, 0.575, 0.565, 1);
+
+.glow:hover{
+   box-shadow: 0px 1px 2px rgba(0,255,255,0.5), 
+              0px 2px 4px rgba(0,255,255,0.5), 
+              0px 4px 8px rgba(0,255,255,0.5), 
+              0px 8px 16px rgba(0,255,255,0.5);
 }

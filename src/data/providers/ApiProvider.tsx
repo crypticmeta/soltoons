@@ -704,7 +704,7 @@ class ApiState implements PrivateApiInterface {
   private packSignAndSubmit = async (request: TransactionObject, message: string, id: string): Promise<string[]> => {
     const program = await this.program;
     const connection = (await this.program).provider.connection;
-    const blockhash = await program.provider.connection.getLatestBlockhash('finalized');
+    const blockhash = await program.provider.connection.getLatestBlockhash('confirmed');
     const sign = request.sign(blockhash, request.signers);
     const signedTxs = await this.wallet.signAllTransactions([sign]).catch((e) => {
       if (id !== 'collectReward') this.dispatch(thunks.setResult({ status: 'error' }));
@@ -730,7 +730,7 @@ class ApiState implements PrivateApiInterface {
       for (const tx of signedTxs) {
         const serialTx = tx.serialize();
         await connection
-          .sendRawTransaction(serialTx, { skipPreflight: true, preflightCommitment: 'finalized' })
+          .sendRawTransaction(serialTx, { skipPreflight: true, preflightCommitment: 'confirmed' })
           .then(async (sig) => {
             console.info(sig, ' tx');
             txSign.push(sig);
