@@ -5,6 +5,7 @@ import Analytics from '../../components/Analytics';
 import GameRive from '../../components/GameRive';
 
 import Countdown from 'react-countdown';
+import { FaDiscord, FaTwitter } from 'react-icons/fa';
 function Index() {
   const [amount, setAmount] = useState('1');
   const [step, setStep] = useState(0);
@@ -42,14 +43,28 @@ function Index() {
     if (!completed) {
       return (
         <div className="center min-h-screen">
-          <div className="text-3xl 2xl:text-5xl bg-brand_yellow p-3 rounded-xl shadow-2xl font-extrabold font-sans flex space-x-6">
-            <span>{days} D</span>
-            <span>:</span>
-            <span>{hours} H</span>
-            <span>:</span>
-            <span>{minutes} m</span>
-            <span>:</span>
-            <span>{seconds} sec</span>
+          <div>
+            <div className="text-3xl 2xl:text-5xl bg-brand_yellow p-3 rounded-xl shadow-2xl font-extrabold font-sans flex space-x-6">
+              <span>{days} D</span>
+              <span>:</span>
+              <span>{hours} H</span>
+              <span>:</span>
+              <span>{minutes} m</span>
+              <span>:</span>
+              <span>{seconds} sec</span>
+            </div>
+            <div className='center my-6 space-x-6'>
+              <div className="bg-brand_yellow rounded-full w-[40px] h-[40px] text-xl center cursor-pointer hover:bg-yellow-800">
+                <a href="https://twitter.com/SoltoonsArcade" target={'_blank'} rel="noreferrer">
+                  <FaTwitter />
+                </a>
+              </div>
+              <div className="bg-brand_yellow rounded-full w-[40px] h-[40px] text-xl center cursor-pointer hover:bg-yellow-800">
+                <a href="https://t.co/7z4OVkI6DX" target={'_blank'} rel="noreferrer">
+                  <FaDiscord />
+                </a>
+              </div>
+            </div>
           </div>
         </div>
       );
