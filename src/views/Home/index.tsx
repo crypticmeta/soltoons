@@ -43,8 +43,8 @@ function Index() {
     if (!completed) {
       return (
         <div className="center min-h-screen">
-          <div>
-            <div className="text-3xl 2xl:text-5xl bg-brand_yellow p-3 rounded-xl shadow-2xl font-extrabold font-sans flex space-x-6">
+          <div className="w-full bg-red-00 flex-col center">
+            <div className=" text-2xl md:text-3xl 2xl:text-5xl bg-brand_yellow p-3 rounded-xl shadow-2xl font-extrabold font-sans flex space-x-1 md:space-x-6">
               <span>{days} D</span>
               <span>:</span>
               <span>{hours} H</span>
@@ -53,7 +53,7 @@ function Index() {
               <span>:</span>
               <span>{seconds} sec</span>
             </div>
-            <div className='center my-6 space-x-6'>
+            <div className="center my-6 space-x-4 md:space-x-6">
               <div className="bg-brand_yellow rounded-full w-[40px] h-[40px] text-xl center cursor-pointer hover:bg-yellow-800">
                 <a href="https://twitter.com/SoltoonsArcade" target={'_blank'} rel="noreferrer">
                   <FaTwitter />
