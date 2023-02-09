@@ -345,6 +345,7 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
           {wallet?.connected && (
             <div className="tokenSelector mb-1">
               <Select
+                readOnly
                 labelId="select-token"
                 id="select-token"
                 sx={{
