@@ -73,8 +73,8 @@ function Index() {
 
   return (
     <div className="relative no-scrollbar">
-      <Countdown date={new Date('10 February 2023')} zeroPadDays={2} zeroPadTime={2} renderer={renderer} />
-      {new Date() > new Date("10 February 2023") && (<>
+      <Countdown date={new Date('10 February 2023 21:00:00 UTC ')} zeroPadDays={2} zeroPadTime={2} renderer={renderer} />
+      {new Date() > new Date("10 February 2023 21:00:00 UTC ") && (<>
         {splash ? <LoadingScreen style={style} /> : <></>}
         <div className=" flex  relative 2xl:justify-center items-center">
           <div className="2xl:max-w-[1920px] 2xl:max-h-[1080px] w-full  h-screen items-center flex flex-wrap bg-yellow-00 min-h-[120vh] lg:max-h-screen  md:min-h-[100vh]">
