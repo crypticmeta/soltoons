@@ -950,14 +950,14 @@ class ApiState implements PrivateApiInterface {
         !event.userWon && this.log(`You missed the plushie, please try again`, Severity.Error);
 
         // console.log({result: event.result.toString(),
-        //     change: event.escrowChange.toString(),
+        //     change: multiplier[Number(event.result.toString())]===0?0:event.escrowChange.toString(),
         //     multiplier: multiplier[Number(event.result.toString())].toFixed(1),
         //     userWon: event.userWon}, 'result')
         this.dispatch(
           thunks.setResult({
             status: 'success',
             result: event.result.toString(),
-            change: event.escrowChange.toString(),
+            change: multiplier[Number(event.result.toString())]===0?0:event.escrowChange.toString(),
             multiplier: multiplier[Number(event.result.toString())].toFixed(1),
             userWon: event.userWon,
           })
@@ -971,7 +971,7 @@ class ApiState implements PrivateApiInterface {
             network: process.env.REACT_APP_NETWORK,
             status: 'success',
             result: event.result.toString(),
-            change: event.escrowChange.toString(),
+            change: multiplier[Number(event.result.toString())]===0?0:event.escrowChange.toString(),
             multiplier: multiplier[Number(event.result.toString())].toFixed(1),
             userWon: event.userWon,
             bet: Number(event.betAmount),
@@ -990,7 +990,7 @@ class ApiState implements PrivateApiInterface {
               network: process.env.REACT_APP_NETWORK,
               status: 'success',
               result: Number(event.result.toString()),
-              change: Number(event.escrowChange.toString()),
+              change: Number(multiplier[Number(event.result.toString())]===0?0:event.escrowChange.toString()),
               multiplier: Number(multiplier[Number(event.result.toString())].toFixed(1)),
               userWon: event.userWon,
               bet: Number(event.betAmount),
