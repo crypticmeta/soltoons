@@ -3,11 +3,11 @@ import { WalletAdapterNetwork, WalletError } from '@solana/wallet-adapter-base';
 import { WalletDialogProvider } from '@solana/wallet-adapter-material-ui';
 import { ConnectionProvider, WalletProvider } from '@solana/wallet-adapter-react';
 import {
-  getPhantomWallet,
-  getSolflareWallet,
-  getSolletWallet,
-  getSolletExtensionWallet,
-  getSlopeWallet,
+  PhantomWalletAdapter,
+  SolflareWalletAdapter,
+  SolletWalletAdapter,
+  SolletExtensionWalletAdapter,
+  SlopeWalletAdapter,
 } from '@solana/wallet-adapter-wallets';
 
 import toast from 'react-hot-toast';
@@ -26,11 +26,11 @@ const Wallet: FC = ({ children }:any) => {
   // Only the wallets you want to support will be compiled into your application
   const wallets = useMemo(
     () => [
-      getPhantomWallet(),
-      getSolflareWallet(),
-      getSlopeWallet(),
-      getSolletWallet({ network: network as unknown as WalletAdapterNetwork }),
-      getSolletExtensionWallet({
+      new PhantomWalletAdapter(),
+      new SolflareWalletAdapter(),
+      new SlopeWalletAdapter(),
+      new SolletWalletAdapter({ network: network as unknown as WalletAdapterNetwork }),
+      new SolletExtensionWalletAdapter({
         network: network as unknown as WalletAdapterNetwork,
       }),
     ],
