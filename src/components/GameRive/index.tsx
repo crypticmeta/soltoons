@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { hooks, Store } from '../../data';
+import { useState, useEffect, useCallback } from 'react';
+import { Store } from '../../data';
 import { useSelector } from 'react-redux';
 import { useRive, useStateMachineInput } from '@rive-app/react-canvas';
 import useSound from 'use-sound';
@@ -17,7 +17,7 @@ const plushies = {
 };
 
 //@ts-ignore
-function Game({ amount, step, setStep, handleModalOpen, sound }) {
+function Game({ step, setStep, handleModalOpen, sound, demoResult, isDemo, demoRunning, onDemoPlay, x, setX }) {
   //sound
   const [playWin, stopWin] = useSound('/assets/audio/win.mp3', {
     volume: sound ? 1 : 0,
@@ -43,14 +43,13 @@ function Game({ amount, step, setStep, handleModalOpen, sound }) {
   const moveLeftInput = useStateMachineInput(rive, STATE_MACHINE_NAME, 'moveLeft'); //boolean
   const resultInput = useStateMachineInput(rive, STATE_MACHINE_NAME, 'Result'); //number 0-7
   const posInput = useStateMachineInput(rive, STATE_MACHINE_NAME, 'pos'); //number 0/100
-  //api
-  const api = hooks.useApi();
-  const [x, setX] = useState(50);
   const [leftHold, setLeftHold] = useState(false);
   const [rightHold, setRightHold] = useState(false);
 
   //@ts-ignore
-  const result = useSelector((store: Store) => store.gameState.result);
+  const chainResult = useSelector((store: Store) => store.gameState.result);
+  const result = demoResult ?? chainResult;
+  const canMove = step === 0 && result.status !== 'waiting' && result.status !== 'success' && !demoRunning;
 
   useEffect(() => {
     if (result.status === 'waiting') {
@@ -89,71 +88,40 @@ function Game({ amount, step, setStep, handleModalOpen, sound }) {
   }, [playNeutral, playWin, result.multiplier, result?.userWon, setStep, step]);
 
   useEffect(() => {
-    if (leftHold || rightHold) {
-      let newX = x;
-      if (leftHold && step < 3) {
-        newX = x - 0.1;
-        if (newX >= 0 && newX <= 100) {
-          if (moveLeftInput) moveLeftInput.value = true; //move left button in rive
-          playSlide();
-        } else {
-          stopSlide.stop();
-        }
-      } else if (rightHold && !step) {
-        newX = x + 0.1;
-        if (newX >= 0 && newX <= 100) {
-          playSlide();
-          if (moveRightInput) moveRightInput.value = true; //move right button in rive
-        } else {
-          stopSlide.stop();
-        }
-      }
+    if (canMove && (leftHold || rightHold)) {
+      if (moveLeftInput) moveLeftInput.value = leftHold;
+      if (moveRightInput) moveRightInput.value = rightHold;
+      playSlide();
     } else {
       if (moveLeftInput) moveLeftInput.value = false; //disable move button in rive
       if (moveRightInput) moveRightInput.value = false; // disable move button in rive
       stopSlide.stop();
     }
-  }, [leftHold, rightHold, x, step, moveLeftInput, playSlide, stopSlide, moveRightInput]);
+  }, [canMove, leftHold, moveLeftInput, moveRightInput, playSlide, rightHold, stopSlide]);
 
   useEffect(() => {
-    let interval: any;
-    let newX = x - 0.1;
-    if (leftHold && posInput && posInput?.value === 0)
-      interval = setInterval(() => {
-        if (newX >= 0 && newX <= 100) {
-          setX(newX);
-          if (xAxisInput) xAxisInput.value = newX;
-          newX = newX - 0.1;
-        }
-      }, 1);
+    if (!canMove || (!leftHold && !rightHold)) return;
 
-    return () => {
-      clearInterval(interval);
-    };
-  }, [leftHold, posInput, step, x, xAxisInput]);
+    const direction = leftHold ? -1 : 1;
+    const interval = window.setInterval(() => {
+      setX((currentX: number) => Math.max(0, Math.min(100, currentX + direction)));
+    }, 20);
 
-  useEffect(() => {
-    let interval: any;
-    let newX = x + 0.1;
-    if (rightHold && posInput && posInput?.value === 0)
-      interval = setInterval(() => {
-        if (newX >= 0 && newX <= 100) {
-          setX(newX);
-          if (xAxisInput) xAxisInput.value = newX;
-          newX = newX + 0.1;
-        }
-      }, 1);
+    return () => window.clearInterval(interval);
+  }, [canMove, leftHold, rightHold, setX]);
 
-    return () => {
-      clearInterval(interval);
-    };
-  }, [posInput, rightHold, step, x, xAxisInput]);
+  const nudgeClaw = useCallback(
+    (direction: -1 | 1) => {
+      if (!canMove) return;
+      setX((currentX: number) => Math.max(0, Math.min(100, currentX + direction * 12.5)));
+    },
+    [canMove, setX]
+  );
 
   //rive movement after getting collecting rewards
 
   useEffect(() => {
     if (result.status === 'claimed') {
-      console.log('claimed');
       setStep(0);
       if (posInput) posInput.value = 0; //set pos 0
       if (resultInput) resultInput.value = 0; //set reward 0
@@ -161,28 +129,33 @@ function Game({ amount, step, setStep, handleModalOpen, sound }) {
     }
   }, [posInput, refreshInput, result, resultInput, setStep]);
 
-  function handleKeyDown(e: any) {
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
     if (e.code === 'Enter') {
-      api.handleCommand(`user play 1 ${amount}`);
+      if (isDemo) onDemoPlay();
     }
     if (e.code === 'ArrowRight') {
-      setRightHold(true);
+      if (canMove) setRightHold(true);
     }
     if (e.code === 'ArrowLeft') {
-      setLeftHold(true);
+      if (canMove) setLeftHold(true);
     }
-  }
-  function handleKeyUp(e: any) {
+  }, [canMove, isDemo, onDemoPlay]);
+
+  const handleKeyUp = useCallback(() => {
     if (moveLeftInput?.value) moveLeftInput.value = false;
     if (moveRightInput?.value) moveRightInput.value = false;
     setLeftHold(false);
     setRightHold(false);
-  }
+  }, [moveLeftInput, moveRightInput]);
 
   useEffect(() => {
     document.addEventListener('keydown', handleKeyDown);
     document.addEventListener('keyup', handleKeyUp);
-  }, []);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('keyup', handleKeyUp);
+    };
+  }, [handleKeyDown, handleKeyUp]);
 
   useEffect(() => {
     if (xAxisInput) {
@@ -203,18 +176,32 @@ function Game({ amount, step, setStep, handleModalOpen, sound }) {
             result?.userWon ? ' cursor-pointer  glow ' : ''
           } w-[15%] lg:w-[10%] xl:w-[13%] 2xl:w-[20%] absolute z-[1] bottom-[5%] left-[17%] md:left-[17%] lg:left-[17%] xl:left-[17%] 2xl:left-[15%]`}
         ></div>
-        <div
-          onMouseDown={() => setLeftHold(true)}
-          onMouseUp={() => setLeftHold(false)}
-          onTouchStart={() => !rightHold && setLeftHold(!leftHold)}
-          className="h-[5%] w-[7%] cursor-pointer lg:w-[5%] absolute z-[1] bottom-[28%] md:bottom-[27%] left-[40%] "
-        ></div>
-        <div
-          onMouseDown={() => setRightHold(true)}
-          onMouseUp={() => setRightHold(false)}
-          onTouchStart={() => !leftHold && setRightHold(!rightHold)}
-          className="h-[5%] w-[7%] cursor-pointer lg:w-[5%] absolute z-[1] bottom-[28%] md:bottom-[27%] left-[55%]"
-        ></div>
+        <button
+          type="button"
+          aria-label="Move claw left"
+          aria-pressed={leftHold}
+          disabled={!canMove}
+          onPointerDown={() => !rightHold && setLeftHold(true)}
+          onPointerUp={() => setLeftHold(false)}
+          onPointerCancel={() => setLeftHold(false)}
+          onPointerLeave={() => setLeftHold(false)}
+          onBlur={() => setLeftHold(false)}
+          onClick={() => nudgeClaw(-1)}
+          className="absolute bottom-[28%] left-[40%] z-[1] h-[5%] w-[7%] cursor-pointer touch-none rounded-full border-0 bg-transparent focus:outline-none focus-visible:ring-4 focus-visible:ring-white disabled:cursor-not-allowed md:bottom-[27%] lg:w-[5%]"
+        />
+        <button
+          type="button"
+          aria-label="Move claw right"
+          aria-pressed={rightHold}
+          disabled={!canMove}
+          onPointerDown={() => !leftHold && setRightHold(true)}
+          onPointerUp={() => setRightHold(false)}
+          onPointerCancel={() => setRightHold(false)}
+          onPointerLeave={() => setRightHold(false)}
+          onBlur={() => setRightHold(false)}
+          onClick={() => nudgeClaw(1)}
+          className="absolute bottom-[28%] left-[55%] z-[1] h-[5%] w-[7%] cursor-pointer touch-none rounded-full border-0 bg-transparent focus:outline-none focus-visible:ring-4 focus-visible:ring-white disabled:cursor-not-allowed md:bottom-[27%] lg:w-[5%]"
+        />
       </div>
     </div>
   );

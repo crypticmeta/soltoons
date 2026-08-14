@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "homepage": "https://soltoons.vercel.app",
+  "engines": {
+    "node": "24.x"
+  },
   "dependencies": {
     "@craco/craco": "^6.4.3",
     "@emotion/react": "^11.10.6",

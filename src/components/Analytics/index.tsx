@@ -1,92 +1,109 @@
-import axios from 'axios';
-import moment from 'moment';
-import React, { useCallback, useEffect, useState } from 'react'
-import { tokenInfoMap } from '../../data/providers/tokenProvider';
+import React from 'react';
+import historicalStats from '../../data/historicalStats.json';
 
-function Index() {
-    const [events, setEvents] = useState<any>([ ]);
-     const getRecentPlays = useCallback(async () => {
-         try {
-           const to_date=moment().format('YYYY-MM-DD')
-           const from_date= moment().subtract(1, 'day').format('YYYY-MM-DD')
-         const res = await axios.post("https://soltoons-api.vercel.app/api/get-recent-plays", {from_date, to_date})
-        //  const body = await res.data.json();
+const number = new Intl.NumberFormat('en-US');
 
-           if (res.data?.events) {
-            //  console.log(res.data.events, 'EVE')
-           setEvents(res.data.events);
-         } else {
-           setEvents([]);
-         }
-       } catch (error) {
-         console.error(error);
-         setEvents([]);
-       }
-     }, []);
-    
-    useEffect(() => {
-      getRecentPlays()
-    }, [])
+const formatDate = (value: string) =>
+  new Intl.DateTimeFormat('en', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    timeZone: 'UTC',
+  }).format(new Date(value));
+
+const cards = [
+  {
+    value: `${number.format(historicalStats.metrics.signaturesInspected)}+`,
+    label: 'signatures inspected',
+    note: 'The bounded query reached its cap.',
+  },
+  {
+    value: number.format(historicalStats.metrics.successfulSignatures),
+    label: 'successful signatures',
+    note: 'Raw chain activity, not a play or user count.',
+  },
+  {
+    value: number.format(historicalStats.metrics.currentAccountTypes.UserState),
+    label: 'current UserState accounts',
+    note: 'Program accounts, not verified unique people.',
+  },
+  {
+    value: number.format(historicalStats.metrics.recognizedSuccessfulTransactionsInSample),
+    label: 'recognized successful actions',
+    note: `From ${historicalStats.methodology.decodedTransactionSample} decoded signatures.`,
+  },
+];
+
+function Analytics() {
+  const instructions = historicalStats.metrics.instructionCountsInSample;
+
   return (
-    <div className="w-full p-6 lg:px-24 ">
-      <div className="text-center text-lg tracking-wider center font-bold pb-4 uppercase">
-        <p className="px-4 py-2 bg-brand_yellow  border-4 border-black">24 Hour Stat ({events.length} Rounds Played)</p>
-      </div>
-      {events.length ? (
-        <div className="h-80vh overflow-y-scroll lg:px-6 small-scrollbar">
-          {events &&
-            events.length &&
-            events
-              .sort((a: any, b: any) => b.time - a.time)
-              .filter((a: any) => a.properties.network !== 'devnet')
-              .map((item: any) => (
-                <div key={item.properties.id + item.time}>
-                  <a
-                    target={'_blank'}
-                    href={`https://explorer.solana.com/tx/${item.properties.id}`}
-                    className={`${
-                      item.properties.multiplier !== 0
-                        ? item.properties.multiplier >= 1
-                          ? ' bg-brand_yellow font-bold'
-                          : ' bg-blue-400 font-light'
-                        : ' bg-gray-400 font-light'
-                    } p-3 mb-3 rounded shadow-xl flex bg-opacity-70 justify-between hover:bg-opacity-100`}
-                    rel="noreferrer"
-                  >
-                    <div className="flex w-10/12">
-                      <p className="w-4/12 text-xs lg:text-lg">
-                        {item.properties.walletId.substring(0, 4)}...
-                        {item.properties.walletId.substring(
-                          item.properties.walletId.length - 4,
-                          item.properties.walletId.length
-                        )}
-                      </p>
-                      <p className="w-4/12  text-xs lg:text-lg pl-2">
-                        Bet {item.properties.bet / Math.pow(10, tokenInfoMap.get(item.properties.mint)?.decimals || 9)}{' '}
-                        {tokenInfoMap.get(item.properties.mint)?.symbol}
-                      </p>
-                      <p className="w-4/12  text-xs lg:text-lg pl-2">
-                        {item.properties.multiplier === 0
-                          ? 'And lost '
-                          : 'And Won ' +
-                            item.properties.change /
-                              Math.pow(10, tokenInfoMap.get(item.properties.mint)?.decimals || 9) +
-                            ' ' +
-                            tokenInfoMap.get(item.properties.mint)?.symbol}{' '}
-                        {/* {tokenInfoMap.get(item.properties.mint)?.symbol} */}
-                      </p>
-                    </div>
-                    <p className="w-2/12 lg:text-2xl font-bold text-right">{item.properties.multiplier}x</p>
-                    {/* <p>{item.properties.id.substring(0, 7)}</p> */}
-                  </a>
-                </div>
-              ))}
+    <section className="w-full px-6 pb-20 lg:px-24" aria-labelledby="historical-activity-title">
+      <div className="mx-auto max-w-6xl">
+        <div className="pb-7 text-center">
+          <h2
+            id="historical-activity-title"
+            className="inline-block border-4 border-black bg-brand_yellow px-5 py-3 text-lg font-extrabold uppercase tracking-wider"
+          >
+            Verified historical on-chain activity
+          </h2>
+          <p className="mx-auto mt-3 max-w-2xl text-sm font-semibold text-white">
+            A checked-in Solana mainnet snapshot generated {formatDate(historicalStats.generatedAt)}. It keeps the
+            playable archive independent from the retired analytics service.
+          </p>
         </div>
-      ) : (
-        <div className="text-white text-center">NONE</div>
-      )}
-    </div>
+
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {cards.map((card) => (
+            <article key={card.label} className="rounded-3xl border-4 border-black bg-brand_yellow p-5 shadow-xl">
+              <p className="text-3xl font-black">{card.value}</p>
+              <h3 className="mt-1 text-sm font-extrabold uppercase">{card.label}</h3>
+              <p className="mt-3 text-xs font-semibold leading-relaxed">{card.note}</p>
+            </article>
+          ))}
+        </div>
+
+        <div className="mt-5 grid gap-5 rounded-3xl border-4 border-black bg-black/80 p-6 text-white md:grid-cols-2">
+          <div>
+            <h3 className="text-sm font-extrabold uppercase text-brand_yellow">Decoded sample</h3>
+            <p className="mt-2 text-sm leading-relaxed">
+              {number.format(historicalStats.metrics.interactingFeePayersInSample)} distinct fee-payer wallets made
+              recognized successful calls in the decoded sample. That is evidence of interacting wallets—not a claim
+              about unique people.
+            </p>
+            <p className="mt-3 text-xs leading-relaxed text-gray-300">
+              {instructions.userBet} bets · {instructions.userSettle} settlements · {instructions.collectReward}{' '}
+              reward collections · {instructions.userInit} user initializations
+            </p>
+          </div>
+          <div>
+            <h3 className="text-sm font-extrabold uppercase text-brand_yellow">Observed history</h3>
+            <p className="mt-2 text-sm leading-relaxed">
+              The inspected range begins {formatDate(historicalStats.observedActivity.oldestSignatureInRange)}. The most
+              recent recognized successful Soltoons action in this snapshot is{' '}
+              {formatDate(historicalStats.observedActivity.newestRecognizedSuccessfulActivity)}.
+            </p>
+            <a
+              className="mt-3 inline-block text-xs font-extrabold uppercase text-brand_yellow underline decoration-2 underline-offset-4"
+              href={historicalStats.explorerUrl}
+              target="_blank"
+              rel="noreferrer"
+            >
+              Inspect the program on Solana Explorer
+            </a>
+          </div>
+        </div>
+
+        <details className="mt-4 rounded-2xl border-2 border-white/30 bg-black/60 p-4 text-xs text-gray-200">
+          <summary className="cursor-pointer font-extrabold uppercase text-white">How these numbers were derived</summary>
+          <p className="mt-3 leading-relaxed">{historicalStats.methodology.note}</p>
+          <p className="mt-2 break-all leading-relaxed">
+            Program: {historicalStats.programId} · Source: {historicalStats.source}
+          </p>
+        </details>
+      </div>
+    </section>
   );
 }
 
-export default Index
+export default Analytics;

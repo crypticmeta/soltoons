@@ -15,7 +15,7 @@ const DEFAULT_COMMITMENT = 'confirmed';
 export const defaultRpcForCluster = (cluster: anchor.web3.Cluster | 'localnet') => {
   switch (cluster) {
     case 'mainnet-beta':
-      return 'https://warmhearted-greatest-emerald.solana-mainnet.quiknode.pro/2b6bcf328ed2611d4d293c2aaa027f3139acb0af/';
+      return process.env.REACT_APP_RPC || anchor.web3.clusterApiUrl('mainnet-beta');
     case 'devnet':
       return 'https://api.devnet.solana.com';
     case 'localnet':

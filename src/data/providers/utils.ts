@@ -1,18 +1,17 @@
 import axios from 'axios';
 
-export const getVRF = async(user:string) => {
-    let data = null;
-    await axios.post('https://soltoons-api.vercel.app/api/assign-vrf', {
-        user,
-        network: process.env.REACT_APP_NETWORK==="devnet"?"devnet":"mainnet"
-    }).then(res => {
-        if (res.data.vrf) {
-            data = res.data.vrf;
-        }
-    }).catch(async(err) => {
-        return null;
+export const getVRF = async (user: string) => {
+  const gameApi = process.env.REACT_APP_GAME_API;
+  if (!gameApi) return null;
+
+  try {
+    const response = await axios.post(`${gameApi}/api/assign-vrf`, {
+      user,
+      network: process.env.REACT_APP_NETWORK === 'mainnet-beta' ? 'mainnet' : 'devnet',
     });
 
-    return data
-   
-}
+    return response.data.vrf ?? null;
+  } catch {
+    return null;
+  }
+};
