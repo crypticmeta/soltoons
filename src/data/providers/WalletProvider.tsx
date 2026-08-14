@@ -11,16 +11,12 @@ import {
 } from '@solana/wallet-adapter-wallets';
 
 import toast from 'react-hot-toast';
-const extendedClusterApiUrl = () => {
-  return (
-    process.env.REACT_APP_RPC ||
-    'https://warmhearted-greatest-emerald.solana-mainnet.quiknode.pro/2b6bcf328ed2611d4d293c2aaa027f3139acb0af/'
-  );
-};
+import { clusterApiUrl } from '@solana/web3.js';
 
 const Wallet: FC = ({ children }:any) => {
-  const network = process.env.REACT_APP_NETWORK==="devnet"?"devnet":"mainnet-beta";
-  const endpoint = useMemo(() => extendedClusterApiUrl(), []);
+  const onchainEnabled = process.env.REACT_APP_ENABLE_ONCHAIN === 'true';
+  const network = process.env.REACT_APP_NETWORK === 'mainnet-beta' ? 'mainnet-beta' : 'devnet';
+  const endpoint = useMemo(() => process.env.REACT_APP_RPC || clusterApiUrl(network), [network]);
 
   // @solana/wallet-adapter-wallets imports all the adapters but supports tree shaking --
   // Only the wallets you want to support will be compiled into your application
@@ -45,7 +41,7 @@ const Wallet: FC = ({ children }:any) => {
 
   return (
     <ConnectionProvider endpoint={endpoint}>
-      <WalletProvider wallets={wallets} onError={onError} autoConnect>
+      <WalletProvider wallets={wallets} onError={onError} autoConnect={onchainEnabled}>
         <WalletDialogProvider featuredWallets={5}>{children}</WalletDialogProvider>
       </WalletProvider>
     </ConnectionProvider>

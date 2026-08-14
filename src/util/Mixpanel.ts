@@ -1,26 +1,26 @@
 import mixpanel from 'mixpanel-browser';
 
-const PROD_TOKEN = process.env.REACT_APP_MIXPANEL || "5fa23edbf619e78b0fc68a47f493167d";
-mixpanel.init(PROD_TOKEN);
-mixpanel.set_config({
-    ip: true,
-    ignore_dnt: true,
-});
-let actions = {
+const PROD_TOKEN = process.env.REACT_APP_MIXPANEL;
+const enabled = Boolean(PROD_TOKEN);
+
+if (PROD_TOKEN) {
+    mixpanel.init(PROD_TOKEN);
+    mixpanel.set_config({ ip: false });
+}
+
+export const Mixpanel = {
     identify: (id: any) => {
-        mixpanel.identify(id);
+        if (enabled) mixpanel.identify(id);
     },
     alias: (id: any) => {
-        mixpanel.alias(id);
+        if (enabled) mixpanel.alias(id);
     },
     track: (name: any, props: any) => {
-        mixpanel.track(name, props);
+        if (enabled) mixpanel.track(name, props);
     },
     people: {
         set: (props: any) => {
-            mixpanel.people.set(props);
+            if (enabled) mixpanel.people.set(props);
         },
     },
 };
-
-export let Mixpanel = actions;

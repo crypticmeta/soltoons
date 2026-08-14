@@ -39,8 +39,37 @@ function LinearProgressWithLabel(props: LinearProgressProps & { value: number })
     </Box>
   );
 }
-//@ts-ignore
-function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal, sound, setSound }) {
+type SidebarProps = {
+  amount: number;
+  setAmount: React.Dispatch<React.SetStateAction<number>>;
+  step: number;
+  setStep: React.Dispatch<React.SetStateAction<number>>;
+  handleModalClose: () => void;
+  openModal: boolean;
+  sound: boolean;
+  setSound: React.Dispatch<React.SetStateAction<boolean>>;
+  demoResult: { status: string } | null;
+  demoRunning: boolean;
+  demoMessage: string;
+  onDemoPlay: () => void;
+  onchainEnabled: boolean;
+};
+
+function Sidebar({
+  amount,
+  setAmount,
+  step,
+  setStep,
+  handleModalClose,
+  openModal,
+  sound,
+  setSound,
+  demoResult,
+  demoRunning,
+  demoMessage,
+  onDemoPlay,
+  onchainEnabled,
+}: SidebarProps) {
   const wallet = useWallet();
   const { connection } = useConnection();
   const [playLoading, stopLoading] = useSound('/assets/audio/loading.mp3', {
@@ -342,7 +371,7 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
       )}
       <div className="part1  md:h-[20%]  center w-full">
         <div className="w-full">
-          {wallet?.connected && (
+          {onchainEnabled && wallet?.connected && (
             <div className="tokenSelector mb-1">
               <Select
                 readOnly
@@ -371,9 +400,15 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
               </Select>
             </div>
           )}
-          <div className="bg-brand_yellow walletMultiButton">
-            <WalletMultiButton color="inherit" className={'walletButton'} />
-          </div>
+          {onchainEnabled ? (
+            <div className="bg-brand_yellow walletMultiButton">
+              <WalletMultiButton color="inherit" className={'walletButton'} />
+            </div>
+          ) : (
+            <div className="rounded-3xl border-4 border-black bg-brand_yellow px-4 py-3 text-center text-xs font-extrabold">
+              PLAYABLE ARCHIVE · ON-CHAIN MODE OFF
+            </div>
+          )}
         </div>
       </div>
       {wallet?.connected && (
@@ -431,6 +466,11 @@ function Sidebar({ amount, setAmount, step, setStep, handleModalClose, openModal
                 escrow={tokenEscrow}
                 discountNft={discountNft}
                 houseVaultBal={houseVaultBal}
+                isDemo={!onchainEnabled || !wallet.connected}
+                demoResult={demoResult}
+                demoRunning={demoRunning}
+                demoMessage={demoMessage}
+                onDemoPlay={onDemoPlay}
               />
             </div>
           )}
@@ -661,7 +701,36 @@ const Play = ({
   tokenInfo,
   escrow,
   discountNft,
-  houseVaultBal}: any) => {
+  houseVaultBal,
+  isDemo,
+  demoResult,
+  demoRunning,
+  demoMessage,
+  onDemoPlay,
+}: any) => {
+  if (isDemo) {
+    return (
+      <div className="flex h-full w-full flex-col items-center justify-center px-3">
+        <p className="w-full border-b-2 pb-2 text-center text-base font-extrabold">FREE DEMO</p>
+        <p className="py-3 text-xs font-semibold">Use the machine controls to choose a position, then drop the claw.</p>
+        <button
+          id="demo-play-button"
+          type="button"
+          disabled={demoRunning}
+          onClick={onDemoPlay}
+          className={`w-10/12 rounded-3xl border-4 border-black p-2 text-xs font-extrabold ${
+            demoRunning ? 'cursor-wait bg-gray-300' : 'bg-yellow-300 hover:bg-yellow-500'
+          }`}
+        >
+          {demoRunning ? 'CLAW IN MOTION...' : demoResult?.status === 'success' ? 'PLAY AGAIN' : 'DROP THE CLAW'}
+        </button>
+        <p aria-live="polite" className="min-h-[2.5rem] pt-3 text-center text-xs">
+          {demoMessage}
+        </p>
+      </div>
+    );
+  }
+
   const isWsol = tokenInfo.address === wsol;
   const token = tokenInfo;
   //TODO: loading when play button pressed
@@ -831,5 +900,3 @@ function convertToShortForm(n: number): string {
   }
   return num.toFixed(1) + suffix;
 }
-
-

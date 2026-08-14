@@ -140,7 +140,8 @@ class ApiState implements PrivateApiInterface {
     // @TODO make rpc connection configurable.
 
     //@ts-ignore
-    return process.env.REACT_APP_NETWORK === 'devnet' ? 'https://api.devnet.solana.com' : process.env.REACT_APP_RPC;
+    const network = process.env.REACT_APP_NETWORK === 'mainnet-beta' ? 'mainnet-beta' : 'devnet';
+    return process.env.REACT_APP_RPC || anchor.web3.clusterApiUrl(network);
   }
 
   /**
@@ -648,7 +649,7 @@ class ApiState implements PrivateApiInterface {
     }
     console.info('VRF used is: ', vrf.id);
     localStorage.setItem("vrf",vrf.id)
-    const DEFAULT_STATE_BUMP = process.env.REACT_APP_NETWORK === 'devnet' ? 255 : 249;
+    const DEFAULT_STATE_BUMP = process.env.REACT_APP_NETWORK === 'mainnet-beta' ? 249 : 255;
     const request = await user
       .placeBetReq(
         {
@@ -662,9 +663,9 @@ class ApiState implements PrivateApiInterface {
         new PublicKey(
           vrf
             ? vrf.id
-            : process.env.REACT_APP_NETWORK === 'devnet'
-            ? '4V4hFcswusaQ9tC5CJekc5YqraNQw4QxBDiSbPLDF4k5'
-            : '8fGps8aCBrkNguLHt9SKHwNvtg7UeTH6MvVQ5y8dDySs'
+            : process.env.REACT_APP_NETWORK === 'mainnet-beta'
+            ? '8fGps8aCBrkNguLHt9SKHwNvtg7UeTH6MvVQ5y8dDySs'
+            : '4V4hFcswusaQ9tC5CJekc5YqraNQw4QxBDiSbPLDF4k5'
         ),
         vrf?.permission_bump || 255,
         vrf?.state_bump || DEFAULT_STATE_BUMP,
@@ -962,8 +963,9 @@ class ApiState implements PrivateApiInterface {
             userWon: event.userWon,
           })
         );
-        if (signature) {
-          await axios.post('https://soltoons-api.vercel.app/api/add-result', {
+        const gameApi = process.env.REACT_APP_GAME_API;
+        if (signature && gameApi) {
+          await axios.post(`${gameApi}/api/add-result`, {
             walletId: this.wallet.publicKey.toBase58(),
             id: signature,
             vrf: localStorage.getItem("vrf")||"",

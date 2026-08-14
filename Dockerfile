@@ -1,0 +1,32 @@
+FROM node:18-bullseye-slim AS build
+
+WORKDIR /app
+
+COPY package.json yarn.lock ./
+RUN yarn install --frozen-lockfile
+
+COPY . .
+
+ARG REACT_APP_NETWORK=devnet
+ARG REACT_APP_ENABLE_ONCHAIN=false
+ARG REACT_APP_ENABLE_ADMIN=false
+ARG REACT_APP_RPC
+ARG REACT_APP_GAME_API
+ARG REACT_APP_MIXPANEL
+
+ENV REACT_APP_NETWORK=${REACT_APP_NETWORK}
+ENV REACT_APP_ENABLE_ONCHAIN=${REACT_APP_ENABLE_ONCHAIN}
+ENV REACT_APP_ENABLE_ADMIN=${REACT_APP_ENABLE_ADMIN}
+ENV REACT_APP_RPC=${REACT_APP_RPC}
+ENV REACT_APP_GAME_API=${REACT_APP_GAME_API}
+ENV REACT_APP_MIXPANEL=${REACT_APP_MIXPANEL}
+
+RUN yarn build
+
+FROM nginx:1.27-alpine
+
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY --from=build /app/build /usr/share/nginx/html
+RUN chmod -R a+rX /usr/share/nginx/html
+
+EXPOSE 80

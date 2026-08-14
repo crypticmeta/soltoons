@@ -1,0 +1,49 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-14T14:30:08Z",
+  "network": "mainnet-beta",
+  "programId": "soLDMzSg7VgDp6SjNXoySM3iko5sFcnwXzKZcv8r8yL",
+  "explorerUrl": "https://explorer.solana.com/address/soLDMzSg7VgDp6SjNXoySM3iko5sFcnwXzKZcv8r8yL",
+  "source": "Solana mainnet RPC queried through Helius with helius_onchain_stats.mjs",
+  "methodology": {
+    "signatureLimit": 20000,
+    "signatureLimitReached": true,
+    "decodedTransactionSample": 500,
+    "knownInstructions": [
+      "collectReward",
+      "createEscrow",
+      "drain",
+      "houseInit",
+      "userAirdrop",
+      "userBet",
+      "userInit",
+      "userSettle"
+    ],
+    "note": "Raw signatures include failed probes and unrelated calls. Recognized activity counts only successful transactions containing a known Soltoons Anchor instruction. Wallets are distinct fee payers in the decoded sample, not verified unique people."
+  },
+  "observedActivity": {
+    "oldestSignatureInRange": "2023-01-27T20:21:41.000Z",
+    "newestSignature": "2026-07-28T13:44:58.000Z",
+    "newestRecognizedSuccessfulActivity": "2025-04-17T01:14:18.000Z"
+  },
+  "metrics": {
+    "signaturesInspected": 20000,
+    "successfulSignatures": 19894,
+    "failedSignatures": 106,
+    "currentProgramAccounts": 132,
+    "currentAccountTypes": {
+      "UserState": 112,
+      "HouseState": 2,
+      "Unknown": 18
+    },
+    "recognizedSuccessfulTransactionsInSample": 35,
+    "recognizedInstructionsInSample": 36,
+    "interactingFeePayersInSample": 12,
+    "instructionCountsInSample": {
+      "userBet": 12,
+      "userSettle": 10,
+      "collectReward": 9,
+      "userInit": 5
+    }
+  }
+}
