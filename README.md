@@ -23,7 +23,7 @@ Demo outcomes are local presentation state. They are not transactions, rewards, 
 
 ## Run locally
 
-Requirements: Node.js 18 and Yarn 1.
+Requirements: Node.js 24 and Yarn 1.
 
 ```bash
 yarn install --frozen-lockfile
